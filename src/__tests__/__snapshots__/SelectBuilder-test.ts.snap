@@ -1,0 +1,177 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`select columns 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "__dialect": null,
+  "select": Immutable.List [
+    Immutable.ColumnNode {
+      "__typename": "ColumnNode",
+      "__dialect": null,
+      "value": "a",
+      "escaped": "a",
+    },
+    Immutable.ColumnNode {
+      "__typename": "ColumnNode",
+      "__dialect": null,
+      "value": "b",
+      "escaped": "b",
+    },
+  ],
+  "from": Immutable.List [],
+  "join": Immutable.List [],
+  "where": Immutable.List [],
+  "having": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "distinct": false,
+}
+`;
+
+exports[`select columns, with builder 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "__dialect": null,
+  "select": Immutable.List [
+    Immutable.ColumnNode {
+      "__typename": "ColumnNode",
+      "__dialect": null,
+      "value": "a",
+      "escaped": "a",
+    },
+    Immutable.ColumnNode {
+      "__typename": "ColumnNode",
+      "__dialect": null,
+      "value": "b",
+      "escaped": "b",
+    },
+    Immutable.SubQueryNode {
+      "__typename": "SubqueryNode",
+      "__dialect": null,
+      "ast": Immutable.SelectNodes {
+        "__operation": "SELECT",
+        "__dialect": null,
+        "select": Immutable.List [
+          Immutable.ColumnNode {
+            "__typename": "ColumnNode",
+            "__dialect": null,
+            "value": "c",
+            "escaped": "c",
+          },
+        ],
+        "from": Immutable.List [],
+        "join": Immutable.List [],
+        "where": Immutable.List [],
+        "having": Immutable.List [],
+        "order": Immutable.List [],
+        "union": Immutable.List [],
+        "limit": null,
+        "offset": null,
+        "distinct": false,
+      },
+      "sql": "SELECT c",
+      "query": "SELECT c",
+      "values": Array [],
+      "fragments": Array [
+        "SELECT c",
+      ],
+    },
+  ],
+  "from": Immutable.List [],
+  "join": Immutable.List [],
+  "where": Immutable.List [],
+  "having": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "distinct": false,
+}
+`;
+
+exports[`select columns, with raw 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "__dialect": null,
+  "select": Immutable.List [
+    Immutable.ColumnNode {
+      "__typename": "ColumnNode",
+      "__dialect": null,
+      "value": "a",
+      "escaped": "a",
+    },
+    Immutable.ColumnNode {
+      "__typename": "ColumnNode",
+      "__dialect": null,
+      "value": "b",
+      "escaped": "b",
+    },
+    Immutable.RawNode {
+      "__typename": "RawNode",
+      "__dialect": null,
+      "fragments": Immutable.List [
+        "COUNT(*) as cnt",
+      ],
+      "bindings": Immutable.List [],
+    },
+  ],
+  "from": Immutable.List [],
+  "join": Immutable.List [],
+  "where": Immutable.List [],
+  "having": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "distinct": false,
+}
+`;
+
+exports[`select from table 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "__dialect": null,
+  "select": Immutable.List [
+    Immutable.ColumnNode {
+      "__typename": "ColumnNode",
+      "__dialect": null,
+      "value": "a",
+      "escaped": "a",
+    },
+    Immutable.ColumnNode {
+      "__typename": "ColumnNode",
+      "__dialect": null,
+      "value": "b",
+      "escaped": "b",
+    },
+  ],
+  "from": Immutable.List [],
+  "join": Immutable.List [],
+  "where": Immutable.List [],
+  "having": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "distinct": false,
+}
+`;
+
+exports[`where clause 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "__dialect": null,
+  "select": Immutable.List [],
+  "from": Immutable.List [],
+  "join": Immutable.List [],
+  "where": Immutable.List [],
+  "having": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "distinct": false,
+}
+`;

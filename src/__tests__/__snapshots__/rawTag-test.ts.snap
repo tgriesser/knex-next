@@ -1,0 +1,26 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`raw tag 1`] = `
+Immutable.RawNode {
+  "__typename": "RawNode",
+  "__dialect": null,
+  "fragments": Immutable.List [
+    "some value",
+  ],
+  "bindings": Immutable.List [],
+}
+`;
+
+exports[`raw tag with bindings 1`] = `
+Immutable.RawNode {
+  "__typename": "RawNode",
+  "__dialect": null,
+  "fragments": Immutable.List [
+    "select * from tbl where id = ",
+    "",
+  ],
+  "bindings": Immutable.List [
+    1,
+  ],
+}
+`;
