@@ -1,20 +1,24 @@
-import { ChainFnInsert } from "./types";
+import { ChainFnInsert, SubQueryArg } from "./data/types";
+import { Grammar } from "./Grammar";
+import { insertAst } from "./data/datatypes";
+import { Loggable } from "./contracts/Loggable";
 
-export class InsertBuilder {
+export class InsertBuilder<T = { [columnName: string]: any }>
+  implements Loggable {
   public readonly dialect = null;
 
-  into(tableName: string) {}
+  protected grammar = new Grammar();
 
-  select() {}
+  constructor(protected ast = insertAst) {}
 
-  values() {}
+  values(toInsert: T | T[]) {}
+
+  select(subQuery: SubQueryArg) {}
 
   inBatchesOf(value: number) {}
 
-  insert() {
-    return this.chain(ast => {
-      return ast;
-    });
+  insertInto(tableName: string) {
+    return this.chain(ast => ast.set("table", tableName));
   }
 
   insertGetId() {
@@ -23,20 +27,28 @@ export class InsertBuilder {
     });
   }
 
-  protected chain(fn: ChainFnInsert) {
-    return;
+  getAst() {
+    return this.ast;
   }
-}
 
-export class UpsertBuilder extends InsertBuilder {
-  // update() {
-  //   return this.chain(ast => {
-  //     return ast;
-  //   });
-  // }
-  // updateOrInsert() {
-  //   return this.chain(ast => {
-  //     return ast;
-  //   });
-  // }
+  toOperation() {
+    return this.grammar.toOperation(this.ast);
+  }
+
+  protected chain(fn: ChainFnInsert) {
+    this.ast = fn(this.ast);
+    return this;
+  }
+
+  log(msg: string) {
+    console.log(msg);
+  }
+
+  error(err: Error) {
+    console.error(err);
+  }
+
+  warn(warning: string | Error) {
+    console.warn(warning);
+  }
 }

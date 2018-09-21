@@ -3,26 +3,38 @@ import {
   TRawNode,
   UnionNode,
   DialectEnum,
-  Maybe,
   TSelectNode,
-  ColumnNode,
   SubQueryNode,
-  ISubQuery,
   TSelectOperation,
-} from "./datatypes";
+  TableNode,
+} from "./data/datatypes";
 import { WhereClauseBuilder } from "./WhereClauseBuilder";
 import {
   TSelectArg,
   TTableArg,
   TUnionArg,
-  SubQuery,
+  SubQueryArg,
   ChainFnSelect,
-  ChainFn,
-} from "./types";
+  Maybe,
+  FromJSArg,
+} from "./data/types";
 import { Grammar } from "./Grammar";
-import { isRawNode, isSelectBuilder } from "./predicates";
+import { isRawNode, isSelectBuilder } from "./data/predicates";
+import { KnexConnection } from "./Connection";
+import { withEventEmitter } from "./mixins/withEventEmitter";
+import { Loggable } from "./contracts/Loggable";
+import { ExecutionContext } from "./ExecutionContext";
 
-export class SelectBuilder extends WhereClauseBuilder {
+export class SelectBuilder<T = any> extends WhereClauseBuilder
+  implements PromiseLike<T>, Loggable {
+  /**
+   * Whether the builder is "mutable". Immutable builders are useful
+   * when building subQueries or statements we want to ensure aren't
+   * changed, but aren't good if we want to actually use them to
+   * execute queries.
+   */
+  private mutable = true;
+
   /**
    * Useful if we want to check the builder's dialect from userland.
    */
@@ -33,46 +45,42 @@ export class SelectBuilder extends WhereClauseBuilder {
    */
   protected grammar = new Grammar();
 
-  constructor(protected ast = selectAst) {
+  /**
+   * The connection we're using to execute the queries.
+   */
+  protected connection: Maybe<KnexConnection> = null;
+
+  /**
+   * If we've executed the promise, cache it on the class body
+   * to fulfill the promises spec.
+   */
+  protected _promise: Maybe<Promise<T>> = null;
+
+  /**
+   * All events, row iteration, and query execution takes place in
+   * an "Execution Context", a combination of a connection, a grammar,
+   * and an EventEmitter.
+   */
+  protected executionContext: Maybe<ExecutionContext> = null;
+
+  constructor(protected ast = selectAst, protected forSubQuery = false) {
     super();
+  }
+
+  clone() {
+    return new (<typeof SelectBuilder>this.constructor)(this.ast);
   }
 
   select(...args: Array<TSelectArg>): this {
     return this.chain(ast => {
-      return ast.update("select", cols => {
-        return args.reduce((result, arg) => {
+      return ast.set(
+        "select",
+        args.reduce((result, arg) => {
           const node = this.selectArg(arg);
           return node ? result.push(node) : result;
-        }, cols);
-      });
+        }, ast.select)
+      );
     });
-  }
-
-  /**
-   * A select argument can be a "string", a "function" (SubQuery),
-   * an instance of a SelectBuilder, or RawNode.
-   */
-  protected selectArg(arg: TSelectArg): Maybe<TSelectNode> {
-    if (arg === null || arg === undefined) {
-      return null;
-    }
-    if (typeof arg === "string") {
-      return ColumnNode({
-        __dialect: this.dialect,
-        value: arg,
-        escaped: this.grammar.escapeId(arg),
-      });
-    }
-    if (typeof arg === "function") {
-      return this.subQuery(arg);
-    }
-    if (isSelectBuilder(arg)) {
-      return this.subSelect(arg);
-    }
-    if (isRawNode(arg)) {
-      return arg;
-    }
-    return null;
   }
 
   /**
@@ -84,12 +92,16 @@ export class SelectBuilder extends WhereClauseBuilder {
     });
   }
 
+  /**
+   * Adds the table for the "from"
+   */
   from(table: TTableArg) {
     if (this.isEmpty(table)) {
       return this;
     }
     return this.chain(ast => {
       if (typeof table === "string") {
+        return ast.set("from", TableNode({ value: table }));
       }
       return ast;
     });
@@ -195,19 +207,17 @@ export class SelectBuilder extends WhereClauseBuilder {
 
   protected addUnionClauses(args: Array<TUnionArg>, unionAll: boolean = false) {
     return this.chain(ast => {
-      return args.reduce((result, arg) => {
-        if (typeof arg === "function") {
-          return result.update("union", unions =>
-            unions.push(
-              UnionNode({
-                value: new (this
-                  .constructor as typeof SelectBuilder)().getAst(),
-              })
-            )
-          );
-        }
-        return result;
-      }, ast);
+      return ast.set(
+        "union",
+        args.reduce((result, arg) => {
+          if (typeof arg === "function") {
+            const ast = new (this
+              .constructor as typeof SelectBuilder)().getAst();
+            return result.push(UnionNode({ ast }));
+          }
+          return result;
+        }, ast.union)
+      );
     });
   }
 
@@ -333,8 +343,27 @@ export class SelectBuilder extends WhereClauseBuilder {
     return this.grammar.toOperation(this.ast);
   }
 
-  getAst() {
-    return this.ast;
+  /**
+   * A select argument can be a "string", a "function" (SubQuery),
+   * an instance of a SelectBuilder, or RawNode.
+   */
+  protected selectArg(arg: TSelectArg): Maybe<TSelectNode> {
+    if (arg === null || arg === undefined) {
+      return null;
+    }
+    if (typeof arg === "string") {
+      return arg;
+    }
+    if (typeof arg === "function") {
+      return this.subQuery(arg);
+    }
+    if (isSelectBuilder(arg)) {
+      return SubQueryNode({ ast: arg.getAst() });
+    }
+    if (isRawNode(arg)) {
+      return arg;
+    }
+    return null;
   }
 
   protected fromSub() {
@@ -355,23 +384,10 @@ export class SelectBuilder extends WhereClauseBuilder {
     });
   }
 
-  protected subQuery(fn: SubQuery) {
+  protected subQuery(fn: SubQueryArg) {
     const builder = new (<typeof SelectBuilder>this.constructor)();
     fn.call(builder, builder);
-    return this.subSelect(builder);
-  }
-
-  protected subSelect(builder: SelectBuilder) {
-    let subQueryData: Partial<ISubQuery> = {
-      ast: builder.getAst(),
-    };
-    if (builder.dialect === this.dialect) {
-      subQueryData = {
-        ast: builder.getAst(),
-        ...builder.toOperation(),
-      };
-    }
-    return SubQueryNode(subQueryData);
+    return SubQueryNode({ ast: builder.getAst() });
   }
 
   protected isEmpty(val: any) {
@@ -379,13 +395,100 @@ export class SelectBuilder extends WhereClauseBuilder {
   }
 
   protected chain(fn: ChainFnSelect): this {
-    this.ast = fn(this.ast);
+    if (this.mutable) {
+      this.ast = fn(this.ast);
+      return this;
+    }
+    return new (<typeof SelectBuilder>this.constructor)(fn(this.ast)) as this;
+  }
+
+  fromJS(obj: FromJSArg) {
     return this;
   }
 
-  toImmutable() {
-    const builder = new this.constructor(this.ast);
+  getAst(): TSelectOperation {
+    return this.ast;
   }
 
-  toMutable() {}
+  toImmutable() {
+    if (this.executionContext) {
+      throw new Error(`
+        Cannot convert a builder which has already begun execution to an immutable instance.
+        Execution is defined as 
+          - calling .then() or .catch(), either directly or indirectly via async / await
+          - calling any of the EventEmitter methods (.on, .off, etc.)
+          - beginning async iteration
+      `);
+    }
+    const builder = this.clone();
+    builder.mutable = false;
+    return builder;
+  }
+
+  toMutable() {
+    const builder = this.clone();
+    builder.mutable = true;
+    return builder;
+  }
+
+  setConnection(connection: KnexConnection) {
+    this.connection = connection;
+    return this;
+  }
+
+  then<TResult1 = T, TResult2 = never>(
+    onFulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>),
+    onRejected?:
+      | ((reason: any) => TResult2 | PromiseLike<TResult2>)
+      | undefined
+      | null
+  ): Promise<TResult1 | TResult2> {
+    if (!this.mutable) {
+      return Promise.reject(new Error());
+    }
+    if (this.forSubQuery) {
+      return Promise.reject(new Error());
+    }
+    if (!this.connection) {
+      return Promise.reject(new Error());
+    }
+    if (this._promise) {
+      return this._promise.then(onFulfilled, onRejected);
+    }
+    this._promise = this.getExecutionContext();
+  }
+
+  catch<TResult = never>(
+    onRejected:
+      | ((reason: any) => TResult | PromiseLike<TResult>)
+      | undefined
+      | null
+  ) {
+    if (!this._promise) {
+      return this.then().catch(onRejected);
+    }
+    return this._promise.catch(onRejected);
+  }
+
+  protected getExecutionContext() {
+    if (!this.executionContext) {
+      this.executionContext = new ExecutionContext();
+    }
+  }
+
+  protected makeExecutionContext() {}
+
+  log(msg: string) {
+    console.log(msg);
+  }
+
+  error(err: Error) {
+    console.error(err);
+  }
+
+  warn(warning: string | Error) {
+    console.warn(warning);
+  }
 }
+
+withEventEmitter(SelectBuilder);

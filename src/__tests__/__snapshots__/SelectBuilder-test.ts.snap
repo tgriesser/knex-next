@@ -3,175 +3,199 @@
 exports[`select columns 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",
-  "__dialect": null,
-  "select": Immutable.List [
-    Immutable.ColumnNode {
-      "__typename": "ColumnNode",
-      "__dialect": null,
-      "value": "a",
-      "escaped": "a",
-    },
-    Immutable.ColumnNode {
-      "__typename": "ColumnNode",
-      "__dialect": null,
-      "value": "b",
-      "escaped": "b",
-    },
-  ],
-  "from": Immutable.List [],
-  "join": Immutable.List [],
+  "from": null,
   "where": Immutable.List [],
+  "select": Immutable.List [
+    "a",
+    "b",
+  ],
+  "join": Immutable.List [],
   "having": Immutable.List [],
   "order": Immutable.List [],
   "union": Immutable.List [],
   "limit": null,
   "offset": null,
+  "alias": null,
   "distinct": false,
+  "meta": Immutable.Map {},
 }
 `;
 
 exports[`select columns, with builder 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",
-  "__dialect": null,
+  "from": null,
+  "where": Immutable.List [],
   "select": Immutable.List [
-    Immutable.ColumnNode {
-      "__typename": "ColumnNode",
-      "__dialect": null,
-      "value": "a",
-      "escaped": "a",
-    },
-    Immutable.ColumnNode {
-      "__typename": "ColumnNode",
-      "__dialect": null,
-      "value": "b",
-      "escaped": "b",
-    },
+    "a",
+    "b",
     Immutable.SubQueryNode {
-      "__typename": "SubqueryNode",
-      "__dialect": null,
+      "__typename": "SubQueryNode",
       "ast": Immutable.SelectNodes {
         "__operation": "SELECT",
-        "__dialect": null,
-        "select": Immutable.List [
-          Immutable.ColumnNode {
-            "__typename": "ColumnNode",
-            "__dialect": null,
-            "value": "c",
-            "escaped": "c",
-          },
-        ],
-        "from": Immutable.List [],
-        "join": Immutable.List [],
+        "from": null,
         "where": Immutable.List [],
+        "select": Immutable.List [
+          "c",
+        ],
+        "join": Immutable.List [],
         "having": Immutable.List [],
         "order": Immutable.List [],
         "union": Immutable.List [],
         "limit": null,
         "offset": null,
+        "alias": null,
         "distinct": false,
+        "meta": Immutable.Map {},
       },
-      "sql": "SELECT c",
-      "query": "SELECT c",
-      "values": Array [],
-      "fragments": Array [
-        "SELECT c",
-      ],
     },
   ],
-  "from": Immutable.List [],
   "join": Immutable.List [],
-  "where": Immutable.List [],
   "having": Immutable.List [],
   "order": Immutable.List [],
   "union": Immutable.List [],
   "limit": null,
   "offset": null,
+  "alias": null,
   "distinct": false,
+  "meta": Immutable.Map {},
 }
 `;
 
 exports[`select columns, with raw 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",
-  "__dialect": null,
+  "from": null,
+  "where": Immutable.List [],
   "select": Immutable.List [
-    Immutable.ColumnNode {
-      "__typename": "ColumnNode",
-      "__dialect": null,
-      "value": "a",
-      "escaped": "a",
-    },
-    Immutable.ColumnNode {
-      "__typename": "ColumnNode",
-      "__dialect": null,
-      "value": "b",
-      "escaped": "b",
-    },
+    "a",
+    "b",
     Immutable.RawNode {
       "__typename": "RawNode",
-      "__dialect": null,
       "fragments": Immutable.List [
         "COUNT(*) as cnt",
       ],
       "bindings": Immutable.List [],
     },
   ],
-  "from": Immutable.List [],
   "join": Immutable.List [],
-  "where": Immutable.List [],
   "having": Immutable.List [],
   "order": Immutable.List [],
   "union": Immutable.List [],
   "limit": null,
   "offset": null,
+  "alias": null,
   "distinct": false,
+  "meta": Immutable.Map {},
 }
 `;
 
 exports[`select from table 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",
-  "__dialect": null,
-  "select": Immutable.List [
-    Immutable.ColumnNode {
-      "__typename": "ColumnNode",
-      "__dialect": null,
-      "value": "a",
-      "escaped": "a",
-    },
-    Immutable.ColumnNode {
-      "__typename": "ColumnNode",
-      "__dialect": null,
-      "value": "b",
-      "escaped": "b",
-    },
-  ],
-  "from": Immutable.List [],
-  "join": Immutable.List [],
+  "from": Immutable.TableNode {
+    "__typename": "TableNode",
+    "value": "users",
+  },
   "where": Immutable.List [],
+  "select": Immutable.List [
+    "a",
+    "b",
+  ],
+  "join": Immutable.List [],
   "having": Immutable.List [],
   "order": Immutable.List [],
   "union": Immutable.List [],
   "limit": null,
   "offset": null,
+  "alias": null,
   "distinct": false,
+  "meta": Immutable.Map {},
 }
 `;
 
 exports[`where clause 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",
-  "__dialect": null,
+  "from": Immutable.TableNode {
+    "__typename": "TableNode",
+    "value": "users",
+  },
+  "where": Immutable.List [
+    Immutable.WhereExpressionNode {
+      "__typename": "WhereExpressionNode",
+      "not": null,
+      "column": "id",
+      "operator": "=",
+      "value": 1,
+      "andOr": "AND",
+    },
+  ],
   "select": Immutable.List [],
-  "from": Immutable.List [],
   "join": Immutable.List [],
-  "where": Immutable.List [],
   "having": Immutable.List [],
   "order": Immutable.List [],
   "union": Immutable.List [],
   "limit": null,
   "offset": null,
+  "alias": null,
   "distinct": false,
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`where subquery 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "from": Immutable.TableNode {
+    "__typename": "TableNode",
+    "value": "users",
+  },
+  "where": Immutable.List [
+    Immutable.WhereSubNode {
+      "__typename": "WhereSubNode",
+      "not": null,
+      "andOr": "AND",
+      "ast": Immutable.WhereClauseNodes {
+        "__clause": "WhereClause",
+        "where": Immutable.List [
+          Immutable.WhereExpressionNode {
+            "__typename": "WhereExpressionNode",
+            "not": null,
+            "column": "id",
+            "operator": "=",
+            "value": 1,
+            "andOr": "AND",
+          },
+          Immutable.WhereExpressionNode {
+            "__typename": "WhereExpressionNode",
+            "not": null,
+            "column": "id",
+            "operator": "=",
+            "value": 2,
+            "andOr": "AND",
+          },
+        ],
+      },
+    },
+    Immutable.WhereExpressionNode {
+      "__typename": "WhereExpressionNode",
+      "not": null,
+      "column": "id",
+      "operator": "=",
+      "value": 4,
+      "andOr": "OR",
+    },
+  ],
+  "select": Immutable.List [],
+  "join": Immutable.List [],
+  "having": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "alias": null,
+  "distinct": false,
+  "meta": Immutable.Map {},
 }
 `;

@@ -3,7 +3,6 @@
 exports[`raw tag 1`] = `
 Immutable.RawNode {
   "__typename": "RawNode",
-  "__dialect": null,
   "fragments": Immutable.List [
     "some value",
   ],
@@ -14,7 +13,6 @@ Immutable.RawNode {
 exports[`raw tag with bindings 1`] = `
 Immutable.RawNode {
   "__typename": "RawNode",
-  "__dialect": null,
   "fragments": Immutable.List [
     "select * from tbl where id = ",
     "",

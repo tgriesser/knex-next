@@ -1,9 +1,7 @@
-import { BaseSelectBuilder } from "../SelectBuilder";
-import { ChainFn } from "../types";
-import { TSelectOperation } from "../datatypes";
+import { SelectBuilder } from "../SelectBuilder";
 
-export class PostgresQueryBuilder extends BaseSelectBuilder {
-  protected operators = [
+export class PostgresQueryBuilder extends SelectBuilder {
+  protected operators = new Set([
     "=",
     "<",
     ">",
@@ -36,29 +34,5 @@ export class PostgresQueryBuilder extends BaseSelectBuilder {
     "#-",
     "is distinct from",
     "is not distinct from",
-  ];
-
-  toMutable(): PostgresQueryBuilder {
-    return this;
-  }
-
-  toImmutable(): ImmutablePostgresQueryBuilder {
-    return new ImmutablePostgresQueryBuilder(this.ast);
-  }
-
-  protected chain(fn: ChainFn<TSelectOperation>): PostgresQueryBuilder {
-    return this;
-  }
-}
-
-export class ImmutablePostgresQueryBuilder extends PostgresQueryBuilder {
-  toMutable(): PostgresQueryBuilder {
-    return new PostgresQueryBuilder(this.ast);
-  }
-  toImmutable(): ImmutablePostgresQueryBuilder {
-    return this;
-  }
-  protected chain(fn: ChainFn<TSelectOperation>) {
-    return new ImmutablePostgresQueryBuilder(fn(this.ast));
-  }
+  ]);
 }

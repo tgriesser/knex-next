@@ -5,13 +5,23 @@ import {
   TInsertOperation,
   TUpdateOperation,
   TDeleteOperation,
-  Maybe,
   TSelectNode,
   NodeTypeEnum,
-  TColumnNodeRecord,
   TRawNode,
   TSubQueryNode,
-} from "./datatypes";
+  TWhereClause,
+  TClauseAst,
+  ClauseTypeEnum,
+  TWhereNode,
+  TWhereExprNode,
+  TWhereColumnNode,
+  TWhereInNode,
+  TWhereSubNode,
+  TWhereExistsNode,
+  TWhereBetweenNode,
+} from "./data/datatypes";
+import { List } from "immutable";
+import { Maybe } from "./data/types";
 
 interface ToSQLValue {
   sql: string;
@@ -26,7 +36,7 @@ export class Grammar {
 
   // The only state stored on the class. Uses the
   // immutable guarentees of the AST to memoize the query build
-  protected lastAst: Maybe<TOperationAst> = null;
+  protected lastAst: Maybe<TOperationAst | TClauseAst> = null;
 
   protected currentFragment: string = "";
   protected fragments: string[] = [];
@@ -34,6 +44,10 @@ export class Grammar {
   protected sqlValues: any[] = [];
   protected sqlWithBindings: string = "";
   protected sqlWithValues: string = "";
+
+  newInstance(): this {
+    return new (<any>this.constructor)();
+  }
 
   /**
    * By default, we don't do any escaping on the id's. That is
@@ -59,9 +73,27 @@ export class Grammar {
   toOperation(operationAst: TOperationAst): ToSQLValue {
     if (operationAst === this.lastAst) {
       return this.sqlValue();
+    } else {
+      this.resetState();
     }
     this.buildOperation(operationAst);
-    return this.cacheSqlValue();
+    return this.cacheSqlValue(operationAst);
+  }
+
+  toClause(clauseAst: TWhereClause): ToSQLValue {
+    if (clauseAst === this.lastAst) {
+      return this.sqlValue();
+    } else {
+      this.resetState();
+    }
+    this.buildClause(clauseAst);
+    return this.cacheSqlValue(clauseAst);
+  }
+
+  protected resetState() {
+    this.currentFragment = "";
+    this.fragments = [];
+    this.sqlValues = [];
   }
 
   protected buildOperation(operationAst: TOperationAst) {
@@ -81,6 +113,14 @@ export class Grammar {
     }
   }
 
+  protected buildClause(clauseAst: TClauseAst) {
+    switch (clauseAst.__clause) {
+      case ClauseTypeEnum.WHERE:
+        this.buildWhere(clauseAst.where, true);
+        break;
+    }
+  }
+
   protected sqlValue() {
     return {
       sql: this.sqlWithValues,
@@ -95,10 +135,12 @@ export class Grammar {
     if (ast.distinct) {
       this.currentFragment += " DISTINCT";
     }
-    this.buildSelectColumns(ast);
+    this.buildSelectColumns(ast.select);
+    this.buildSelectFrom(ast);
+    this.buildWhere(ast.where);
   }
 
-  protected cacheSqlValue() {
+  protected cacheSqlValue(ast: TOperationAst | TClauseAst) {
     this.pushFragment();
     const { fragments, sqlValues } = this;
     let sql = fragments[0];
@@ -111,7 +153,13 @@ export class Grammar {
     }
     this.sqlWithValues = sql;
     this.sqlWithBindings = sqlWithBindings;
+    this.lastAst = ast;
     return this.sqlValue();
+  }
+
+  pushValue(value: any) {
+    this.pushFragment();
+    this.sqlValues.push(value);
   }
 
   pushFragment() {
@@ -119,38 +167,47 @@ export class Grammar {
     this.currentFragment = "";
   }
 
-  buildSelectColumns(ast: TSelectOperation) {
-    if (ast.select.size === 0) {
+  buildSelectColumns(select: TSelectOperation["select"]) {
+    if (select.size === 0) {
       this.currentFragment += " *";
     }
-    ast.select.forEach((node, i) => {
+    select.forEach((node, i) => {
       this.buildSelectColumn(node);
-      if (i < ast.select.size - 1) {
+      if (i < select.size - 1) {
         this.currentFragment += ",";
       }
     });
   }
 
+  buildSelectFrom(ast: TSelectOperation) {
+    if (ast.from === null) {
+      return;
+    }
+    this.currentFragment += " FROM";
+    switch (ast.from.__typename) {
+      case NodeTypeEnum.TABLE:
+        this.currentFragment += ` ${ast.from.value}`;
+        break;
+      case NodeTypeEnum.SUB_QUERY:
+        break;
+      case NodeTypeEnum.RAW:
+        break;
+    }
+  }
+
   buildSelectColumn(node: TSelectNode) {
+    if (typeof node === "string") {
+      this.currentFragment += ` ${this.escapeId(node)}`;
+      return;
+    }
     switch (node.__typename) {
-      case NodeTypeEnum.SUBQUERY:
+      case NodeTypeEnum.SUB_QUERY:
         this.addSubQueryNode(node);
         break;
       case NodeTypeEnum.RAW:
         this.addRawNode(node);
         break;
-      case NodeTypeEnum.COLUMN_NODE:
-        this.addColumnNode(node);
-        break;
     }
-  }
-
-  addColumnNode(node: TColumnNodeRecord) {
-    if (node.__dialect === this.dialect) {
-      this.currentFragment += ` ${node.value}`;
-      return;
-    }
-    this.currentFragment += ` ${this.escapeId(node.value)}`;
   }
 
   /**
@@ -162,12 +219,7 @@ export class Grammar {
     }
   }
 
-  addSubQueryNode(node: TSubQueryNode) {
-    if (node.__dialect === this.dialect) {
-    }
-  }
-
-  buildSelectFrom(ast: TSelectOperation) {}
+  addSubQueryNode(node: TSubQueryNode) {}
 
   buildSelectJoin(ast: TSelectOperation) {}
 
@@ -177,11 +229,86 @@ export class Grammar {
 
   buildSelectHaving(ast: TSelectOperation) {}
 
-  buildInsert(ast: TInsertOperation) {}
+  buildInsert(ast: TInsertOperation) {
+    if (!ast.table) {
+      return null;
+    }
+    this.currentFragment += `INSERT INTO ${this.escapeId(ast.table)}`;
+  }
 
   buildUpdate(ast: TUpdateOperation) {}
 
   buildDelete(ast: TDeleteOperation) {}
+
+  buildWhere(nodes: List<TWhereNode>, subWhere: boolean = false) {
+    if (nodes.size === 0) {
+      return;
+    }
+    this.currentFragment += subWhere ? "" : " WHERE ";
+    nodes.forEach((node, i) => {
+      if (i > 0) {
+        this.currentFragment += ` ${node.andOr} `;
+      }
+      switch (node.__typename) {
+        case NodeTypeEnum.WHERE_EXPR:
+          this.buildWhereExpr(node);
+          break;
+        case NodeTypeEnum.WHERE_COLUMN:
+          this.buildWhereColumn(node);
+          break;
+        case NodeTypeEnum.WHERE_IN:
+          this.buildWhereIn(node);
+          break;
+        case NodeTypeEnum.WHERE_EXISTS:
+          this.buildWhereExists(node);
+          break;
+        case NodeTypeEnum.WHERE_BETWEEN:
+          this.buildWhereBetween(node);
+          break;
+        case NodeTypeEnum.WHERE_SUB:
+          this.buildWhereSub(node);
+          break;
+      }
+    });
+  }
+
+  buildWhereExists(node: TWhereExistsNode) {
+    //
+  }
+
+  buildWhereBetween(node: TWhereBetweenNode) {
+    //
+  }
+
+  buildWhereExpr(node: TWhereExprNode) {
+    if (!node.column) {
+      return;
+    }
+    if (node.not) {
+      this.currentFragment += "NOT ";
+    }
+    this.currentFragment += this.escapeId(node.column);
+    this.currentFragment += ` ${node.operator} `;
+    this.pushValue(node.value);
+  }
+
+  buildWhereColumn(node: TWhereColumnNode) {
+    if (node.not) {
+      this.currentFragment += "NOT ";
+    }
+  }
+
+  buildWhereIn(node: TWhereInNode) {
+    this.currentFragment += node.not ? "NOT IN " : "IN ";
+  }
+
+  buildWhereSub(node: TWhereSubNode) {
+    if (node.ast && node.ast.where.size > 0) {
+      this.currentFragment += "(";
+      this.buildWhere(node.ast.where, true);
+      this.currentFragment += ")";
+    }
+  }
 
   /**
    * A raw node can have any number of values interpolated.
@@ -375,7 +502,6 @@ export class Grammar {
 //         return $this;
 //     }
 // }
-
 // class Grammar extends BaseGrammar {
 //     /**
 //      * The grammar specific operators.
@@ -383,7 +509,6 @@ export class Grammar {
 //      * @var array
 //      */
 //     protected $operators = [];
-
 //     /**
 //      * The components that make up a select clause.
 //      *
@@ -403,7 +528,6 @@ export class Grammar {
 //         'unions',
 //         'lock',
 //     ];
-
 //     /**
 //      * Compile a select query into SQL.
 //      *
@@ -416,23 +540,18 @@ export class Grammar {
 //         // * character to just get all of the columns from the database. Then we
 //         // can build the query and concatenate all the pieces together as one.
 //         $original = $query->columns;
-
 //         if (is_null($query->columns)) {
 //             $query->columns = ['*'];
 //         }
-
 //         // To compile the query, we'll spin through each component of the query and
 //         // see if that component exists. If it does we'll just call the compiler
 //         // function for the component which is responsible for making the SQL.
 //         $sql = trim(this.concatenate(
 //             this.compileComponents($query))
 //         );
-
 //         $query->columns = $original;
-
 //         return $sql;
 //     }
-
 //     /**
 //      * Compile the components necessary for a select clause.
 //      *
@@ -442,21 +561,17 @@ export class Grammar {
 //     protected  compileComponents(Builder $query)
 //     {
 //         $sql = [];
-
 //         foreach (this.selectComponents as $component) {
 //             // To compile the query, we'll spin through each component of the query and
 //             // see if that component exists. If it does we'll just call the compiler
 //             // function for the component which is responsible for making the SQL.
 //             if (! is_null($query->$component)) {
 //                 $method = 'compile'.ucfirst($component);
-
 //                 $sql[$component] = this.method($query, $query->$component);
 //             }
 //         }
-
 //         return $sql;
 //     }
-
 //     /**
 //      * Compile an aggregated select clause.
 //      *
@@ -467,17 +582,14 @@ export class Grammar {
 //     protected  compileAggregate(Builder $query, $aggregate)
 //     {
 //         $column = this.columnize($aggregate['columns']);
-
 //         // If the query has a "distinct" constraint and we're not asking for all columns
 //         // we need to prepend "distinct" onto the column name so that the query takes
 //         // it into account when it performs the aggregating operations on the data.
 //         if ($query->distinct && $column !== '*') {
 //             $column = 'distinct '.$column;
 //         }
-
 //         return 'select '.$aggregate['function'].'('.$column.') as aggregate';
 //     }
-
 //     /**
 //      * Compile the "select *" portion of the query.
 //      *
@@ -493,12 +605,9 @@ export class Grammar {
 //         if (! is_null($query->aggregate)) {
 //             return;
 //         }
-
 //         $select = $query->distinct ? 'select distinct ' : 'select ';
-
 //         return $select.this.columnize($columns);
 //     }
-
 //     /**
 //      * Compile the "from" portion of the query.
 //      *
@@ -510,7 +619,6 @@ export class Grammar {
 //     {
 //         return 'from '.this.wrapTable($table);
 //     }
-
 //     /**
 //      * Compile the "join" portions of the query.
 //      *
@@ -522,13 +630,10 @@ export class Grammar {
 //     {
 //         return collect($joins)->map(function ($join) use ($query) {
 //             $table = this.wrapTable($join->table);
-
 //             $nestedJoins = is_null($join->joins) ? '' : ' '.this.compileJoins($query, $join->joins);
-
 //             return trim("{$join->type} join {$table}{$nestedJoins} {this.compileWheres($join)}");
 //         })->implode(' ');
 //     }
-
 //     /**
 //      * Compile the "where" portions of the query.
 //      *
@@ -543,17 +648,14 @@ export class Grammar {
 //         if (is_null($query->wheres)) {
 //             return '';
 //         }
-
 //         // If we actually have some where clauses, we will strip off the first boolean
 //         // operator, which is added by the query builders for convenience so we can
 //         // avoid checking for the first clauses in each of the compilers methods.
 //         if (count($sql = this.compileWheresToArray($query)) > 0) {
 //             return this.concatenateWhereClauses($query, $sql);
 //         }
-
 //         return '';
 //     }
-
 //     /**
 //      * Get an array of all the where clauses for the query.
 //      *
@@ -566,7 +668,6 @@ export class Grammar {
 //             return $where['boolean'].' '.this.where{$where['type']}"}($query, $where);
 //         })->all();
 //     }
-
 //     /**
 //      * Format the where clause statements into one string.
 //      *
@@ -577,10 +678,8 @@ export class Grammar {
 //     protected  concatenateWhereClauses($query, $sql)
 //     {
 //         $conjunction = $query instanceof JoinClause ? 'on' : 'where';
-
 //         return $conjunction.' '.this.removeLeadingBoolean(implode(' ', $sql));
 //     }
-
 //     /**
 //      * Compile a raw where clause.
 //      *
@@ -592,7 +691,6 @@ export class Grammar {
 //     {
 //         return $where['sql'];
 //     }
-
 //     /**
 //      * Compile a basic where clause.
 //      *
@@ -603,10 +701,8 @@ export class Grammar {
 //     protected  whereBasic(Builder $query, $where)
 //     {
 //         $value = this.parameter($where['value']);
-
 //         return this.wrap($where['column']).' '.$where['operator'].' '.$value;
 //     }
-
 //     /**
 //      * Compile a "where in" clause.
 //      *
@@ -619,10 +715,8 @@ export class Grammar {
 //         if (! empty($where['values'])) {
 //             return this.wrap($where['column']).' in ('.this.parameterize($where['values']).')';
 //         }
-
 //         return '0 = 1';
 //     }
-
 //     /**
 //      * Compile a "where not in" clause.
 //      *
@@ -635,10 +729,8 @@ export class Grammar {
 //         if (! empty($where['values'])) {
 //             return this.wrap($where['column']).' not in ('.this.parameterize($where['values']).')';
 //         }
-
 //         return '1 = 1';
 //     }
-
 //     /**
 //      * Compile a where in sub-select clause.
 //      *
@@ -650,7 +742,6 @@ export class Grammar {
 //     {
 //         return this.wrap($where['column']).' in ('.this.compileSelect($where['query']).')';
 //     }
-
 //     /**
 //      * Compile a where not in sub-select clause.
 //      *
@@ -662,7 +753,6 @@ export class Grammar {
 //     {
 //         return this.wrap($where['column']).' not in ('.this.compileSelect($where['query']).')';
 //     }
-
 //     /**
 //      * Compile a "where null" clause.
 //      *
@@ -674,7 +764,6 @@ export class Grammar {
 //     {
 //         return this.wrap($where['column']).' is null';
 //     }
-
 //     /**
 //      * Compile a "where not null" clause.
 //      *
@@ -686,7 +775,6 @@ export class Grammar {
 //     {
 //         return this.wrap($where['column']).' is not null';
 //     }
-
 //     /**
 //      * Compile a "between" where clause.
 //      *
@@ -697,14 +785,10 @@ export class Grammar {
 //     protected  whereBetween(Builder $query, $where)
 //     {
 //         $between = $where['not'] ? 'not between' : 'between';
-
 //         $min = this.parameter(reset($where['values']));
-
 //         $max = this.parameter(end($where['values']));
-
 //         return this.wrap($where['column']).' '.$between.' '.$min.' and '.$max;
 //     }
-
 //     /**
 //      * Compile a "where date" clause.
 //      *
@@ -716,7 +800,6 @@ export class Grammar {
 //     {
 //         return this.dateBasedWhere('date', $query, $where);
 //     }
-
 //     /**
 //      * Compile a "where time" clause.
 //      *
@@ -728,7 +811,6 @@ export class Grammar {
 //     {
 //         return this.dateBasedWhere('time', $query, $where);
 //     }
-
 //     /**
 //      * Compile a "where day" clause.
 //      *
@@ -740,7 +822,6 @@ export class Grammar {
 //     {
 //         return this.dateBasedWhere('day', $query, $where);
 //     }
-
 //     /**
 //      * Compile a "where month" clause.
 //      *
@@ -752,7 +833,6 @@ export class Grammar {
 //     {
 //         return this.dateBasedWhere('month', $query, $where);
 //     }
-
 //     /**
 //      * Compile a "where year" clause.
 //      *
@@ -764,7 +844,6 @@ export class Grammar {
 //     {
 //         return this.dateBasedWhere('year', $query, $where);
 //     }
-
 //     /**
 //      * Compile a date based where clause.
 //      *
@@ -776,10 +855,8 @@ export class Grammar {
 //     protected  dateBasedWhere($type, Builder $query, $where)
 //     {
 //         $value = this.parameter($where['value']);
-
 //         return $type.'('.this.wrap($where['column']).') '.$where['operator'].' '.$value;
 //     }
-
 //     /**
 //      * Compile a where clause comparing two columns..
 //      *
@@ -791,7 +868,6 @@ export class Grammar {
 //     {
 //         return this.wrap($where['first']).' '.$where['operator'].' '.this.wrap($where['second']);
 //     }
-
 //     /**
 //      * Compile a nested where clause.
 //      *
@@ -805,10 +881,8 @@ export class Grammar {
 //         // is a join clause query, we need to remove the "on" portion of the SQL and
 //         // if it is a normal query we need to take the leading "where" of queries.
 //         $offset = $query instanceof JoinClause ? 3 : 6;
-
 //         return '('.substr(this.compileWheres($where['query']), $offset).')';
 //     }
-
 //     /**
 //      * Compile a where condition with a sub-select.
 //      *
@@ -819,10 +893,8 @@ export class Grammar {
 //     protected  whereSub(Builder $query, $where)
 //     {
 //         $select = this.compileSelect($where['query']);
-
 //         return this.wrap($where['column']).' '.$where['operator']." ($select)";
 //     }
-
 //     /**
 //      * Compile a where exists clause.
 //      *
@@ -834,7 +906,6 @@ export class Grammar {
 //     {
 //         return 'exists ('.this.compileSelect($where['query']).')';
 //     }
-
 //     /**
 //      * Compile a where exists clause.
 //      *
@@ -846,7 +917,6 @@ export class Grammar {
 //     {
 //         return 'not exists ('.this.compileSelect($where['query']).')';
 //     }
-
 //     /**
 //      * Compile a where row values condition.
 //      *
@@ -857,12 +927,9 @@ export class Grammar {
 //     protected  whereRowValues(Builder $query, $where)
 //     {
 //         $columns = this.columnize($where['columns']);
-
 //         $values = this.parameterize($where['values']);
-
 //         return '('.$columns.') '.$where['operator'].' ('.$values.')';
 //     }
-
 //     /**
 //      * Compile a "where JSON contains" clause.
 //      *
@@ -873,12 +940,10 @@ export class Grammar {
 //     protected  whereJsonContains(Builder $query, $where)
 //     {
 //         $not = $where['not'] ? 'not ' : '';
-
 //         return $not.this.compileJsonContains(
 //             $where['column'], this.parameter($where['value'])
 //         );
 //     }
-
 //     /**
 //      * Compile a "JSON contains" statement into SQL.
 //      *
@@ -1004,10 +1069,8 @@ export class Grammar {
 //         if (! empty($orders)) {
 //             return 'order by '.implode(', ', this.compileOrdersToArray($query, $orders));
 //         }
-
 //         return '';
 //     }
-
 //     /**
 //      * Compile the query orders to an array.
 //      *
@@ -1023,7 +1086,6 @@ export class Grammar {
 //                         : $order['sql'];
 //         }, $orders);
 //     }
-
 //     /**
 //      * Compile the random statement into SQL.
 //      *
@@ -1034,7 +1096,6 @@ export class Grammar {
 //     {
 //         return 'RANDOM()';
 //     }
-
 //     /**
 //      * Compile the "limit" portions of the query.
 //      *
@@ -1046,7 +1107,6 @@ export class Grammar {
 //     {
 //         return 'limit '.(int) $limit;
 //     }
-
 //     /**
 //      * Compile the "offset" portions of the query.
 //      *
@@ -1058,7 +1118,6 @@ export class Grammar {
 //     {
 //         return 'offset '.(int) $offset;
 //     }
-
 //     /**
 //      * Compile the "union" queries attached to the main query.
 //      *
@@ -1068,26 +1127,20 @@ export class Grammar {
 //     protected  compileUnions(Builder $query)
 //     {
 //         $sql = '';
-
 //         foreach ($query->unions as $union) {
 //             $sql .= this.compileUnion($union);
 //         }
-
 //         if (! empty($query->unionOrders)) {
 //             $sql .= ' '.this.compileOrders($query, $query->unionOrders);
 //         }
-
 //         if (isset($query->unionLimit)) {
 //             $sql .= ' '.this.compileLimit($query, $query->unionLimit);
 //         }
-
 //         if (isset($query->unionOffset)) {
 //             $sql .= ' '.this.compileOffset($query, $query->unionOffset);
 //         }
-
 //         return ltrim($sql);
 //     }
-
 //     /**
 //      * Compile a single union statement.
 //      *
@@ -1097,10 +1150,8 @@ export class Grammar {
 //     protected  compileUnion(union: Array<any>)
 //     {
 //         $conjunction = $union['all'] ? ' union all ' : ' union ';
-
 //         return $conjunction.$union['query']->toSql();
 //     }
-
 //     /**
 //      * Compile an exists statement into SQL.
 //      *
@@ -1110,10 +1161,8 @@ export class Grammar {
 //     compileExists(Builder $query)
 //     {
 //         $select = this.compileSelect($query);
-
 //         return "select exists({$select}) as {this.wrap('exists')}";
 //     }
-
 //     /**
 //      * Compile an insert statement into SQL.
 //      *
@@ -1127,23 +1176,18 @@ export class Grammar {
 //         // simply makes creating the SQL easier for us since we can utilize the same
 //         // basic routine regardless of an amount of records given to us to insert.
 //         $table = this.wrapTable($query->from);
-
 //         if (! is_array(reset($values))) {
 //             $values = [$values];
 //         }
-
 //         $columns = this.columnize(array_keys(reset($values)));
-
 //         // We need to build a list of parameter place-holders of values that are bound
 //         // to the query. Each insert should have the exact same amount of parameter
 //         // bindings so we will loop through the record and parameterize them all.
 //         $parameters = collect($values)->map(function ($record) {
 //             return '('.this.parameterize($record).')';
 //         })->implode(', ');
-
 //         return "insert into $table ($columns) values $parameters";
 //     }
-
 //     /**
 //      * Compile an insert and get ID statement into SQL.
 //      *
@@ -1156,7 +1200,6 @@ export class Grammar {
 //     {
 //         return this.compileInsert($query, $values);
 //     }
-
 //     /**
 //      * Compile an update statement into SQL.
 //      *
@@ -1167,31 +1210,25 @@ export class Grammar {
 //     compileUpdate(Builder $query, $values)
 //     {
 //         $table = this.wrapTable($query->from);
-
 //         // Each one of the columns in the update statements needs to be wrapped in the
 //         // keyword identifiers, also a place-holder needs to be created for each of
 //         // the values in the list of bindings so we can make the sets statements.
 //         $columns = collect($values)->map(function ($value, $key) {
 //             return this.wrap($key).' = '.this.parameter($value);
 //         })->implode(', ');
-
 //         // If the query has any "join" clauses, we will setup the joins on the builder
 //         // and compile them so we can attach them to this update, as update queries
 //         // can get join statements to attach to other tables when they're needed.
 //         $joins = '';
-
 //         if (isset($query->joins)) {
 //             $joins = ' '.this.compileJoins($query, $query->joins);
 //         }
-
 //         // Of course, update queries may also be constrained by where clauses so we'll
 //         // need to compile the where clauses and attach it to the query so only the
 //         // intended records are updated by the SQL statements we generate to run.
 //         $wheres = this.compileWheres($query);
-
 //         return trim("update {$table}{$joins} set $columns $wheres");
 //     }
-
 //     /**
 //      * Prepare the bindings for an update statement.
 //      *
@@ -1202,12 +1239,10 @@ export class Grammar {
 //     prepareBindingsForUpdate(bindings: Array<any>, array $values)
 //     {
 //         $cleanBindings = Arr::except($bindings, ['join', 'select']);
-
 //         return array_values(
 //             array_merge($bindings['join'], $values, Arr::flatten($cleanBindings))
 //         );
 //     }
-
 //     /**
 //      * Compile a delete statement into SQL.
 //      *
@@ -1217,10 +1252,8 @@ export class Grammar {
 //     compileDelete(Builder $query)
 //     {
 //         $wheres = is_array($query->wheres) ? this.compileWheres($query) : '';
-
 //         return trim("delete from {this.wrapTable($query->from)} $wheres");
 //     }
-
 //     /**
 //      * Prepare the bindings for a delete statement.
 //      *
@@ -1231,7 +1264,6 @@ export class Grammar {
 //     {
 //         return Arr::flatten($bindings);
 //     }
-
 //     /**
 //      * Compile a truncate table statement into SQL.
 //      *
@@ -1242,7 +1274,6 @@ export class Grammar {
 //     {
 //         return ['truncate '.this.wrapTable($query->from) => []];
 //     }
-
 //     /**
 //      * Compile the lock into SQL.
 //      *
@@ -1254,7 +1285,6 @@ export class Grammar {
 //     {
 //         return is_string($value) ? $value : '';
 //     }
-
 //     /**
 //      * Determine if the grammar supports savepoints.
 //      *
@@ -1264,7 +1294,6 @@ export class Grammar {
 //     {
 //         return true;
 //     }
-
 //     /**
 //      * Compile the SQL statement to define a savepoint.
 //      *
@@ -1275,7 +1304,6 @@ export class Grammar {
 //     {
 //         return 'SAVEPOINT '.$name;
 //     }
-
 //     /**
 //      * Compile the SQL statement to execute a savepoint rollback.
 //      *
@@ -1286,7 +1314,6 @@ export class Grammar {
 //     {
 //         return 'ROLLBACK TO SAVEPOINT '.$name;
 //     }
-
 //     /**
 //      * Wrap a value in keyword identifiers.
 //      *
@@ -1299,24 +1326,20 @@ export class Grammar {
 //         if (this.isExpression($value)) {
 //             return this.getValue($value);
 //         }
-
 //         // If the value being wrapped has a column alias we will need to separate out
 //         // the pieces so we can wrap each of the segments of the expression on its
 //         // own, and then join these both back together using the "as" connector.
 //         if (stripos($value, ' as ') !== false) {
 //             return this.wrapAliasedValue($value, $prefixAlias);
 //         }
-
 //         // If the given value is a JSON selector we will wrap it differently than a
 //         // traditional value. We will need to split this path and wrap each part
 //         // wrapped, etc. Otherwise, we will simply wrap the value as a string.
 //         if (this.isJsonSelector($value)) {
 //             return this.wrapJsonSelector($value);
 //         }
-
 //         return this.wrapSegments(explode('.', $value));
 //     }
-
 //     /**
 //      * Wrap the given JSON selector.
 //      *
@@ -1327,7 +1350,6 @@ export class Grammar {
 //     {
 //         throw new RuntimeException('This database engine does not support JSON operations.');
 //     }
-
 //     /**
 //      * Split the given JSON selector into the field and the optional path and wrap them separately.
 //      *
@@ -1337,14 +1359,10 @@ export class Grammar {
 //     protected  wrapJsonFieldAndPath($column)
 //     {
 //         $parts = explode('->', $column, 2);
-
 //         $field = this.wrap($parts[0]);
-
 //         $path = count($parts) > 1 ? ', '.this.wrapJsonPath($parts[1]) : '';
-
 //         return [$field, $path];
 //     }
-
 //     /**
 //      * Wrap the given JSON path.
 //      *
@@ -1355,7 +1373,6 @@ export class Grammar {
 //     {
 //         return '\'$."'.str_replace('->', '"."', $value).'"\'';
 //     }
-
 //     /**
 //      * Determine if the given string is a JSON selector.
 //      *
@@ -1366,7 +1383,6 @@ export class Grammar {
 //     {
 //         return Str::contains($value, '->');
 //     }
-
 //     /**
 //      * Concatenate an array of segments, removing empties.
 //      *
@@ -1379,7 +1395,6 @@ export class Grammar {
 //             return (string) $value !== '';
 //         }));
 //     }
-
 //     /**
 //      * Remove the leading boolean from a statement.
 //      *
@@ -1390,7 +1405,6 @@ export class Grammar {
 //     {
 //         return preg_replace('/and |or /i', '', $value, 1);
 //     }
-
 //     /**
 //      * Get the grammar specific operators.
 //      *

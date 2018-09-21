@@ -5,14 +5,17 @@ import {
   TInsertOperation,
   TRawNode,
   OperatorEnum,
-  TWhereNode,
 } from "./datatypes";
-import { SelectBuilder } from "./SelectBuilder";
-import { TableModel } from "./TableModel";
+import { SelectBuilder } from "../SelectBuilder";
+import { TableModel } from "../TableModel";
+
+export type Maybe<T> = null | T;
 
 export interface ChainFn<T> {
   (ast: T): T;
 }
+
+export interface ChainFnWhere extends ChainFn<any> {}
 
 export interface ChainFnSelect extends ChainFn<TSelectOperation> {}
 
@@ -22,19 +25,17 @@ export interface ChainFnUpdate extends ChainFn<TUpdateOperation> {}
 
 export interface ChainFnInsert extends ChainFn<TInsertOperation> {}
 
-export interface ChainFnWhere extends ChainFn<TWhereNode> {}
-
-export interface SubQuery {
-  <T extends SelectBuilder>(qb: T): T;
+export interface SubQueryArg {
+  <T extends SelectBuilder>(this: T, qb: T): any;
 }
 
-export type TColumnArg = string | SubQuery | SelectBuilder | TRawNode;
+export type TColumnArg = string | SubQueryArg | SelectBuilder | TRawNode;
 
 export type TSelectArg = TColumnArg | TColumnArg[];
 
-export type TTableArg = string | SubQuery | TableModel | TRawNode;
+export type TTableArg = string | SubQueryArg | TableModel | TRawNode;
 
-export type TUnionArg = SubQuery | SelectBuilder | TRawNode;
+export type TUnionArg = SubQueryArg | SelectBuilder | TRawNode;
 
 export type TAndOr = OperatorEnum.AND | OperatorEnum.OR;
 
@@ -86,3 +87,5 @@ export type TValueConditions = Array<
 >;
 
 export type TValueArg = any;
+
+export interface FromJSArg {}

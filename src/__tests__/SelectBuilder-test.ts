@@ -1,5 +1,5 @@
 import { SelectBuilder } from "../SelectBuilder";
-import { sql } from "../sqlTag";
+import { sql as raw } from "../sqlTag";
 
 function builder() {
   return new SelectBuilder();
@@ -7,40 +7,115 @@ function builder() {
 function expectAst(b: SelectBuilder) {
   return expect(b.getAst());
 }
-function expectSql(b: SelectBuilder) {
-  return expect(b.toSql());
+function expectOp(b: SelectBuilder) {
+  return expect(b.toOperation());
 }
 
 test("select columns", () => {
-  expectAst(builder().select("a", "b")).toMatchSnapshot();
-  expectSql(builder().select("a", "b")).toMatchInlineSnapshot(`"SELECT a, b"`);
+  const query = builder().select("a", "b");
+  expectAst(query).toMatchSnapshot();
+  expectOp(query).toMatchInlineSnapshot(`
+Object {
+  "fragments": Array [
+    "SELECT a, b",
+  ],
+  "query": "SELECT a, b",
+  "sql": "SELECT a, b",
+  "values": Array [],
+}
+`);
 });
 
 test("select columns, with builder", () => {
-  expectAst(
-    builder().select("a", "b", builder().select("c"))
-  ).toMatchSnapshot();
-  expectSql(builder().select("a", "b")).toMatchInlineSnapshot(`"SELECT a, b"`);
+  const query = builder().select("a", "b", builder().select("c"));
+  expectAst(query).toMatchSnapshot();
+  expectOp(query).toMatchInlineSnapshot(`
+Object {
+  "fragments": Array [
+    "SELECT a, b,",
+  ],
+  "query": "SELECT a, b,",
+  "sql": "SELECT a, b,",
+  "values": Array [],
+}
+`);
 });
 
 test("select columns, with raw", () => {
-  expectAst(builder().select("a", "b", sql`COUNT(*) as cnt`)).toMatchSnapshot();
-  expectSql(builder().select("a", "b")).toMatchInlineSnapshot(`"SELECT a, b"`);
+  const query = builder().select("a", "b", raw`COUNT(*) as cnt`);
+  expectAst(query).toMatchSnapshot();
+  expectOp(query).toMatchInlineSnapshot(`
+Object {
+  "fragments": Array [
+    "SELECT a, b, COUNT(*) as cnt",
+  ],
+  "query": "SELECT a, b, COUNT(*) as cnt",
+  "sql": "SELECT a, b, COUNT(*) as cnt",
+  "values": Array [],
+}
+`);
 });
 
 test("select from table", () => {
-  expectAst(
-    builder()
-      .select("a", "b")
-      .from("users")
-  ).toMatchSnapshot();
-  expectSql(
-    builder()
-      .select("a", "b")
-      .from("users")
-  ).toMatchInlineSnapshot(`"SELECT a, b"`);
+  const query = builder()
+    .select("a", "b")
+    .from("users");
+  expectAst(query).toMatchSnapshot();
+  expectOp(query).toMatchInlineSnapshot(`
+Object {
+  "fragments": Array [
+    "SELECT a, b FROM users",
+  ],
+  "query": "SELECT a, b FROM users",
+  "sql": "SELECT a, b FROM users",
+  "values": Array [],
+}
+`);
 });
 
 test("where clause", () => {
-  expectAst(builder().where("user", 1)).toMatchSnapshot();
+  const query = builder()
+    .from("users")
+    .where("id", 1);
+  expectAst(query).toMatchSnapshot();
+  expectOp(query).toMatchInlineSnapshot(`
+Object {
+  "fragments": Array [
+    "SELECT * FROM users WHERE id = ",
+    "",
+  ],
+  "query": "SELECT * FROM users WHERE id = ?",
+  "sql": "SELECT * FROM users WHERE id = 1",
+  "values": Array [
+    1,
+  ],
+}
+`);
+});
+
+test("where subquery", () => {
+  let query = builder()
+    .from("users")
+    .where(q => {
+      q.where("id", 1).andWhere("id", 2);
+    })
+    .orWhere("id", 4);
+  expectAst(query).toMatchSnapshot();
+  expectOp(query).toMatchInlineSnapshot(`
+Object {
+  "fragments": Array [
+    "SELECT * FROM users WHERE (id = ",
+    " AND id = ",
+    ") OR id = ",
+    "",
+  ],
+  "query": "SELECT * FROM users WHERE (id = ? AND id = ?) OR id = ?",
+  "sql": "SELECT * FROM users WHERE (id = 1 AND id = 2) OR id = 4",
+  "values": Array [
+    1,
+    2,
+    4,
+  ],
+}
+`);
 });
