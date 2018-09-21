@@ -1,4 +1,11 @@
 {
-  "name": "@knex/core",
-  "version": "2.0.0-alpha"
+  "name": "@knex/knex",
+  "version": "2.0.0-alpha",
+  "scripts": {
+    "build": "tsc -p ."
+  },
+  "dependencies": {
+    "@knex/core": "2.0.0-alpha",
+    "tslib": "^1.9.3"
+  }
 }

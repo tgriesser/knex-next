@@ -1,4 +1,15 @@
 {
   "name": "@knex/oracle",
-  "version": "2.0.0-alpha"
+  "version": "2.0.0-alpha",
+  "scripts": {
+    "build": "tsc -p ."
+  },
+  "dependencies": {
+    "@knex/core": "2.0.0-alpha",
+    "tslib": "^1.9.3"
+  },
+  "devDependencies": {
+    "@types/oracledb": "^1.11.34",
+    "oracledb": "^2.3.0"
+  }
 }

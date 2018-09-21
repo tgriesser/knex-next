@@ -1,4 +1,21 @@
 {
   "name": "@knex/core",
-  "version": "2.0.0-alpha"
+  "version": "2.0.0-alpha",
+  "main": "lib/index.js",
+  "types": "src/index.ts",
+  "author": "Tim Griesser <tgriesser10@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -p ."
+  },
+  "dependencies": {
+    "tslib": "^1.9.3",
+    "immutable": "^4.0.0-rc.10",
+    "invariant": "^2.2.4",
+    "dedent": "^0.7.0"
+  },
+  "devDependencies": {
+    "@types/invariant": "^2.2.29",
+    "@types/dedent": "^0.7.0"
+  }
 }

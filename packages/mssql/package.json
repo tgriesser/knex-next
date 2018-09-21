@@ -1,0 +1,15 @@
+{
+  "name": "@knex/mssql",
+  "version": "2.0.0-alpha",
+  "scripts": {
+    "build": "tsc -p ."
+  },
+  "dependencies": {
+    "@knex/core": "2.0.0-alpha",
+    "tslib": "^1.9.3",
+    "mssql": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/mssql": "^4.0.10"
+  }
+}

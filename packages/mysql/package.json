@@ -1,4 +1,17 @@
 {
   "name": "@knex/mysql",
-  "version": "2.0.0-alpha"
+  "version": "2.0.0-alpha",
+  "scripts": {
+    "build": "tsc -p ."
+  },
+  "dependencies": {
+    "tslib": "^1.9.3",
+    "mysql": "^2.16.0",
+    "sqlstring": "^2.3.1",
+    "@knex/core": "2.0.0-alpha"
+  },
+  "devDependencies": {
+    "@types/sqlstring": "^2.2.0",
+    "@types/mysql": "^2.15.5"
+  }
 }

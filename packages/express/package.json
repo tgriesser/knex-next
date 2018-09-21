@@ -1,4 +1,11 @@
 {
   "name": "@knex/express",
-  "version": "2.0.0-alpha"
+  "version": "2.0.0-alpha",
+  "scripts": {
+    "build": "tsc -p ."
+  },
+  "devDependencies": {
+    "@knex/core": "2.0.0-alpha",
+    "@types/express": "^4.16.0"
+  }
 }
