@@ -25,6 +25,7 @@ export enum OperationTypeEnum {
   INSERT = "INSERT",
   UPDATE = "UPDATE",
   DELETE = "DELETE",
+  TRUNCATE = "TRUNCATE",
 }
 
 export enum OperatorEnum {
@@ -181,7 +182,7 @@ export const WhereNullNode = IRecord<WhereNullNode>(
     andOr: OperatorEnum.AND,
     column: null,
   },
-  NodeTypeEnum.WHERE_IN
+  NodeTypeEnum.WHERE_NULL
 );
 export type TWhereNullNode = RecordOf<WhereNullNode>;
 
@@ -330,6 +331,13 @@ export const havingClauseNode = HavingClause();
 
 export type TSelectNode = string | TSubQueryNode | TRawNode;
 export type TFromNode = string | TSubQueryNode | TRawNode;
+export type TWhereNode =
+  | TWhereExprNode
+  | TWhereInNode
+  | TWhereBetweenNode
+  | TWhereSubNode
+  | TWhereExistsNode
+  | TWhereColumnNode;
 
 /**
  * Select Expressions:
@@ -380,10 +388,16 @@ export interface IInsertOperation
   extends IOperationNode<OperationTypeEnum.INSERT> {
   __operation: OperationTypeEnum.INSERT;
   table: Maybe<string>;
+  chunkSize: Maybe<number>;
+  values: List<any>;
+  select: Maybe<TSelectOperation>;
 }
 export const InsertOperation = IRecord<IInsertOperation>({
   __operation: OperationTypeEnum.INSERT,
   table: null,
+  chunkSize: null,
+  values: List(),
+  select: null,
 });
 export type TInsertOperation = RecordOf<IInsertOperation>;
 
@@ -407,26 +421,37 @@ export const updateAst = UpdateOperation();
  * Delete Bindings:
  */
 export interface IDeleteOperation
-  extends IOperationNode<OperationTypeEnum.DELETE> {}
+  extends IOperationNode<OperationTypeEnum.DELETE> {
+  table: Maybe<string>;
+}
 export const DeleteBindings = IRecord<IDeleteOperation>({
   __operation: OperationTypeEnum.DELETE,
+  table: null,
 });
 export type TDeleteOperation = RecordOf<IDeleteOperation>;
 
 export const deleteAst = DeleteBindings();
 
+/**
+ * Truncate Bindings:
+ */
+export interface ITruncateOperation
+  extends IOperationNode<OperationTypeEnum.TRUNCATE> {
+  table: Maybe<string>;
+}
+export const TruncateBindings = IRecord<ITruncateOperation>({
+  __operation: OperationTypeEnum.TRUNCATE,
+  table: null,
+});
+export type TTruncateOperation = RecordOf<ITruncateOperation>;
+
+export const truncateAst = TruncateBindings();
+
 export type TOperationAst =
   | TSelectOperation
   | TUpdateOperation
   | TDeleteOperation
-  | TInsertOperation;
+  | TInsertOperation
+  | TTruncateOperation;
 
 export type TClauseAst = TWhereClause;
-
-export type TWhereNode =
-  | TWhereExprNode
-  | TWhereInNode
-  | TWhereBetweenNode
-  | TWhereSubNode
-  | TWhereExistsNode
-  | TWhereColumnNode;

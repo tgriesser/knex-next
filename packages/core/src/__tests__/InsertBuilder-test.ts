@@ -1,14 +1,14 @@
 import { InsertBuilder } from "../InsertBuilder";
 
-function builder() {
+function insert() {
   return new InsertBuilder();
 }
 function expectOp(obj: InsertBuilder) {
   return expect(obj.toOperation());
 }
 
-test("insert into table", () => {
-  expectOp(builder().insertInto("some_table")).toMatchInlineSnapshot(`
+test("insert: values", () => {
+  expectOp(insert().into("some_table")).toMatchInlineSnapshot(`
 Object {
   "fragments": Array [
     "INSERT INTO some_table",
@@ -18,4 +18,13 @@ Object {
   "values": Array [],
 }
 `);
+});
+
+test("insert: select", () => {
+  const query = insert()
+    .into("someTable")
+    .select(qb => {
+      qb.select("a").from("otherTable");
+    });
+  expectOp(query).toMatchSnapshot();
 });

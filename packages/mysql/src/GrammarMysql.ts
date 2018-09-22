@@ -1,9 +1,12 @@
 import { Grammar } from "@knex/core";
 import sqlstring from "sqlstring";
 
-export class KnexGrammarMysql extends Grammar {
+export class GrammarMysql extends Grammar {
   escapeId(id: string) {
-    return sqlstring.escapeId(id);
+    return id
+      .split(".")
+      .map(piece => (piece === "*" ? "*" : sqlstring.escapeId(piece)))
+      .join(".");
   }
   escapeValue(val: any) {
     return sqlstring.escape(val);

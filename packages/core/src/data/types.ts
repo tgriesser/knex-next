@@ -5,9 +5,9 @@ import {
   TInsertOperation,
   TRawNode,
   OperatorEnum,
+  TTruncateOperation,
 } from "./datatypes";
 import { SelectBuilder } from "../SelectBuilder";
-import { TableModel } from "../TableModel";
 
 export type Maybe<T> = null | T;
 
@@ -25,6 +25,8 @@ export interface ChainFnUpdate extends ChainFn<TUpdateOperation> {}
 
 export interface ChainFnInsert extends ChainFn<TInsertOperation> {}
 
+export interface ChainFnTruncate extends ChainFn<TTruncateOperation> {}
+
 export interface SubQueryArg {
   <T extends SelectBuilder>(this: T, qb: T): any;
 }
@@ -33,7 +35,7 @@ export type TColumnArg = string | SubQueryArg | SelectBuilder | TRawNode;
 
 export type TSelectArg = TColumnArg | TColumnArg[];
 
-export type TTableArg = string | SubQueryArg | TableModel | TRawNode;
+export type TTableArg = string | SubQueryArg | TRawNode;
 
 export type TUnionArg = SubQueryArg | SelectBuilder | TRawNode;
 

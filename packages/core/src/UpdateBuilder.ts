@@ -1,6 +1,7 @@
 import { WhereClauseBuilder } from "./WhereClauseBuilder";
-import { updateAst } from "./data/datatypes";
-import { ChainFnUpdate } from "./data/types";
+import { updateAst, SubQueryNode } from "./data/datatypes";
+import { ChainFnUpdate, SubQueryArg } from "./data/types";
+import { SelectBuilder } from "@knex/core/src/SelectBuilder";
 
 export class UpdateBuilder<
   T = { [columnName: string]: any }
@@ -16,5 +17,10 @@ export class UpdateBuilder<
   protected chain(fn: ChainFnUpdate) {
     this.ast = fn(this.ast);
     return this;
+  }
+  protected subQuery(fn: SubQueryArg) {
+    const builder = new SelectBuilder();
+    fn.call(builder, builder);
+    return SubQueryNode({ ast: builder.getAst() });
   }
 }

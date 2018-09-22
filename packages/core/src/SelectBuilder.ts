@@ -21,7 +21,7 @@ import {
   FromJSArg,
 } from "./data/types";
 import { Grammar } from "./Grammar";
-import { isRawNode, isSelectBuilder } from "./data/predicates";
+import { isRawNode } from "./data/predicates";
 import { KnexConnection } from "./Connection";
 import { withEventEmitter } from "./mixins/withEventEmitter";
 import { Loggable } from "./contracts/Loggable";
@@ -35,7 +35,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder
    * changed, but aren't good if we want to actually use them to
    * execute queries.
    */
-  private mutable = true;
+  protected mutable = true;
 
   /**
    * Useful if we want to check the builder's dialect from userland.
@@ -299,18 +299,6 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder
     });
   }
 
-  delete() {
-    return this.chain(ast => {
-      return ast;
-    });
-  }
-
-  truncate() {
-    return this.chain(ast => {
-      return ast;
-    });
-  }
-
   cloneWithout() {
     return this.chain(ast => {
       return ast;
@@ -343,7 +331,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder
     if (typeof arg === "function") {
       return this.subQuery(arg);
     }
-    if (isSelectBuilder(arg)) {
+    if (arg instanceof SelectBuilder) {
       return SubQueryNode({ ast: arg.getAst() });
     }
     if (isRawNode(arg)) {

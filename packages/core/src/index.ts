@@ -11,6 +11,5 @@ export * from "./SchemaBuilder";
 export * from "./rawTag";
 export * from "./SchemaBuilder";
 export * from "./SelectBuilder";
-export * from "./TableModel";
 export * from "./UpdateBuilder";
 export * from "./WhereClauseBuilder";

@@ -1,24 +1,35 @@
 import { ChainFnInsert, SubQueryArg } from "./data/types";
 import { Grammar } from "./Grammar";
-import { insertAst } from "./data/datatypes";
+import { insertAst, TRawNode } from "./data/datatypes";
 import { Loggable } from "./contracts/Loggable";
+import { Buildable } from "./contracts/Buildable";
+import { SelectBuilder } from "./SelectBuilder";
 
 export class InsertBuilder<T = { [columnName: string]: any }>
-  implements Loggable {
+  implements Loggable, Buildable {
   public readonly dialect = null;
 
-  protected grammar = new Grammar();
+  grammar = new Grammar();
 
   constructor(protected ast = insertAst) {}
 
-  values(toInsert: T | T[]) {}
-
-  select(subQuery: SubQueryArg) {}
-
-  inBatchesOf(value: number) {}
-
-  insertInto(tableName: string) {
+  into(tableName: string) {
     return this.chain(ast => ast.set("table", tableName));
+  }
+
+  values(toInsert: T | T[]) {
+    return this.chain(ast => ast.set("values", ast.values.concat(toInsert)));
+  }
+
+  select(arg: SubQueryArg | TRawNode) {
+    if (typeof arg === "function") {
+      return this.chain(ast => ast.set("select", this.subQuery(arg)));
+    }
+    return this;
+  }
+
+  inBatchesOf(value: number) {
+    return this.chain(ast => ast.set("chunkSize", value));
   }
 
   insertGetId() {
@@ -33,6 +44,12 @@ export class InsertBuilder<T = { [columnName: string]: any }>
 
   toOperation() {
     return this.grammar.toOperation(this.ast);
+  }
+
+  protected subQuery(arg: SubQueryArg) {
+    const builder = new SelectBuilder();
+    arg.call(builder, builder);
+    return builder.getAst();
   }
 
   protected chain(fn: ChainFnInsert) {

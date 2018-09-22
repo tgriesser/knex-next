@@ -5,6 +5,7 @@
     "build": "tsc -p ."
   },
   "dependencies": {
+    "@knex/core": "2.0.0-alpha",
     "pg": "^7.4.3",
     "tslib": "^1.9.3"
   },

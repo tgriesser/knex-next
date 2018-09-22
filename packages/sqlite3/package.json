@@ -5,6 +5,7 @@
     "build": "tsc -p ."
   },
   "dependencies": {
+    "@knex/core": "2.0.0-alpha",
     "sqlite3": "^4.0.2"
   },
   "devDependencies": {

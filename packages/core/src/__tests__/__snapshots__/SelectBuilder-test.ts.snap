@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`select columns 1`] = `
+exports[`@knex/core - selectBuilder select columns 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",
   "from": null,
@@ -22,7 +22,18 @@ Immutable.SelectNodes {
 }
 `;
 
-exports[`select columns, with builder 1`] = `
+exports[`@knex/core - selectBuilder select columns 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT a, b",
+  ],
+  "query": "SELECT a, b",
+  "sql": "SELECT a, b",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - selectBuilder select columns, with builder 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",
   "from": null,
@@ -45,7 +56,7 @@ Immutable.SelectNodes {
         "union": Immutable.List [],
         "limit": null,
         "offset": null,
-        "alias": null,
+        "alias": "sub",
         "distinct": false,
         "lock": null,
         "meta": Immutable.Map {},
@@ -65,7 +76,18 @@ Immutable.SelectNodes {
 }
 `;
 
-exports[`select columns, with raw 1`] = `
+exports[`@knex/core - selectBuilder select columns, with builder 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT a, b, (SELECT c) AS sub",
+  ],
+  "query": "SELECT a, b, (SELECT c) AS sub",
+  "sql": "SELECT a, b, (SELECT c) AS sub",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - selectBuilder select columns, with raw 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",
   "from": null,
@@ -94,7 +116,18 @@ Immutable.SelectNodes {
 }
 `;
 
-exports[`select from table 1`] = `
+exports[`@knex/core - selectBuilder select columns, with raw 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT a, b, COUNT(*) as cnt",
+  ],
+  "query": "SELECT a, b, COUNT(*) as cnt",
+  "sql": "SELECT a, b, COUNT(*) as cnt",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - selectBuilder select from table 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",
   "from": "users",
@@ -116,7 +149,18 @@ Immutable.SelectNodes {
 }
 `;
 
-exports[`where clause 1`] = `
+exports[`@knex/core - selectBuilder select from table 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT a, b FROM users",
+  ],
+  "query": "SELECT a, b FROM users",
+  "sql": "SELECT a, b FROM users",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - selectBuilder where clause 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",
   "from": "users",
@@ -144,7 +188,21 @@ Immutable.SelectNodes {
 }
 `;
 
-exports[`where subquery 1`] = `
+exports[`@knex/core - selectBuilder where clause 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT * FROM users WHERE id = ",
+    "",
+  ],
+  "query": "SELECT * FROM users WHERE id = ?",
+  "sql": "SELECT * FROM users WHERE id = 1",
+  "values": Array [
+    1,
+  ],
+}
+`;
+
+exports[`@knex/core - selectBuilder where subquery 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",
   "from": "users",
@@ -195,5 +253,23 @@ Immutable.SelectNodes {
   "distinct": false,
   "lock": null,
   "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - selectBuilder where subquery 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT * FROM users WHERE (id = ",
+    " AND id = ",
+    ") OR id = ",
+    "",
+  ],
+  "query": "SELECT * FROM users WHERE (id = ? AND id = ?) OR id = ?",
+  "sql": "SELECT * FROM users WHERE (id = 1 AND id = 2) OR id = 4",
+  "values": Array [
+    1,
+    2,
+    4,
+  ],
 }
 `;

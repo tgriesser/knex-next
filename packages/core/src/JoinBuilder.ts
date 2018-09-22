@@ -17,4 +17,5 @@ export class JoinBuilder {
   andNotIn() {
     return this;
   }
+  getAst() {}
 }

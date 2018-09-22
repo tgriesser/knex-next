@@ -12,20 +12,7 @@ type DecoratedClasses =
 
 export function withEventEmitter(ClassToDecorate: DecoratedClasses) {
   Object.keys(EventEmitter.prototype).forEach(key => {
-    Object.defineProperty(ClassToDecorate.prototype, key, {
-      configurable: true,
-      value() {
-        if (!this.connection) {
-          this.warn(
-            new Error(
-              `Cannot call EventEmitter property ${key} on class ${
-                this.constructor.name
-              } before a connection is provided. This call will be ignored.`
-            )
-          );
-          return this;
-        }
-      },
-    });
+    // @ts-ignore
+    ClassToDecorate.prototype[key] = EventEmitter.prototype[key];
   });
 }

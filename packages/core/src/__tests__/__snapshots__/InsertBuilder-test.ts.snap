@@ -1,0 +1,12 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`insert: select 1`] = `
+Object {
+  "fragments": Array [
+    "INSERT INTO someTable SELECT a FROM otherTable",
+  ],
+  "query": "INSERT INTO someTable SELECT a FROM otherTable",
+  "sql": "INSERT INTO someTable SELECT a FROM otherTable",
+  "values": Array [],
+}
+`;

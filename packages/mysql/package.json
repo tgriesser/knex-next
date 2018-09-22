@@ -5,10 +5,10 @@
     "build": "tsc -p ."
   },
   "dependencies": {
+    "@knex/core": "2.0.0-alpha",
     "tslib": "^1.9.3",
     "mysql": "^2.16.0",
-    "sqlstring": "^2.3.1",
-    "@knex/core": "2.0.0-alpha"
+    "sqlstring": "^2.3.1"
   },
   "devDependencies": {
     "@types/sqlstring": "^2.2.0",
