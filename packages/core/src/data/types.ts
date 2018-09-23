@@ -6,6 +6,7 @@ import {
   TRawNode,
   OperatorEnum,
   TTruncateOperation,
+  TCreateTableOperation,
 } from "./datatypes";
 import { SelectBuilder } from "../SelectBuilder";
 
@@ -26,6 +27,8 @@ export interface ChainFnUpdate extends ChainFn<TUpdateOperation> {}
 export interface ChainFnInsert extends ChainFn<TInsertOperation> {}
 
 export interface ChainFnTruncate extends ChainFn<TTruncateOperation> {}
+
+export interface ChainFnCreateTable extends ChainFn<TCreateTableOperation> {}
 
 export interface SubQueryArg {
   <T extends SelectBuilder>(this: T, qb: T): any;
@@ -91,3 +94,42 @@ export type TValueConditions = Array<
 export type TValueArg = any;
 
 export interface FromJSArg {}
+
+export type ColumnDataType =
+  | "dropColumn"
+  | "dropColumns"
+  | "renameColumn"
+  | "increments"
+  | "integer"
+  | "bigInteger"
+  | "text"
+  | "string"
+  | "float"
+  | "decimal"
+  | "boolean"
+  | "date"
+  | "dateTime"
+  | "time"
+  | "timestamp"
+  | "timestamps"
+  | "dropTimestamps"
+  | "binary"
+  | "enum"
+  | "json"
+  | "jsonb"
+  | "uuid"
+  | "comment"
+  | "engine"
+  | "charset"
+  | "collate"
+  | "inherits"
+  | "specificType"
+  | "index"
+  | "dropIndex"
+  | "unique"
+  | "foreign"
+  | "dropForeign"
+  | "dropUnique"
+  | "dropPrimary";
+
+export type ColumnIndexType = "unique" | "foreign";

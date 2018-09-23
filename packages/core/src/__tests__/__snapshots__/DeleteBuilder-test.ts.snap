@@ -1,0 +1,51 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`@knex/core - DeleteBuilder from table 1`] = `
+Immutable.DeleteOperation {
+  "__operation": "DELETE",
+  "table": "someTable",
+  "where": Immutable.List [],
+}
+`;
+
+exports[`@knex/core - DeleteBuilder from table 2`] = `
+Object {
+  "fragments": Array [
+    "DELETE FROM someTable",
+  ],
+  "query": "DELETE FROM someTable",
+  "sql": "DELETE FROM someTable",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - DeleteBuilder from table where 1`] = `
+Immutable.DeleteOperation {
+  "__operation": "DELETE",
+  "table": "someTable",
+  "where": Immutable.List [
+    Immutable.WhereExpressionNode {
+      "__typename": "WhereExpressionNode",
+      "not": null,
+      "column": "id",
+      "operator": "=",
+      "value": 1,
+      "andOr": "AND",
+    },
+  ],
+}
+`;
+
+exports[`@knex/core - DeleteBuilder from table where 2`] = `
+Object {
+  "fragments": Array [
+    "DELETE FROM someTable WHERE id = ",
+    "",
+  ],
+  "query": "DELETE FROM someTable WHERE id = ?",
+  "sql": "DELETE FROM someTable WHERE id = 1",
+  "values": Array [
+    1,
+  ],
+}
+`;

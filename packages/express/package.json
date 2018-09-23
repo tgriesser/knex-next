@@ -2,7 +2,8 @@
   "name": "@knex/express",
   "version": "2.0.0-alpha",
   "scripts": {
-    "build": "tsc -p ."
+    "build": "tsc -p .",
+    "dev": "tsc -w -p ."
   },
   "devDependencies": {
     "@knex/core": "2.0.0-alpha",

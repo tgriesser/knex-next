@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`@knex/core - selectBuilder select columns 1`] = `
+exports[`@knex/core - SelectBuilder select columns 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",
   "from": null,
@@ -11,6 +11,7 @@ Immutable.SelectNodes {
   ],
   "join": Immutable.List [],
   "having": Immutable.List [],
+  "group": Immutable.List [],
   "order": Immutable.List [],
   "union": Immutable.List [],
   "limit": null,
@@ -22,7 +23,7 @@ Immutable.SelectNodes {
 }
 `;
 
-exports[`@knex/core - selectBuilder select columns 2`] = `
+exports[`@knex/core - SelectBuilder select columns 2`] = `
 Object {
   "fragments": Array [
     "SELECT a, b",
@@ -33,7 +34,7 @@ Object {
 }
 `;
 
-exports[`@knex/core - selectBuilder select columns, with builder 1`] = `
+exports[`@knex/core - SelectBuilder select columns, with builder 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",
   "from": null,
@@ -52,6 +53,7 @@ Immutable.SelectNodes {
         ],
         "join": Immutable.List [],
         "having": Immutable.List [],
+        "group": Immutable.List [],
         "order": Immutable.List [],
         "union": Immutable.List [],
         "limit": null,
@@ -65,6 +67,7 @@ Immutable.SelectNodes {
   ],
   "join": Immutable.List [],
   "having": Immutable.List [],
+  "group": Immutable.List [],
   "order": Immutable.List [],
   "union": Immutable.List [],
   "limit": null,
@@ -76,7 +79,7 @@ Immutable.SelectNodes {
 }
 `;
 
-exports[`@knex/core - selectBuilder select columns, with builder 2`] = `
+exports[`@knex/core - SelectBuilder select columns, with builder 2`] = `
 Object {
   "fragments": Array [
     "SELECT a, b, (SELECT c) AS sub",
@@ -87,7 +90,7 @@ Object {
 }
 `;
 
-exports[`@knex/core - selectBuilder select columns, with raw 1`] = `
+exports[`@knex/core - SelectBuilder select columns, with raw 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",
   "from": null,
@@ -105,6 +108,7 @@ Immutable.SelectNodes {
   ],
   "join": Immutable.List [],
   "having": Immutable.List [],
+  "group": Immutable.List [],
   "order": Immutable.List [],
   "union": Immutable.List [],
   "limit": null,
@@ -116,7 +120,7 @@ Immutable.SelectNodes {
 }
 `;
 
-exports[`@knex/core - selectBuilder select columns, with raw 2`] = `
+exports[`@knex/core - SelectBuilder select columns, with raw 2`] = `
 Object {
   "fragments": Array [
     "SELECT a, b, COUNT(*) as cnt",
@@ -127,7 +131,7 @@ Object {
 }
 `;
 
-exports[`@knex/core - selectBuilder select from table 1`] = `
+exports[`@knex/core - SelectBuilder select from table 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",
   "from": "users",
@@ -138,6 +142,7 @@ Immutable.SelectNodes {
   ],
   "join": Immutable.List [],
   "having": Immutable.List [],
+  "group": Immutable.List [],
   "order": Immutable.List [],
   "union": Immutable.List [],
   "limit": null,
@@ -149,7 +154,7 @@ Immutable.SelectNodes {
 }
 `;
 
-exports[`@knex/core - selectBuilder select from table 2`] = `
+exports[`@knex/core - SelectBuilder select from table 2`] = `
 Object {
   "fragments": Array [
     "SELECT a, b FROM users",
@@ -160,7 +165,7 @@ Object {
 }
 `;
 
-exports[`@knex/core - selectBuilder where clause 1`] = `
+exports[`@knex/core - SelectBuilder where clause 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",
   "from": "users",
@@ -177,6 +182,7 @@ Immutable.SelectNodes {
   "select": Immutable.List [],
   "join": Immutable.List [],
   "having": Immutable.List [],
+  "group": Immutable.List [],
   "order": Immutable.List [],
   "union": Immutable.List [],
   "limit": null,
@@ -188,7 +194,7 @@ Immutable.SelectNodes {
 }
 `;
 
-exports[`@knex/core - selectBuilder where clause 2`] = `
+exports[`@knex/core - SelectBuilder where clause 2`] = `
 Object {
   "fragments": Array [
     "SELECT * FROM users WHERE id = ",
@@ -202,7 +208,7 @@ Object {
 }
 `;
 
-exports[`@knex/core - selectBuilder where subquery 1`] = `
+exports[`@knex/core - SelectBuilder where subquery 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",
   "from": "users",
@@ -245,6 +251,7 @@ Immutable.SelectNodes {
   "select": Immutable.List [],
   "join": Immutable.List [],
   "having": Immutable.List [],
+  "group": Immutable.List [],
   "order": Immutable.List [],
   "union": Immutable.List [],
   "limit": null,
@@ -256,7 +263,7 @@ Immutable.SelectNodes {
 }
 `;
 
-exports[`@knex/core - selectBuilder where subquery 2`] = `
+exports[`@knex/core - SelectBuilder where subquery 2`] = `
 Object {
   "fragments": Array [
     "SELECT * FROM users WHERE (id = ",

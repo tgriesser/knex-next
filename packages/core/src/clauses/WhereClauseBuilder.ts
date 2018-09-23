@@ -8,7 +8,7 @@ import {
   ChainFnWhere,
   Maybe,
   TValueArg,
-} from "./data/types";
+} from "../data/types";
 import {
   IRawNode,
   OperatorEnum,
@@ -22,9 +22,9 @@ import {
   TUpdateOperation,
   WhereNullNode,
   TSubQueryNode,
-} from "./data/datatypes";
-import { Grammar } from "./Grammar";
-import { unpackValue, unpackColumn } from "./data/utils";
+} from "../data/datatypes";
+import { Grammar } from "../Grammar";
+import { unpackValue, unpackColumn } from "../data/utils";
 
 type TNot = OperatorEnum.NOT | null;
 

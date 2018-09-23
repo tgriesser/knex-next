@@ -1,7 +1,7 @@
-import { WhereClauseBuilder } from "./WhereClauseBuilder";
+import { WhereClauseBuilder } from "./clauses/WhereClauseBuilder";
 import { updateAst, SubQueryNode } from "./data/datatypes";
 import { ChainFnUpdate, SubQueryArg } from "./data/types";
-import { SelectBuilder } from "@knex/core/src/SelectBuilder";
+import { SelectBuilder } from "./SelectBuilder";
 
 export class UpdateBuilder<
   T = { [columnName: string]: any }

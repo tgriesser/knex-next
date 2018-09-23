@@ -1,10 +1,6 @@
 import { DeleteBuilder } from "../DeleteBuilder";
+import { commonDeleteTests } from "../testing/common-delete-tests";
 
-function builder() {
-  return new DeleteBuilder();
-}
-function expectAst(builder: DeleteBuilder) {
-  return expect(builder.getAst());
-}
-
-test("Delete from table", () => {});
+describe("@knex/core - DeleteBuilder", () => {
+  commonDeleteTests(() => new DeleteBuilder());
+});

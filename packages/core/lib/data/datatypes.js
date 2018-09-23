@@ -26,6 +26,9 @@ var OperationTypeEnum;
     OperationTypeEnum["INSERT"] = "INSERT";
     OperationTypeEnum["UPDATE"] = "UPDATE";
     OperationTypeEnum["DELETE"] = "DELETE";
+    OperationTypeEnum["TRUNCATE"] = "TRUNCATE";
+    OperationTypeEnum["CREATE_TABLE"] = "CREATE_TABLE";
+    OperationTypeEnum["ALTER_TABLE"] = "ALTER_TABLE";
 })(OperationTypeEnum = exports.OperationTypeEnum || (exports.OperationTypeEnum = {}));
 var OperatorEnum;
 (function (OperatorEnum) {
@@ -42,7 +45,8 @@ var ClauseTypeEnum;
 var NodeTypeEnum;
 (function (NodeTypeEnum) {
     NodeTypeEnum["JOIN"] = "JoinNode";
-    NodeTypeEnum["ORDER"] = "OrderByNode";
+    NodeTypeEnum["ORDER_BY"] = "OrderByNode";
+    NodeTypeEnum["GROUP_BY"] = "GroupByNode";
     NodeTypeEnum["UNION"] = "UnionNode";
     NodeTypeEnum["SUB_QUERY"] = "SubQueryNode";
     NodeTypeEnum["RAW"] = "RawNode";
@@ -90,7 +94,7 @@ exports.WhereNullNode = immutable_1.Record({
     not: null,
     andOr: OperatorEnum.AND,
     column: null,
-}, NodeTypeEnum.WHERE_IN);
+}, NodeTypeEnum.WHERE_NULL);
 exports.WhereExistsNode = immutable_1.Record({
     __typename: NodeTypeEnum.WHERE_EXISTS,
     not: null,
@@ -105,8 +109,14 @@ exports.HavingNode = immutable_1.Record({
     __typename: NodeTypeEnum.HAVING_EXPR,
 }, NodeTypeEnum.HAVING_EXPR);
 exports.OrderByNode = immutable_1.Record({
-    __typename: NodeTypeEnum.ORDER,
-}, NodeTypeEnum.ORDER);
+    __typename: NodeTypeEnum.ORDER_BY,
+    column: "",
+    direction: "ASC",
+}, NodeTypeEnum.ORDER_BY);
+exports.GroupByNode = immutable_1.Record({
+    __typename: NodeTypeEnum.GROUP_BY,
+    column: "",
+}, NodeTypeEnum.GROUP_BY);
 exports.UnionNode = immutable_1.Record({
     __typename: NodeTypeEnum.UNION,
     ast: null,
@@ -138,6 +148,7 @@ exports.SelectOperationNodes = immutable_1.Record({
     select: immutable_1.List(),
     join: immutable_1.List(),
     having: immutable_1.List(),
+    group: immutable_1.List(),
     order: immutable_1.List(),
     union: immutable_1.List(),
     limit: null,
@@ -151,13 +162,33 @@ exports.selectAst = exports.SelectOperationNodes();
 exports.InsertOperation = immutable_1.Record({
     __operation: OperationTypeEnum.INSERT,
     table: null,
-});
+    chunkSize: null,
+    values: immutable_1.List(),
+    select: null,
+}, "InsertOperation");
 exports.insertAst = exports.InsertOperation();
 exports.UpdateOperation = immutable_1.Record({
     __operation: OperationTypeEnum.UPDATE,
-});
+    table: "",
+}, "UpdateOperation");
 exports.updateAst = exports.UpdateOperation();
 exports.DeleteBindings = immutable_1.Record({
     __operation: OperationTypeEnum.DELETE,
-});
+    table: "",
+    where: immutable_1.List(),
+}, "DeleteOperation");
 exports.deleteAst = exports.DeleteBindings();
+exports.TruncateBindings = immutable_1.Record({
+    __operation: OperationTypeEnum.TRUNCATE,
+    table: null,
+}, "TruncateOperation");
+exports.truncateAst = exports.TruncateBindings();
+exports.CreateTableOperation = immutable_1.Record({
+    __operation: OperationTypeEnum.CREATE_TABLE,
+    table: "",
+    columns: immutable_1.List(),
+});
+exports.CreateTableColumnNode = immutable_1.Record({
+    dataType: null,
+});
+exports.createTableAst = exports.CreateTableOperation();

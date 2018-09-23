@@ -10,7 +10,7 @@ import {
 } from "./data/datatypes";
 import invariant from "invariant";
 import dedent from "dedent";
-import { WhereClauseBuilder } from "./WhereClauseBuilder";
+import { WhereClauseBuilder } from "./clauses/WhereClauseBuilder";
 import {
   TSelectArg,
   TTableArg,
@@ -22,7 +22,7 @@ import {
 } from "./data/types";
 import { Grammar } from "./Grammar";
 import { isRawNode } from "./data/predicates";
-import { KnexConnection } from "./Connection";
+import { Connection } from "./Connection";
 import { withEventEmitter } from "./mixins/withEventEmitter";
 import { Loggable } from "./contracts/Loggable";
 import { ExecutionContext } from "./ExecutionContext";
@@ -50,7 +50,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder
   /**
    * The connection we're using to execute the queries.
    */
-  protected connection: Maybe<KnexConnection> = null;
+  protected connection: Maybe<Connection> = null;
 
   /**
    * If we've executed the promise, cache it on the class body
@@ -409,7 +409,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder
     return builder;
   }
 
-  setConnection(connection: KnexConnection) {
+  setConnection(connection: Connection) {
     this.connection = connection;
     return this;
   }

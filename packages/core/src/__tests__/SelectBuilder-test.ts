@@ -1,6 +1,6 @@
 import { SelectBuilder } from "../SelectBuilder";
-import { commonTests } from "../testing/common-tests";
+import { commonSelectTests } from "../testing/common-select-tests";
 
-describe("@knex/core - selectBuilder", () => {
-  commonTests(() => new SelectBuilder());
+describe("@knex/core - SelectBuilder", () => {
+  commonSelectTests(() => new SelectBuilder());
 });

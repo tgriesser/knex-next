@@ -1,5 +1,5 @@
 import { Record as IRecord, List, RecordOf, Map as IMap } from "immutable";
-import { Maybe, TAndOr } from "./types";
+import { Maybe, TAndOr, ColumnDataType } from "./types";
 
 export enum DialectEnum {
   MYSQL = "mysql",
@@ -26,6 +26,8 @@ export enum OperationTypeEnum {
   UPDATE = "UPDATE",
   DELETE = "DELETE",
   TRUNCATE = "TRUNCATE",
+  CREATE_TABLE = "CREATE_TABLE",
+  ALTER_TABLE = "ALTER_TABLE",
 }
 
 export enum OperatorEnum {
@@ -42,7 +44,8 @@ export enum ClauseTypeEnum {
 
 export enum NodeTypeEnum {
   JOIN = "JoinNode",
-  ORDER = "OrderByNode",
+  ORDER_BY = "OrderByNode",
+  GROUP_BY = "GroupByNode",
   UNION = "UnionNode",
   SUB_QUERY = "SubQueryNode",
   RAW = "RawNode",
@@ -57,7 +60,7 @@ export enum NodeTypeEnum {
   HAVING_EXPR = "HavingExpressionNode",
 }
 
-type WhereNodeTypes =
+export type WhereNodeTypes =
   | NodeTypeEnum.WHERE_EXPR
   | NodeTypeEnum.WHERE_COLUMN
   | NodeTypeEnum.WHERE_IN
@@ -229,16 +232,36 @@ export const HavingNode = IRecord<IHavingNode>(
 export type THavingNode = RecordOf<IHavingNode>;
 
 /**
- * OrderBy Node
+ * ORDER BY Node
  */
-export interface IOrderByNode extends INode<NodeTypeEnum.ORDER> {}
+export interface IOrderByNode extends INode<NodeTypeEnum.ORDER_BY> {
+  column: string | TRawNode;
+  direction: "ASC" | "DESC";
+}
 export const OrderByNode = IRecord<IOrderByNode>(
   {
-    __typename: NodeTypeEnum.ORDER,
+    __typename: NodeTypeEnum.ORDER_BY,
+    column: "",
+    direction: "ASC",
   },
-  NodeTypeEnum.ORDER
+  NodeTypeEnum.ORDER_BY
 );
 export type TOrderByNode = RecordOf<IOrderByNode>;
+
+/**
+ * GROUP BY Node
+ */
+export interface IGroupByNode extends INode<NodeTypeEnum.GROUP_BY> {
+  column: string | TRawNode;
+}
+export const GroupByNode = IRecord<IGroupByNode>(
+  {
+    __typename: NodeTypeEnum.GROUP_BY,
+    column: "",
+  },
+  NodeTypeEnum.GROUP_BY
+);
+export type TGroupByNode = RecordOf<IGroupByNode>;
 
 /**
  * Union Node
@@ -342,13 +365,14 @@ export type TWhereNode =
 /**
  * Select Expressions:
  */
-interface ISelectOperation {
+export interface ISelectOperation {
   __operation: OperationTypeEnum.SELECT;
   select: List<TSelectNode>;
   from: Maybe<TFromNode>;
   join: List<TJoinNode | TRawNode>;
   having: List<THavingNode>;
   order: List<TOrderByNode>;
+  group: List<TGroupByNode>;
   union: List<IUnionNode>;
   limit: Maybe<NumOrRaw>;
   where: List<TWhereNode>;
@@ -366,6 +390,7 @@ export const SelectOperationNodes = IRecord<ISelectOperation>(
     select: List(),
     join: List(),
     having: List(),
+    group: List(),
     order: List(),
     union: List(),
     limit: null,
@@ -392,13 +417,16 @@ export interface IInsertOperation
   values: List<any>;
   select: Maybe<TSelectOperation>;
 }
-export const InsertOperation = IRecord<IInsertOperation>({
-  __operation: OperationTypeEnum.INSERT,
-  table: null,
-  chunkSize: null,
-  values: List(),
-  select: null,
-});
+export const InsertOperation = IRecord<IInsertOperation>(
+  {
+    __operation: OperationTypeEnum.INSERT,
+    table: null,
+    chunkSize: null,
+    values: List(),
+    select: null,
+  },
+  "InsertOperation"
+);
 export type TInsertOperation = RecordOf<IInsertOperation>;
 
 export const insertAst = InsertOperation();
@@ -409,10 +437,15 @@ export const insertAst = InsertOperation();
 export interface IUpdateOperation
   extends IOperationNode<OperationTypeEnum.UPDATE> {
   __operation: OperationTypeEnum.UPDATE;
+  table: string;
 }
-export const UpdateOperation = IRecord<IUpdateOperation>({
-  __operation: OperationTypeEnum.UPDATE,
-});
+export const UpdateOperation = IRecord<IUpdateOperation>(
+  {
+    __operation: OperationTypeEnum.UPDATE,
+    table: "",
+  },
+  "UpdateOperation"
+);
 export type TUpdateOperation = RecordOf<IUpdateOperation>;
 
 export const updateAst = UpdateOperation();
@@ -422,12 +455,17 @@ export const updateAst = UpdateOperation();
  */
 export interface IDeleteOperation
   extends IOperationNode<OperationTypeEnum.DELETE> {
-  table: Maybe<string>;
+  table: string;
+  where: List<TWhereNode>;
 }
-export const DeleteBindings = IRecord<IDeleteOperation>({
-  __operation: OperationTypeEnum.DELETE,
-  table: null,
-});
+export const DeleteBindings = IRecord<IDeleteOperation>(
+  {
+    __operation: OperationTypeEnum.DELETE,
+    table: "",
+    where: List(),
+  },
+  "DeleteOperation"
+);
 export type TDeleteOperation = RecordOf<IDeleteOperation>;
 
 export const deleteAst = DeleteBindings();
@@ -439,13 +477,42 @@ export interface ITruncateOperation
   extends IOperationNode<OperationTypeEnum.TRUNCATE> {
   table: Maybe<string>;
 }
-export const TruncateBindings = IRecord<ITruncateOperation>({
-  __operation: OperationTypeEnum.TRUNCATE,
-  table: null,
-});
+export const TruncateBindings = IRecord<ITruncateOperation>(
+  {
+    __operation: OperationTypeEnum.TRUNCATE,
+    table: null,
+  },
+  "TruncateOperation"
+);
 export type TTruncateOperation = RecordOf<ITruncateOperation>;
 
 export const truncateAst = TruncateBindings();
+
+/**
+ * Create Table Bindings:
+ */
+export interface ICreateTableOperation
+  extends IOperationNode<OperationTypeEnum.CREATE_TABLE> {
+  __operation: OperationTypeEnum.CREATE_TABLE;
+  table: string;
+  columns: List<TCreateTableColumnNode>;
+}
+export const CreateTableOperation = IRecord<ICreateTableOperation>({
+  __operation: OperationTypeEnum.CREATE_TABLE,
+  table: "",
+  columns: List(),
+});
+export type TCreateTableOperation = RecordOf<ICreateTableOperation>;
+
+export interface ICreateTableColumnNode {
+  dataType: Maybe<ColumnDataType>;
+}
+export const CreateTableColumnNode = IRecord<ICreateTableColumnNode>({
+  dataType: null,
+});
+export type TCreateTableColumnNode = RecordOf<ICreateTableColumnNode>;
+
+export const createTableAst = CreateTableOperation();
 
 export type TOperationAst =
   | TSelectOperation

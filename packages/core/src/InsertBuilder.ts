@@ -17,6 +17,8 @@ export class InsertBuilder<T = { [columnName: string]: any }>
     return this.chain(ast => ast.set("table", tableName));
   }
 
+  columns(...columnName: string[]) {}
+
   values(toInsert: T | T[]) {
     return this.chain(ast => ast.set("values", ast.values.concat(toInsert)));
   }
@@ -30,12 +32,6 @@ export class InsertBuilder<T = { [columnName: string]: any }>
 
   inBatchesOf(value: number) {
     return this.chain(ast => ast.set("chunkSize", value));
-  }
-
-  insertGetId() {
-    return this.chain(ast => {
-      return ast;
-    });
   }
 
   getAst() {

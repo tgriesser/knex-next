@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const datatypes_1 = require("./data/datatypes");
 const invariant_1 = __importDefault(require("invariant"));
 const dedent_1 = __importDefault(require("dedent"));
-const WhereClauseBuilder_1 = require("./WhereClauseBuilder");
+const WhereClauseBuilder_1 = require("./clauses/WhereClauseBuilder");
 const Grammar_1 = require("./Grammar");
 const predicates_1 = require("./data/predicates");
 const withEventEmitter_1 = require("./mixins/withEventEmitter");
@@ -235,16 +235,6 @@ class SelectBuilder extends WhereClauseBuilder_1.WhereClauseBuilder {
             return ast;
         });
     }
-    delete() {
-        return this.chain(ast => {
-            return ast;
-        });
-    }
-    truncate() {
-        return this.chain(ast => {
-            return ast;
-        });
-    }
     cloneWithout() {
         return this.chain(ast => {
             return ast;
@@ -273,7 +263,7 @@ class SelectBuilder extends WhereClauseBuilder_1.WhereClauseBuilder {
         if (typeof arg === "function") {
             return this.subQuery(arg);
         }
-        if (predicates_1.isSelectBuilder(arg)) {
+        if (arg instanceof SelectBuilder) {
             return datatypes_1.SubQueryNode({ ast: arg.getAst() });
         }
         if (predicates_1.isRawNode(arg)) {
@@ -398,6 +388,9 @@ class SelectBuilder extends WhereClauseBuilder_1.WhereClauseBuilder {
         }
         this.executionContext = new ExecutionContext_1.ExecutionContext();
         return this.executionContext;
+    }
+    as(val) {
+        return this.chain(ast => ast.set("alias", val));
     }
     log(msg) {
         console.log(msg);

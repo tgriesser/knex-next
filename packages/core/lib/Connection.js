@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 let cid = 0;
-class KnexConnection {
+class Connection {
     constructor(connection) {
         this.connection = connection;
         this.cid = cid + 1;
@@ -10,4 +10,4 @@ class KnexConnection {
         return `[KnexConnection ${this.cid}]`;
     }
 }
-exports.KnexConnection = KnexConnection;
+exports.Connection = Connection;

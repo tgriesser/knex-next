@@ -20,12 +20,15 @@ import {
   TWhereExistsNode,
   TWhereBetweenNode,
   selectAst,
+  TTruncateOperation,
+  deleteAst,
+  updateAst,
 } from "./data/datatypes";
 import { List } from "immutable";
 import { Maybe } from "./data/types";
 import { isRawNode } from "./data/predicates";
 
-interface ToSQLValue {
+export interface ToSQLValue {
   sql: string;
   query: string;
   values: any[];
@@ -36,7 +39,6 @@ export class Grammar {
   public readonly dialect = null;
   public readonly dateString = "Y-m-d H:i:s";
 
-  // Uses the immutable guarentees of the AST to memoize the query build
   protected lastAst: Maybe<TOperationAst | TClauseAst> = null;
 
   protected currentFragment: string = "";
@@ -50,11 +52,18 @@ export class Grammar {
     return new (<any>this.constructor)();
   }
 
+  escapeId(arg: string) {
+    return arg
+      .split(".")
+      .map(f => (f === "*" ? "*" : this.escapeIdFragment(f)))
+      .join(".");
+  }
+
   /**
    * By default, we don't do any escaping on the id's. That is
    * determined by the dialect.
    */
-  escapeId(arg: string) {
+  escapeIdFragment(arg: string) {
     return arg;
   }
 
@@ -111,13 +120,16 @@ export class Grammar {
       case OperationTypeEnum.UPDATE:
         this.buildUpdate(operationAst);
         break;
+      case OperationTypeEnum.TRUNCATE:
+        this.buildTruncate(operationAst);
+        break;
     }
   }
 
   protected buildClause(clauseAst: TClauseAst) {
     switch (clauseAst.__clause) {
       case ClauseTypeEnum.WHERE:
-        this.buildWhere(clauseAst.where, true);
+        this.buildWhereClause(clauseAst.where, true);
         break;
     }
   }
@@ -138,10 +150,11 @@ export class Grammar {
     }
     this.buildSelectColumns(ast.select);
     this.buildSelectFrom(ast);
-    this.buildWhere(ast.where);
+    this.buildJoinClauses(ast);
+    this.buildWhereClause(ast.where);
     this.buildSelectGroupBy(ast);
-    this.buildSelectHaving(ast);
-    this.buildSelectOrderBy(ast);
+    this.buildHavingClause(ast);
+    this.buildOrderByClause(ast);
     this.buildSelectLimit(ast);
     this.buildSelectOffset(ast);
     this.buildSelectUnions(ast);
@@ -248,28 +261,55 @@ export class Grammar {
     }
   }
 
-  buildSelectJoin(ast: TSelectOperation) {
-    //
+  buildJoinClauses(ast: TSelectOperation) {
+    if (ast.join.size === 0) {
+      return;
+    }
+    this.addKeyword("");
+    ast.join.forEach(join => {
+      //
+    });
   }
 
-  buildSelectWhere(ast: TSelectOperation) {
-    //
+  buildHavingClause(ast: TSelectOperation) {
+    if (ast.having.size === 0) {
+      return;
+    }
+    this.addKeyword("");
+    ast.having.forEach(having => {
+      //
+    });
   }
 
   buildSelectGroupBy(ast: TSelectOperation) {
-    //
+    if (ast.group.size === 0) {
+      return;
+    }
+    this.addKeyword(" GROUP BY");
+    ast.group.forEach(group => {
+      //
+    });
   }
 
-  buildSelectHaving(ast: TSelectOperation) {
-    //
-  }
-
-  buildSelectOrderBy(ast: TSelectOperation) {
-    //
+  buildOrderByClause(ast: TSelectOperation) {
+    if (ast.order.size === 0) {
+      return;
+    }
+    this.addKeyword(" ORDER BY");
+    ast.order.forEach(order => {
+      //
+    });
   }
 
   buildSelectLimit(ast: TSelectOperation) {
-    //
+    if (!ast.limit) {
+      return;
+    }
+    this.addKeyword(" LIMIT");
+    if (typeof ast.limit === "number") {
+      this.currentFragment += ast.limit;
+    } else {
+    }
   }
 
   buildSelectOffset(ast: TSelectOperation) {
@@ -299,11 +339,24 @@ export class Grammar {
     }
   }
 
-  buildUpdate(ast: TUpdateOperation) {}
+  buildUpdate(ast: TUpdateOperation) {
+    if (ast === updateAst) {
+      return;
+    }
+    this.addKeyword("UPDATE ");
+    this.currentFragment += this.escapeId(ast.table);
+  }
 
-  buildDelete(ast: TDeleteOperation) {}
+  buildDelete(ast: TDeleteOperation) {
+    if (ast === deleteAst) {
+      return;
+    }
+    this.addKeyword("DELETE FROM ");
+    this.currentFragment += this.escapeId(ast.table);
+    this.buildWhereClause(ast.where);
+  }
 
-  buildWhere(nodes: List<TWhereNode>, subWhere: boolean = false) {
+  buildWhereClause(nodes: List<TWhereNode>, subWhere: boolean = false) {
     if (nodes.size === 0) {
       return;
     }
@@ -368,16 +421,17 @@ export class Grammar {
   buildWhereSub(node: TWhereSubNode) {
     if (node.ast && node.ast.where.size > 0) {
       this.currentFragment += "(";
-      this.buildWhere(node.ast.where, true);
+      this.buildWhereClause(node.ast.where, true);
       this.currentFragment += ")";
     }
   }
 
-  /**
-   * A raw node can have any number of values interpolated.
-   * If we see one that is unique to knex, unpack it.
-   */
-  unpackRawNode() {}
+  buildTruncate(node: TTruncateOperation) {
+    if (node.table) {
+      this.addKeyword("TRUNCATE TABLE ");
+      this.currentFragment += this.escapeId(node.table);
+    }
+  }
 
   addKeyword(keyword: string) {
     this.currentFragment += keyword;
