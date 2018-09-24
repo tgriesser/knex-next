@@ -3,7 +3,7 @@ import { whereClauseNode, WhereExprNode, WhereNullNode, WhereSubNode } from "../
 import {
   ChainFnWhere,
   IRawNode,
-  ISubWhere,
+  IWrappedWhere,
   Maybe,
   SubQueryArg,
   TAndOr,
@@ -36,7 +36,7 @@ export abstract class WhereClauseBuilder {
   protected abstract ast: TSelectOperation | TUpdateOperation | TDeleteOperation | TWhereClause;
 
   where(raw: IRawNode): this;
-  where(fn: ISubWhere): this;
+  where(fn: IWrappedWhere): this;
   where(builder: WhereClauseBuilder): this;
   where(bool: boolean): this;
   where(obj: { [column: string]: any }): this;
@@ -47,7 +47,7 @@ export abstract class WhereClauseBuilder {
     return this.addWhere(args, OperatorEnum.AND);
   }
   andWhere(raw: IRawNode): this;
-  andWhere(fn: ISubWhere): this;
+  andWhere(fn: IWrappedWhere): this;
   andWhere(builder: WhereClauseBuilder): this;
   andWhere(bool: boolean): this;
   andWhere(obj: { [column: string]: any }): this;
@@ -58,7 +58,7 @@ export abstract class WhereClauseBuilder {
     return this.addWhere(args, OperatorEnum.AND);
   }
   orWhere(raw: IRawNode): this;
-  orWhere(fn: ISubWhere): this;
+  orWhere(fn: IWrappedWhere): this;
   orWhere(bool: boolean): this;
   orWhere(builder: WhereClauseBuilder): this;
   orWhere(obj: { [column: string]: any }): this;
@@ -87,7 +87,7 @@ export abstract class WhereClauseBuilder {
   orWhereColumn(obj: { [column: string]: string }): this;
   orWhereColumn(conditions: TColumnConditions): this;
   orWhereColumn(...args: any[]) {
-    return this.addWhere(args, OperatorEnum.OR, OperatorEnum.NOT);
+    return this.addWhereColumn(args, OperatorEnum.OR, OperatorEnum.NOT);
   }
   whereIn(columnA: TColumnArg, sub: SubQueryArg): this;
   whereIn(columnA: TColumnArg, values: any[]): this;
@@ -216,6 +216,8 @@ export abstract class WhereClauseBuilder {
         if (typeof args[0] === "boolean") {
           return this.whereBool(args[0], andOr, not);
         }
+        if (typeof args[0] === "object" && args[0] !== null) {
+        }
         break;
       }
       case 2: {
@@ -292,7 +294,7 @@ export abstract class WhereClauseBuilder {
   /**
    * Compile & add a subquery to the AST
    */
-  protected whereSub(fn: ISubWhere, andOr: TAndOr, not: TNot): this {
+  protected whereSub(fn: IWrappedWhere, andOr: TAndOr, not: TNot): this {
     return this.chain((ast: TWhereClause) => {
       const builder = new SubWhereBuilder(this.grammar.newInstance(), this.dialect, (fn: SubQueryArg) =>
         this.subQuery(fn)

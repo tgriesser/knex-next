@@ -20,7 +20,7 @@ import {
   TWhereExistsNode,
   TWhereExprNode,
   TWhereInNode,
-  TWhereNode,
+  TWhereConditionNode,
   TWhereSubNode,
 } from "./data/types";
 
@@ -128,6 +128,9 @@ export class Grammar {
     switch (clauseAst.__clause) {
       case ClauseTypeEnum.WHERE:
         this.buildWhereClause(clauseAst.where, true);
+        break;
+      case ClauseTypeEnum.HAVING:
+        this.buildHavingClause(clauseAst.having, true);
         break;
     }
   }
@@ -269,7 +272,7 @@ export class Grammar {
     });
   }
 
-  buildHavingClause(ast: TSelectOperation) {
+  buildHavingClause(ast: TSelectOperation, subHaving: boolean = false) {
     if (ast.having.size === 0) {
       return;
     }
@@ -354,7 +357,7 @@ export class Grammar {
     this.buildWhereClause(ast.where);
   }
 
-  buildWhereClause(nodes: List<TWhereNode>, subWhere: boolean = false) {
+  buildWhereClause(nodes: List<TWhereConditionNode>, subWhere: boolean = false) {
     if (nodes.size === 0) {
       return;
     }

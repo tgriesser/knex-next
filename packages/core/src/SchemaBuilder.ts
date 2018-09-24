@@ -1,21 +1,39 @@
 export class SchemaBuilder {
-  with() {}
+  with() {
+    // ... //
+  }
 
-  withSchema() {}
+  withSchema() {
+    // ... //
+  }
 
-  createTable() {}
+  createTable() {
+    // ... //
+  }
 
-  renameTable() {}
+  renameTable() {
+    // ... //
+  }
 
-  dropTable() {}
+  dropTable() {
+    // ... //
+  }
 
-  hasColumn() {}
+  hasColumn() {
+    // ... //
+  }
 
-  hasTable() {}
+  hasTable() {
+    // ... //
+  }
 
-  alterTable() {}
+  alterTable() {
+    // ... //
+  }
 
-  renameColumn() {}
+  renameColumn() {
+    // ... //
+  }
 }
 
 export class ColumnBuilder {}

@@ -3,13 +3,10 @@ import { Record as IRecord, List, Map as IMap } from "immutable";
 import {
   IJoinNode,
   IRawNode,
-  IHavingClauseNodes,
   ISubQuery,
   IWhereSubNode,
   IUnionNode,
-  IGroupByNode,
   IOrderByNode,
-  IHavingNode,
   IWhereBetweenNode,
   IWhereExistsNode,
   IWhereNullNode,
@@ -25,19 +22,9 @@ import {
   ICreateTableOperation,
   ICreateTableColumnNode,
   IBindingNode,
+  IAggregateNode,
+  IAlterTableOperation,
 } from "./types";
-
-/**
- * JOIN ...
- */
-export const JoinNode = IRecord<IJoinNode>(
-  {
-    __typename: NodeTypeEnum.JOIN,
-    joinType: JoinTypeEnum.INNER,
-    column: "",
-  },
-  NodeTypeEnum.JOIN
-);
 
 /**
  * WHERE ...
@@ -46,13 +33,14 @@ export const WhereClause = IRecord<IWhereClauseNodes>(
   {
     __clause: ClauseTypeEnum.WHERE,
     where: List(),
+    having: List(),
   },
   "WhereClauseNodes"
 );
 export const whereClauseNode = WhereClause();
 
 /**
- * WHERE expr [op] expr
+ * WHERE Condition: expr [op] expr
  */
 export const WhereExprNode = IRecord<IWhereExprNode>(
   {
@@ -67,7 +55,7 @@ export const WhereExprNode = IRecord<IWhereExprNode>(
 );
 
 /**
- * WHERE expr [op] column
+ * WHERE Condition: expr [op] column
  */
 export const WhereColumnNode = IRecord<IWhereColumnNode>(
   {
@@ -82,7 +70,7 @@ export const WhereColumnNode = IRecord<IWhereColumnNode>(
 );
 
 /**
- * WHERE [NOT] IN ...
+ * WHERE Condition: [NOT] IN ...
  */
 export const WhereInNode = IRecord<IWhereInNode>(
   {
@@ -131,13 +119,24 @@ export const WhereBetweenNode = IRecord<IWhereBetweenNode>(
 );
 
 /**
- * Having
+ * SUM(*), AVG(*), etc.
  */
-export const HavingNode = IRecord<IHavingNode>(
+export const AggregateNode = IRecord<IAggregateNode>({
+  __typename: NodeTypeEnum.AGGREGATE,
+  column: "",
+  alias: null,
+});
+
+/**
+ * JOIN ...
+ */
+export const JoinNode = IRecord<IJoinNode>(
   {
-    __typename: NodeTypeEnum.HAVING_EXPR,
+    __typename: NodeTypeEnum.JOIN,
+    joinType: JoinTypeEnum.INNER,
+    column: "",
   },
-  NodeTypeEnum.HAVING_EXPR
+  NodeTypeEnum.JOIN
 );
 
 /**
@@ -153,23 +152,13 @@ export const OrderByNode = IRecord<IOrderByNode>(
 );
 
 /**
- * GROUP BY
- */
-export const GroupByNode = IRecord<IGroupByNode>(
-  {
-    __typename: NodeTypeEnum.GROUP_BY,
-    column: "",
-  },
-  NodeTypeEnum.GROUP_BY
-);
-
-/**
  * ... UNION [ALL] ...
  */
 export const UnionNode = IRecord<IUnionNode>(
   {
     __typename: NodeTypeEnum.UNION,
     ast: null,
+    all: false,
   },
   NodeTypeEnum.UNION
 );
@@ -209,18 +198,6 @@ export const RawNode = IRecord<IRawNode>(
   },
   NodeTypeEnum.RAW
 );
-
-/**
- * HAVING ...
- */
-export const HavingClause = IRecord<IHavingClauseNodes>(
-  {
-    __clause: ClauseTypeEnum.HAVING,
-    having: List(),
-  },
-  "HavingClauseNodes"
-);
-export const havingClauseNode = HavingClause();
 
 /**
  * Operations:
@@ -276,6 +253,7 @@ export const UpdateOperation = IRecord<IUpdateOperation>(
     __operation: OperationTypeEnum.UPDATE,
     table: "",
     join: List(),
+    values: List(),
     meta: IMap(),
   },
   "UpdateOperation"
@@ -311,19 +289,36 @@ export const truncateAst = TruncateBindings();
 /**
  * CREATE TABLE
  */
-export const CreateTableOperation = IRecord<ICreateTableOperation>({
-  __operation: OperationTypeEnum.CREATE_TABLE,
-  table: "",
-  columns: List(),
-});
+export const CreateTableOperation = IRecord<ICreateTableOperation>(
+  {
+    __operation: OperationTypeEnum.CREATE_TABLE,
+    table: "",
+    columns: List(),
+  },
+  "CreateTableOperation"
+);
 export const createTableAst = CreateTableOperation();
+
+/**
+ * ALTER TABLE
+ */
+export const AlterTableOperation = IRecord<IAlterTableOperation>(
+  {
+    __operation: OperationTypeEnum.ALTER_TABLE,
+    table: "",
+  },
+  "AlterTableOperation"
+);
 
 /**
  * CREATE TABLE (column)
  */
-export const CreateTableColumnNode = IRecord<ICreateTableColumnNode>({
-  dataType: null,
-});
+export const CreateTableColumnNode = IRecord<ICreateTableColumnNode>(
+  {
+    dataType: null,
+  },
+  "CreateTableColumnNode"
+);
 
 /**
  * Placeholder for a future binding value, allows precompiled queries.

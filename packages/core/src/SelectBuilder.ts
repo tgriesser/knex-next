@@ -3,13 +3,13 @@ import invariant from "invariant";
 import { WhereClauseBuilder } from "./clauses/WhereClauseBuilder";
 import { Connection } from "./Connection";
 import { Loggable } from "./contracts/Loggable";
-import { DialectEnum, JoinTypeEnum } from "./data/enums";
+import { DialectEnum, JoinTypeEnum, AggregateFns } from "./data/enums";
 import { isRawNode } from "./data/predicates";
 import { selectAst, SubQueryNode, UnionNode } from "./data/structs";
 import {
   ChainFnSelect,
   FromJSArg,
-  ISubJoin,
+  IJoinBuilderFn,
   Maybe,
   SubQueryArg,
   TOperator,
@@ -19,6 +19,8 @@ import {
   TSelectOperation,
   TTableArg,
   TUnionArg,
+  TColumnArg,
+  TGroupByArg,
 } from "./data/types";
 import { ExecutionContext } from "./ExecutionContext";
 import { Grammar } from "./Grammar";
@@ -70,10 +72,21 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
    */
   protected selectBuilder = (ast = selectAst, forSubQuery = false) => new SelectBuilder(ast, forSubQuery);
 
+  /**
+   * "Clones" the current query builder, creating a new instance with a copy of
+   * the Query's AST. This does not copy over properties about the query execution,
+   * such as the connection or the promise state.
+   */
   clone(): this {
     return this.selectBuilder(this.ast) as this;
   }
 
+  /**
+   * Columns we wish to include, optionally qualified (dot separated) by
+   * the table name:
+   *
+   * .select('account.id')
+   */
   select(...args: Array<TSelectArg>): this {
     return this.chain(ast => {
       return ast.set(
@@ -88,15 +101,17 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
 
   /**
    * Force the query to only return distinct results.
+   *
+   * select('id', 'name').distinct()...
+   *
+   * SELECT DISTINCT id, name FROM ...
    */
   distinct(): this {
-    return this.chain(ast => {
-      return ast.set("distinct", true);
-    });
+    return this.chain(ast => ast.set("distinct", true));
   }
 
   /**
-   * Adds the table for the "from"
+   * Adds the FROM value for the select query
    */
   from(table: TTableArg) {
     if (this.isEmpty(table)) {
@@ -110,11 +125,18 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
     });
   }
 
+  /**
+   * Adds a JOIN clause to the query
+   */
   join(raw: TRawNode): this;
   join(tableName: string, leftCol: string, rightCol: string): this;
   join(tableName: string, leftCol: string, op: TOperator, rightCol: string): this;
-  join(tableName: string, subJoin: ISubJoin): this;
+  join(tableName: string, subJoin: IJoinBuilderFn): this;
   join(...args: any[]) {
+    // Allow .join(raw`...`)
+    if (args.length === 1 && isRawNode(args[0])) {
+      return this.joinRaw(args[0]);
+    }
     return this.addJoinClause(JoinTypeEnum.INNER, args);
   }
   joinWhere(...args: any[]) {
@@ -147,11 +169,12 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
   joinRaw(node: TRawNode) {
     invariant(
       isRawNode(node),
-      "Expected joinRaw to be provided with a knex template tag literal, instead saw a %s",
+      "Expected joinRaw to be provided with a knex raw`` template tag literal, instead saw %s",
       typeof node
     );
     return this.chain(ast => ast.set("join", ast.join.push(node)));
   }
+
   protected addJoinClause(joinType: JoinTypeEnum, args: any[], asWhere = false) {
     return this.chain(ast => {
       // const joinNode = unpackJoin(args);
@@ -159,10 +182,8 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
     });
   }
 
-  groupBy() {
-    return this.chain(ast => {
-      return ast;
-    });
+  groupBy(...args: TGroupByArg[]) {
+    return this.chain(ast => ast.set("group", ast.group.concat(args)));
   }
 
   orderBy() {
@@ -181,18 +202,14 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
    * Set the "offset" value of the query.
    */
   offset(value: number | TRawNode) {
-    return this.chain(ast => {
-      return ast;
-    });
+    return this.chain(ast => ast.set("offset", value));
   }
 
   /**
    * Set the "limit" value of the query.
    */
   limit(value: number | TRawNode) {
-    return this.chain(ast => {
-      return ast;
-    });
+    return this.chain(ast => ast.set("limit", value));
   }
 
   union(...args: Array<TUnionArg>) {
@@ -210,7 +227,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
         args.reduce((result, arg) => {
           if (typeof arg === "function") {
             const ast = this.selectBuilder().getAst();
-            return result.push(UnionNode({ ast }));
+            return result.push(UnionNode({ ast, all: unionAll }));
           }
           return result;
         }, ast.union)
@@ -219,9 +236,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
   }
 
   lock(value: boolean | string = true) {
-    return this.chain(ast => {
-      return ast;
-    });
+    return this.chain(ast => ast.set("lock", value));
   }
 
   lockForUpdate() {
@@ -232,43 +247,30 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
     return this.lock(false);
   }
 
-  count() {
-    return this.chain(ast => {
-      return ast;
-    });
+  count(column: TColumnArg) {
+    return this.addAggregate(AggregateFns.COUNT, column);
   }
 
-  min() {
-    return this.chain(ast => {
-      return ast;
-    });
+  min(column: TColumnArg) {
+    return this.addAggregate(AggregateFns.MIN, column);
   }
 
-  max() {
-    return this.chain(ast => {
-      return ast;
-    });
+  max(column: TColumnArg) {
+    return this.addAggregate(AggregateFns.MAX, column);
   }
 
-  sum() {
-    return this.chain(ast => {
-      return ast;
-    });
+  sum(column: TColumnArg) {
+    return this.addAggregate(AggregateFns.SUM, column);
   }
 
-  avg() {
-    return this.chain(ast => {
-      return ast;
-    });
+  avg(column: TColumnArg) {
+    return this.addAggregate(AggregateFns.AVG, column);
   }
 
-  average() {
-    return this.chain(ast => {
-      return ast;
-    });
-  }
-
-  aggregate() {
+  /**
+   * Adds an aggregate value to the SELECT clause
+   */
+  protected addAggregate(fn: AggregateFns, column: TColumnArg) {
     return this.chain(ast => {
       return ast;
     });
@@ -307,24 +309,6 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
       return arg;
     }
     return null;
-  }
-
-  protected fromSub() {
-    return this.chain(ast => {
-      return ast;
-    });
-  }
-
-  protected selectSub() {
-    return this.chain(ast => {
-      return ast;
-    });
-  }
-
-  protected joinSub() {
-    return this.chain(ast => {
-      return ast;
-    });
   }
 
   protected subQuery(fn: SubQueryArg) {

@@ -1,5 +1,98 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`@knex/core - SelectBuilder aggregate: avg 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "from": null,
+  "where": Immutable.List [],
+  "select": Immutable.List [],
+  "join": Immutable.List [],
+  "having": Immutable.List [],
+  "group": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "alias": null,
+  "distinct": false,
+  "lock": null,
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - SelectBuilder aggregate: avg 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT *",
+  ],
+  "query": "SELECT *",
+  "sql": "SELECT *",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - SelectBuilder aggregate: count 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "from": null,
+  "where": Immutable.List [],
+  "select": Immutable.List [],
+  "join": Immutable.List [],
+  "having": Immutable.List [],
+  "group": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "alias": null,
+  "distinct": false,
+  "lock": null,
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - SelectBuilder aggregate: count 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT *",
+  ],
+  "query": "SELECT *",
+  "sql": "SELECT *",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - SelectBuilder aggregate: sum 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "from": null,
+  "where": Immutable.List [],
+  "select": Immutable.List [],
+  "join": Immutable.List [],
+  "having": Immutable.List [],
+  "group": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "alias": null,
+  "distinct": false,
+  "lock": null,
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - SelectBuilder aggregate: sum 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT *",
+  ],
+  "query": "SELECT *",
+  "sql": "SELECT *",
+  "values": Array [],
+}
+`;
+
 exports[`@knex/core - SelectBuilder complex join with empty in 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",

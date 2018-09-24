@@ -148,4 +148,16 @@ export function commonSelectTests(builder: SelectBuilderFactory) {
     //     .toString();
     // }).toThrow('The operator "isnt" is not permitted');
   });
+
+  test("aggregate: sum", () => {
+    snap(builder().sum("logins"));
+  });
+
+  test("aggregate: avg", () => {
+    snap(builder().avg("logins"));
+  });
+
+  test("aggregate: count", () => {
+    snap(builder().count("logins"));
+  });
 }

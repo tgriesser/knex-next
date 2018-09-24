@@ -40,10 +40,10 @@ export enum ClauseTypeEnum {
 }
 
 export enum NodeTypeEnum {
+  AGGREGATE = "AggregateNode",
   BINDING = "BindingNode",
   JOIN = "JoinNode",
   ORDER_BY = "OrderByNode",
-  GROUP_BY = "GroupByNode",
   UNION = "UnionNode",
   SUB_QUERY = "SubQueryNode",
   RAW = "RawNode",
@@ -55,5 +55,12 @@ export enum NodeTypeEnum {
   WHERE_BETWEEN = "WhereBetweenNode",
   WHERE_LIKE = "WhereLikeNode",
   WHERE_SUB = "WhereSubNode",
-  HAVING_EXPR = "HavingExpressionNode",
+}
+
+export enum AggregateFns {
+  COUNT = "COUNT",
+  MIN = "MIN",
+  MAX = "MAX",
+  SUM = "SUM",
+  AVG = "AVG",
 }
