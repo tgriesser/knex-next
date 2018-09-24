@@ -14,6 +14,6 @@ export class GrammarMysql extends Grammar {
     }
     this.addKeyword("UPDATE ");
     this.currentFragment += this.escapeId(ast.table);
-    this.buildJoinClauses(ast.join);
+    this.addJoinClauses(ast.join);
   }
 }

@@ -1,6 +1,6 @@
 import { SelectBuilder } from "../SelectBuilder";
 import { SubWhereBuilder } from "../clauses/WhereClauseBuilder";
-import { OperatorEnum, NodeTypeEnum, ClauseTypeEnum, OperationTypeEnum, JoinTypeEnum } from "./enums";
+import { OperatorEnum, NodeTypeEnum, ClauseTypeEnum, OperationTypeEnum, JoinTypeEnum, AggregateFns } from "./enums";
 import { JoinBuilder } from "../clauses/JoinBuilder";
 import { RecordOf, List, Map as IMap } from "immutable";
 import { SubHavingBuilder } from "../clauses/HavingClauseBuilder";
@@ -188,6 +188,7 @@ export type TWhereExistsNode = RecordOf<IWhereExistsNode>;
 
 export interface IWhereBetweenNode extends IWhereConditionNode<NodeTypeEnum.WHERE_BETWEEN> {}
 export type TWhereBetweenNode = RecordOf<IWhereBetweenNode>;
+
 export interface IOrderByNode extends INode<NodeTypeEnum.ORDER_BY> {
   column: string | TRawNode;
   direction: "ASC" | "DESC";
@@ -198,6 +199,7 @@ export interface IUnionNode extends INode<NodeTypeEnum.UNION> {
   ast: Maybe<TRawNode | ISelectOperation>;
   all: boolean;
 }
+
 export interface IWhereSubNode extends IWhereConditionNode<NodeTypeEnum.WHERE_SUB> {
   ast: Maybe<TWhereClause>;
 }
@@ -206,12 +208,15 @@ export type TWhereSubNode = RecordOf<IWhereSubNode>;
 export interface IJoinNode extends INode<NodeTypeEnum.JOIN> {
   joinType: JoinTypeEnum;
   column: string | TRawNode | TSelectOperation;
+  conditions: List<TWhereConditionNode>;
 }
 export type TJoinNode = RecordOf<IJoinNode>;
 
 export interface IAggregateNode extends INode<NodeTypeEnum.AGGREGATE> {
+  fn: AggregateFns;
   column: string | TRawNode | TSelectOperation;
   alias: Maybe<string>;
+  distinct: boolean;
 }
 
 export type TSelectNode = string | IAggregateNode | TSubQueryNode | TRawNode;
@@ -222,9 +227,9 @@ export type TWhereConditionNode =
   | TWhereExprNode
   | TWhereInNode
   | TWhereBetweenNode
-  | TWhereSubNode
   | TWhereExistsNode
-  | TWhereColumnNode;
+  | TWhereColumnNode
+  | TWhereSubNode;
 
 export interface IOperationNode<T> {
   __operation: T;

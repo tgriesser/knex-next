@@ -286,9 +286,6 @@ export class SubHavingBuilder extends HavingClauseBuilder {
   getAst() {
     return this.ast;
   }
-  toOperation() {
-    return this.grammar.toClause(this.ast);
-  }
   protected chain(fn: ChainFnHaving) {
     this.ast = fn(this.ast);
     return this;

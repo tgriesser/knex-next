@@ -323,9 +323,6 @@ export class SubWhereBuilder extends WhereClauseBuilder {
   getAst(): TWhereClause {
     return this.ast;
   }
-  toOperation() {
-    return this.grammar.toClause(this.ast);
-  }
   protected chain(fn: ChainFnWhere) {
     this.ast = fn(this.ast);
     return this;

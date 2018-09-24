@@ -1,5 +1,5 @@
 import { List } from "immutable";
-import { ClauseTypeEnum, NodeTypeEnum, OperationTypeEnum } from "./data/enums";
+import { NodeTypeEnum, OperationTypeEnum } from "./data/enums";
 import { isRawNode } from "./data/predicates";
 import { deleteAst, selectAst, updateAst } from "./data/structs";
 import {
@@ -15,7 +15,6 @@ import {
   TTruncateOperation,
   TUpdateOperation,
   TWhereBetweenNode,
-  TWhereClause,
   TWhereColumnNode,
   TWhereExistsNode,
   TWhereExprNode,
@@ -88,16 +87,6 @@ export class Grammar {
     return this.cacheSqlValue(operationAst);
   }
 
-  toClause(clauseAst: TWhereClause): ToSQLValue {
-    if (clauseAst === this.lastAst) {
-      return this.sqlValue();
-    } else {
-      this.resetState();
-    }
-    this.buildClause(clauseAst);
-    return this.cacheSqlValue(clauseAst);
-  }
-
   protected resetState() {
     this.currentFragment = "";
     this.fragments = [];
@@ -124,17 +113,6 @@ export class Grammar {
     }
   }
 
-  protected buildClause(clauseAst: TClauseAst) {
-    switch (clauseAst.__clause) {
-      case ClauseTypeEnum.WHERE:
-        this.buildWhereClause(clauseAst.where, true);
-        break;
-      case ClauseTypeEnum.HAVING:
-        this.buildHavingClause(clauseAst.having, true);
-        break;
-    }
-  }
-
   protected sqlValue() {
     return {
       fragments: this.fragments,
@@ -149,16 +127,16 @@ export class Grammar {
     if (ast.distinct) {
       this.addKeyword(" DISTINCT");
     }
-    this.buildSelectColumns(ast.select);
-    this.buildSelectFrom(ast);
-    this.buildJoinClauses(ast.join);
-    this.buildWhereClause(ast.where);
-    this.buildSelectGroupBy(ast);
-    this.buildHavingClause(ast);
-    this.buildOrderByClause(ast);
-    this.buildSelectLimit(ast);
-    this.buildSelectOffset(ast);
-    this.buildSelectUnions(ast);
+    this.addSelectColumns(ast.select);
+    this.addSelectFrom(ast);
+    this.addJoinClauses(ast.join);
+    this.addWhereClauses(ast.where);
+    this.addGroupBy(ast);
+    this.addHavingClause(ast.having);
+    this.addOrderByClause(ast);
+    this.addLimit(ast.limit);
+    this.addOffset(ast.offset);
+    this.addUnions(ast);
     this.buildSelectLock(ast);
   }
 
@@ -189,7 +167,7 @@ export class Grammar {
     this.currentFragment = "";
   }
 
-  buildSelectColumns(select: TSelectOperation["select"]) {
+  addSelectColumns(select: TSelectOperation["select"]) {
     if (select.size === 0) {
       this.currentFragment += " *";
     }
@@ -201,7 +179,7 @@ export class Grammar {
     });
   }
 
-  buildSelectFrom(ast: TSelectOperation) {
+  addSelectFrom(ast: TSelectOperation) {
     if (ast.from === null) {
       return;
     }
@@ -262,7 +240,7 @@ export class Grammar {
     }
   }
 
-  buildJoinClauses(joins: TSelectOperation["join"]) {
+  addJoinClauses(joins: TSelectOperation["join"]) {
     if (joins.size === 0) {
       return;
     }
@@ -272,17 +250,17 @@ export class Grammar {
     });
   }
 
-  buildHavingClause(ast: TSelectOperation, subHaving: boolean = false) {
-    if (ast.having.size === 0) {
+  addHavingClause(having: TSelectOperation["having"], subHaving: boolean = false) {
+    if (having.size === 0) {
       return;
     }
-    this.addKeyword("");
-    ast.having.forEach(having => {
-      //
+    this.addKeyword("HAVING ");
+    having.forEach((node, i) => {
+      this.addWhereCondition(node, i);
     });
   }
 
-  buildSelectGroupBy(ast: TSelectOperation) {
+  addGroupBy(ast: TSelectOperation) {
     if (ast.group.size === 0) {
       return;
     }
@@ -292,7 +270,7 @@ export class Grammar {
     });
   }
 
-  buildOrderByClause(ast: TSelectOperation) {
+  addOrderByClause(ast: TSelectOperation) {
     if (ast.order.size === 0) {
       return;
     }
@@ -302,22 +280,23 @@ export class Grammar {
     });
   }
 
-  buildSelectLimit(ast: TSelectOperation) {
-    if (!ast.limit) {
+  addLimit(limit: TSelectOperation["limit"]) {
+    if (limit === null) {
       return;
     }
     this.addKeyword(" LIMIT");
-    if (typeof ast.limit === "number") {
-      this.currentFragment += ast.limit;
+    if (typeof limit === "number") {
+      this.currentFragment += limit;
     } else {
+      this.addRawNode(limit);
     }
   }
 
-  buildSelectOffset(ast: TSelectOperation) {
+  addOffset(offset: TSelectOperation["offset"]) {
     //
   }
 
-  buildSelectUnions(ast: TSelectOperation) {
+  addUnions(ast: TSelectOperation) {
     //
   }
 
@@ -354,39 +333,43 @@ export class Grammar {
     }
     this.addKeyword("DELETE FROM ");
     this.currentFragment += this.escapeId(ast.table);
-    this.buildWhereClause(ast.where);
+    this.addWhereClauses(ast.where);
   }
 
-  buildWhereClause(nodes: List<TWhereConditionNode>, subWhere: boolean = false) {
+  addWhereClauses(nodes: List<TWhereConditionNode>, subWhere: boolean = false) {
     if (nodes.size === 0) {
       return;
     }
     this.addKeyword(subWhere ? "" : " WHERE ");
     nodes.forEach((node, i) => {
-      if (i > 0) {
-        this.addKeyword(` ${node.andOr} `);
-      }
-      switch (node.__typename) {
-        case NodeTypeEnum.WHERE_EXPR:
-          this.buildWhereExpr(node);
-          break;
-        case NodeTypeEnum.WHERE_COLUMN:
-          this.buildWhereColumn(node);
-          break;
-        case NodeTypeEnum.WHERE_IN:
-          this.buildWhereIn(node);
-          break;
-        case NodeTypeEnum.WHERE_EXISTS:
-          this.buildWhereExists(node);
-          break;
-        case NodeTypeEnum.WHERE_BETWEEN:
-          this.buildWhereBetween(node);
-          break;
-        case NodeTypeEnum.WHERE_SUB:
-          this.buildWhereSub(node);
-          break;
-      }
+      this.addWhereCondition(node, i);
     });
+  }
+
+  addWhereCondition(node: TWhereConditionNode, i: number) {
+    if (i > 0) {
+      this.addKeyword(` ${node.andOr} `);
+    }
+    switch (node.__typename) {
+      case NodeTypeEnum.WHERE_EXPR:
+        this.buildWhereExpr(node);
+        break;
+      case NodeTypeEnum.WHERE_COLUMN:
+        this.buildWhereColumn(node);
+        break;
+      case NodeTypeEnum.WHERE_IN:
+        this.buildWhereIn(node);
+        break;
+      case NodeTypeEnum.WHERE_EXISTS:
+        this.buildWhereExists(node);
+        break;
+      case NodeTypeEnum.WHERE_BETWEEN:
+        this.buildWhereBetween(node);
+        break;
+      case NodeTypeEnum.WHERE_SUB:
+        this.buildWhereSub(node);
+        break;
+    }
   }
 
   buildWhereExists(node: TWhereExistsNode) {
@@ -422,7 +405,9 @@ export class Grammar {
   buildWhereSub(node: TWhereSubNode) {
     if (node.ast && node.ast.where.size > 0) {
       this.currentFragment += "(";
-      this.buildWhereClause(node.ast.where, true);
+      node.ast.where.forEach((node, i) => {
+        this.addWhereCondition(node, i);
+      });
       this.currentFragment += ")";
     }
   }

@@ -1,4 +1,4 @@
-import { NodeTypeEnum, ClauseTypeEnum, OperatorEnum, OperationTypeEnum, JoinTypeEnum } from "./enums";
+import { NodeTypeEnum, ClauseTypeEnum, OperatorEnum, OperationTypeEnum, JoinTypeEnum, AggregateFns } from "./enums";
 import { Record as IRecord, List, Map as IMap } from "immutable";
 import {
   IJoinNode,
@@ -121,11 +121,16 @@ export const WhereBetweenNode = IRecord<IWhereBetweenNode>(
 /**
  * SUM(*), AVG(*), etc.
  */
-export const AggregateNode = IRecord<IAggregateNode>({
-  __typename: NodeTypeEnum.AGGREGATE,
-  column: "",
-  alias: null,
-});
+export const AggregateNode = IRecord<IAggregateNode>(
+  {
+    __typename: NodeTypeEnum.AGGREGATE,
+    fn: AggregateFns.COUNT,
+    column: "",
+    alias: null,
+    distinct: false,
+  },
+  NodeTypeEnum.AGGREGATE
+);
 
 /**
  * JOIN ...
@@ -135,6 +140,7 @@ export const JoinNode = IRecord<IJoinNode>(
     __typename: NodeTypeEnum.JOIN,
     joinType: JoinTypeEnum.INNER,
     column: "",
+    conditions: List(),
   },
   NodeTypeEnum.JOIN
 );

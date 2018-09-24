@@ -5,7 +5,7 @@ import { Connection } from "./Connection";
 import { Loggable } from "./contracts/Loggable";
 import { DialectEnum, JoinTypeEnum, AggregateFns } from "./data/enums";
 import { isRawNode } from "./data/predicates";
-import { selectAst, SubQueryNode, UnionNode } from "./data/structs";
+import { selectAst, SubQueryNode, UnionNode, AggregateNode } from "./data/structs";
 import {
   ChainFnSelect,
   FromJSArg,
@@ -58,8 +58,8 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
 
   /**
    * All events, row iteration, and query execution takes place in
-   * an "Execution Context", a combination of a connection, a grammar,
-   * and an EventEmitter.
+   * an "Execution Context", a combination of:
+   * Connection + Grammar + EventEmitter
    */
   protected executionContext: Maybe<ExecutionContext> = null;
 
@@ -250,6 +250,9 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
   count(column: TColumnArg) {
     return this.addAggregate(AggregateFns.COUNT, column);
   }
+  countDistinct(column: TColumnArg) {
+    return this.addAggregate(AggregateFns.COUNT, column, true);
+  }
 
   min(column: TColumnArg) {
     return this.addAggregate(AggregateFns.MIN, column);
@@ -270,10 +273,18 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
   /**
    * Adds an aggregate value to the SELECT clause
    */
-  protected addAggregate(fn: AggregateFns, column: TColumnArg) {
-    return this.chain(ast => {
-      return ast;
-    });
+  protected addAggregate(fn: AggregateFns, column: TSelectArg, distinct: boolean = false) {
+    return this.chain(ast =>
+      ast.set(
+        "select",
+        ast.select.push(
+          AggregateNode({
+            fn,
+            distinct,
+          })
+        )
+      )
+    );
   }
 
   toString() {
