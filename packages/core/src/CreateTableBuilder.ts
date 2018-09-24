@@ -1,4 +1,4 @@
-import { createTableAst } from "./data/datatypes";
+import { createTableAst } from "./data/structs";
 import { ChainFnCreateTable } from "./data/types";
 
 export interface ColumnBlockBuilder {

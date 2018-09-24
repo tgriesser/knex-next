@@ -21,9 +21,7 @@ export class ConnectionMysql extends Connection {
   async columnInfo(tableName: string) {
     const { fragments, bindings } = raw`
       select * from information_schema.columns 
-      where table_name = ${tableName} and table_schema = ${
-      this.connection.config.database
-    }`;
+      where table_name = ${tableName} and table_schema = ${this.connection.config.database}`;
     const rows = await this.execute(fragments.join("?"), bindings.toArray());
     return [];
   }

@@ -1,8 +1,4 @@
 export class AlterTableBuilder {
-  table(tableName: string) {
-    //
-  }
-
   addColumn() {
     //
   }

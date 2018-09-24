@@ -1,5 +1,236 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`@knex/core - SelectBuilder complex join with empty in 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "from": "users",
+  "where": Immutable.List [],
+  "select": Immutable.List [
+    "*",
+  ],
+  "join": Immutable.List [],
+  "having": Immutable.List [],
+  "group": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "alias": null,
+  "distinct": false,
+  "lock": null,
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - SelectBuilder complex join with empty in 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT * FROM users",
+  ],
+  "query": "SELECT * FROM users",
+  "sql": "SELECT * FROM users",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - SelectBuilder complex join with nest conditional statements 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "from": "users",
+  "where": Immutable.List [],
+  "select": Immutable.List [
+    "*",
+  ],
+  "join": Immutable.List [],
+  "having": Immutable.List [],
+  "group": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "alias": null,
+  "distinct": false,
+  "lock": null,
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - SelectBuilder complex join with nest conditional statements 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT * FROM users",
+  ],
+  "query": "SELECT * FROM users",
+  "sql": "SELECT * FROM users",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - SelectBuilder cross join 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "from": "users",
+  "where": Immutable.List [],
+  "select": Immutable.List [
+    "*",
+  ],
+  "join": Immutable.List [],
+  "having": Immutable.List [],
+  "group": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "alias": null,
+  "distinct": false,
+  "lock": null,
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - SelectBuilder cross join 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT * FROM users",
+  ],
+  "query": "SELECT * FROM users",
+  "sql": "SELECT * FROM users",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - SelectBuilder full outer join 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "from": "users",
+  "where": Immutable.List [],
+  "select": Immutable.List [
+    "*",
+  ],
+  "join": Immutable.List [],
+  "having": Immutable.List [],
+  "group": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "alias": null,
+  "distinct": false,
+  "lock": null,
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - SelectBuilder full outer join 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT * FROM users",
+  ],
+  "query": "SELECT * FROM users",
+  "sql": "SELECT * FROM users",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - SelectBuilder join + left join 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "from": "users",
+  "where": Immutable.List [],
+  "select": Immutable.List [
+    "*",
+  ],
+  "join": Immutable.List [],
+  "having": Immutable.List [],
+  "group": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "alias": null,
+  "distinct": false,
+  "lock": null,
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - SelectBuilder join + left join 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT * FROM users",
+  ],
+  "query": "SELECT * FROM users",
+  "sql": "SELECT * FROM users",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - SelectBuilder multi-statement join 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "from": "users",
+  "where": Immutable.List [],
+  "select": Immutable.List [
+    "*",
+  ],
+  "join": Immutable.List [],
+  "having": Immutable.List [],
+  "group": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "alias": null,
+  "distinct": false,
+  "lock": null,
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - SelectBuilder multi-statement join 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT * FROM users",
+  ],
+  "query": "SELECT * FROM users",
+  "sql": "SELECT * FROM users",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - SelectBuilder right (outer) join 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "from": "users",
+  "where": Immutable.List [],
+  "select": Immutable.List [
+    "*",
+  ],
+  "join": Immutable.List [],
+  "having": Immutable.List [],
+  "group": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "alias": null,
+  "distinct": false,
+  "lock": null,
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - SelectBuilder right (outer) join 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT * FROM users",
+  ],
+  "query": "SELECT * FROM users",
+  "sql": "SELECT * FROM users",
+  "values": Array [],
+}
+`;
+
 exports[`@knex/core - SelectBuilder select columns 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",

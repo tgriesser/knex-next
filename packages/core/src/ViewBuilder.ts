@@ -1,5 +1,5 @@
 import { Grammar } from "./Grammar";
-import { SubQueryNode } from "./data/datatypes";
+import { SubQueryNode } from "./data/structs";
 import { SubQueryArg } from "./data/types";
 import { SelectBuilder } from "./SelectBuilder";
 

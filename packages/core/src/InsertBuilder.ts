@@ -1,12 +1,11 @@
-import { ChainFnInsert, SubQueryArg } from "./data/types";
+import { ChainFnInsert, SubQueryArg, TRawNode } from "./data/types";
 import { Grammar } from "./Grammar";
-import { insertAst, TRawNode } from "./data/datatypes";
+import { insertAst } from "./data/structs";
 import { Loggable } from "./contracts/Loggable";
 import { Buildable } from "./contracts/Buildable";
 import { SelectBuilder } from "./SelectBuilder";
 
-export class InsertBuilder<T = { [columnName: string]: any }>
-  implements Loggable, Buildable {
+export class InsertBuilder<T = { [columnName: string]: any }> implements Loggable, Buildable {
   public readonly dialect = null;
 
   grammar = new Grammar();
@@ -17,7 +16,9 @@ export class InsertBuilder<T = { [columnName: string]: any }>
     return this.chain(ast => ast.set("table", tableName));
   }
 
-  columns(...columnName: string[]) {}
+  columns(...columnName: string[]) {
+    return this.chain(ast => ast.set("columns", ast.columns.concat(columnName)));
+  }
 
   values(toInsert: T | T[]) {
     return this.chain(ast => ast.set("values", ast.values.concat(toInsert)));

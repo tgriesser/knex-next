@@ -1,34 +1,30 @@
-import {
-  selectAst,
-  TRawNode,
-  UnionNode,
-  DialectEnum,
-  TSelectNode,
-  SubQueryNode,
-  TSelectOperation,
-  JoinTypeEnum,
-} from "./data/datatypes";
-import invariant from "invariant";
 import dedent from "dedent";
+import invariant from "invariant";
 import { WhereClauseBuilder } from "./clauses/WhereClauseBuilder";
+import { Connection } from "./Connection";
+import { Loggable } from "./contracts/Loggable";
+import { DialectEnum, JoinTypeEnum } from "./data/enums";
+import { isRawNode } from "./data/predicates";
+import { selectAst, SubQueryNode, UnionNode } from "./data/structs";
 import {
+  ChainFnSelect,
+  FromJSArg,
+  ISubJoin,
+  Maybe,
+  SubQueryArg,
+  TOperator,
+  TRawNode,
   TSelectArg,
+  TSelectNode,
+  TSelectOperation,
   TTableArg,
   TUnionArg,
-  SubQueryArg,
-  ChainFnSelect,
-  Maybe,
-  FromJSArg,
 } from "./data/types";
-import { Grammar } from "./Grammar";
-import { isRawNode } from "./data/predicates";
-import { Connection } from "./Connection";
-import { withEventEmitter } from "./mixins/withEventEmitter";
-import { Loggable } from "./contracts/Loggable";
 import { ExecutionContext } from "./ExecutionContext";
+import { Grammar } from "./Grammar";
+import { withEventEmitter } from "./mixins/withEventEmitter";
 
-export class SelectBuilder<T = any> extends WhereClauseBuilder
-  implements PromiseLike<T>, Loggable {
+export class SelectBuilder<T = any> extends WhereClauseBuilder implements PromiseLike<T>, Loggable {
   /**
    * Whether the builder is "mutable". Immutable builders are useful
    * when building subQueries or statements we want to ensure aren't
@@ -69,8 +65,13 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder
     super();
   }
 
+  /**
+   * Select builder used in subqueries or clone, etc.
+   */
+  protected selectBuilder = (ast = selectAst, forSubQuery = false) => new SelectBuilder(ast, forSubQuery);
+
   clone(): this {
-    return new (<typeof SelectBuilder>this.constructor)(this.ast) as this;
+    return this.selectBuilder(this.ast) as this;
   }
 
   select(...args: Array<TSelectArg>): this {
@@ -110,6 +111,9 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder
   }
 
   join(raw: TRawNode): this;
+  join(tableName: string, leftCol: string, rightCol: string): this;
+  join(tableName: string, leftCol: string, op: TOperator, rightCol: string): this;
+  join(tableName: string, subJoin: ISubJoin): this;
   join(...args: any[]) {
     return this.addJoinClause(JoinTypeEnum.INNER, args);
   }
@@ -148,11 +152,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder
     );
     return this.chain(ast => ast.set("join", ast.join.push(node)));
   }
-  protected addJoinClause(
-    joinType: JoinTypeEnum,
-    args: any[],
-    asWhere = false
-  ) {
+  protected addJoinClause(joinType: JoinTypeEnum, args: any[], asWhere = false) {
     return this.chain(ast => {
       // const joinNode = unpackJoin(args);
       return ast;
@@ -209,8 +209,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder
         "union",
         args.reduce((result, arg) => {
           if (typeof arg === "function") {
-            const ast = new (this
-              .constructor as typeof SelectBuilder)().getAst();
+            const ast = this.selectBuilder().getAst();
             return result.push(UnionNode({ ast }));
           }
           return result;
@@ -231,24 +230,6 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder
 
   sharedLock() {
     return this.lock(false);
-  }
-
-  value() {
-    return this.chain(ast => {
-      return ast;
-    });
-  }
-
-  exists() {
-    return this.chain(ast => {
-      return ast;
-    });
-  }
-
-  doesntExist() {
-    return this.chain(ast => {
-      return ast;
-    });
   }
 
   count() {
@@ -288,18 +269,6 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder
   }
 
   aggregate() {
-    return this.chain(ast => {
-      return ast;
-    });
-  }
-
-  numericAggregate() {
-    return this.chain(ast => {
-      return ast;
-    });
-  }
-
-  cloneWithout() {
     return this.chain(ast => {
       return ast;
     });
@@ -359,7 +328,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder
   }
 
   protected subQuery(fn: SubQueryArg) {
-    const builder = new (<typeof SelectBuilder>this.constructor)();
+    const builder = this.selectBuilder();
     fn.call(builder, builder);
     return SubQueryNode({ ast: builder.getAst() });
   }
@@ -416,10 +385,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder
 
   then<TResult1 = T, TResult2 = never>(
     onFulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>),
-    onRejected?:
-      | ((reason: any) => TResult2 | PromiseLike<TResult2>)
-      | undefined
-      | null
+    onRejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
   ): Promise<TResult1 | TResult2> {
     if (!this._promise) {
       try {
@@ -431,12 +397,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder
     return this._promise.then(onFulfilled, onRejected);
   }
 
-  catch<TResult = never>(
-    onRejected:
-      | ((reason: any) => TResult | PromiseLike<TResult>)
-      | undefined
-      | null
-  ) {
+  catch<TResult = never>(onRejected: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null) {
     if (!this._promise) {
       return this.then().catch(onRejected);
     }
@@ -453,10 +414,10 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder
   protected makeExecutionContext() {
     if (this.forSubQuery) {
       throw new Error(dedent`
-        Oops, looks like you are attempting to call .then or an event emitter method 
+        Oops, looks like you are attempting to call .then or an EventEmitter method 
         (.on, .off, etc.) on a SubQuery. 
         This is not permitted as only the outer query may be executed or used as an
-        event emitter.
+        EventEmitter.
       `);
     }
     if (!this.mutable) {
@@ -497,6 +458,13 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder
 
   warn(warning: string | Error) {
     console.warn(warning);
+  }
+
+  update() {
+    throw new Error(dedent`
+      The .update() method is no longer chained off of a select query, and is 
+      now moved to it's own 
+    `);
   }
 }
 

@@ -1,32 +1,28 @@
-import {
-  TOperationAst,
-  OperationTypeEnum,
-  TSelectOperation,
-  TInsertOperation,
-  TUpdateOperation,
-  TDeleteOperation,
-  TSelectNode,
-  NodeTypeEnum,
-  TRawNode,
-  TSubQueryNode,
-  TClauseAst,
-  ClauseTypeEnum,
-  TWhereClause,
-  TWhereNode,
-  TWhereExprNode,
-  TWhereColumnNode,
-  TWhereInNode,
-  TWhereSubNode,
-  TWhereExistsNode,
-  TWhereBetweenNode,
-  selectAst,
-  TTruncateOperation,
-  deleteAst,
-  updateAst,
-} from "./data/datatypes";
 import { List } from "immutable";
-import { Maybe } from "./data/types";
+import { ClauseTypeEnum, NodeTypeEnum, OperationTypeEnum } from "./data/enums";
 import { isRawNode } from "./data/predicates";
+import { deleteAst, selectAst, updateAst } from "./data/structs";
+import {
+  Maybe,
+  TClauseAst,
+  TDeleteOperation,
+  TInsertOperation,
+  TOperationAst,
+  TRawNode,
+  TSelectNode,
+  TSelectOperation,
+  TSubQueryNode,
+  TTruncateOperation,
+  TUpdateOperation,
+  TWhereBetweenNode,
+  TWhereClause,
+  TWhereColumnNode,
+  TWhereExistsNode,
+  TWhereExprNode,
+  TWhereInNode,
+  TWhereNode,
+  TWhereSubNode,
+} from "./data/types";
 
 export interface ToSQLValue {
   sql: string;
@@ -47,6 +43,8 @@ export class Grammar {
   protected sqlValues: any[] = [];
   protected sqlWithBindings: string = "";
   protected sqlWithValues: string = "";
+  protected hasBindingValue: boolean = false;
+  protected hasUndefinedValue: boolean = false;
 
   newInstance(): this {
     return new (<any>this.constructor)();
@@ -150,7 +148,7 @@ export class Grammar {
     }
     this.buildSelectColumns(ast.select);
     this.buildSelectFrom(ast);
-    this.buildJoinClauses(ast);
+    this.buildJoinClauses(ast.join);
     this.buildWhereClause(ast.where);
     this.buildSelectGroupBy(ast);
     this.buildHavingClause(ast);
@@ -261,12 +259,12 @@ export class Grammar {
     }
   }
 
-  buildJoinClauses(ast: TSelectOperation) {
-    if (ast.join.size === 0) {
+  buildJoinClauses(joins: TSelectOperation["join"]) {
+    if (joins.size === 0) {
       return;
     }
     this.addKeyword("");
-    ast.join.forEach(join => {
+    joins.forEach(join => {
       //
     });
   }

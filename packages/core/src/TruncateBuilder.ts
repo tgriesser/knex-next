@@ -1,6 +1,6 @@
 import { Grammar } from "./Grammar";
 import { Buildable } from "./contracts/Buildable";
-import { truncateAst } from "./data/datatypes";
+import { truncateAst } from "./data/structs";
 import { ChainFnTruncate } from "@knex/core/src/data/types";
 
 export class TruncateBuilder implements Buildable {

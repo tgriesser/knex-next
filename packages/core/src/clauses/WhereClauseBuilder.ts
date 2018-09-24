@@ -1,36 +1,26 @@
+import { DialectEnum, OperatorEnum } from "../data/enums";
+import { whereClauseNode, WhereExprNode, WhereNullNode, WhereSubNode } from "../data/structs";
 import {
-  TOperator,
+  ChainFnWhere,
+  IRawNode,
+  ISubWhere,
+  Maybe,
+  SubQueryArg,
+  TAndOr,
   TColumnArg,
   TColumnConditions,
-  TAndOr,
-  TValueConditions,
-  SubQueryArg,
-  ChainFnWhere,
-  Maybe,
-  TValueArg,
-} from "../data/types";
-import {
-  IRawNode,
-  OperatorEnum,
-  whereClauseNode,
-  DialectEnum,
-  TSelectOperation,
-  WhereSubNode,
-  TWhereClause,
   TDeleteOperation,
-  WhereExprNode,
-  TUpdateOperation,
-  WhereNullNode,
+  TNot,
+  TOperator,
+  TSelectOperation,
   TSubQueryNode,
-} from "../data/datatypes";
+  TUpdateOperation,
+  TValueArg,
+  TValueConditions,
+  TWhereClause,
+} from "../data/types";
+import { unpackColumn, unpackValue } from "../data/utils";
 import { Grammar } from "../Grammar";
-import { unpackValue, unpackColumn } from "../data/utils";
-
-type TNot = OperatorEnum.NOT | null;
-
-interface SubWhere {
-  (this: SubWhereBuilder, arg: SubWhereBuilder): any;
-}
 
 export abstract class WhereClauseBuilder {
   /**
@@ -43,14 +33,10 @@ export abstract class WhereClauseBuilder {
    */
   protected grammar = new Grammar();
 
-  protected abstract ast:
-    | TSelectOperation
-    | TUpdateOperation
-    | TDeleteOperation
-    | TWhereClause;
+  protected abstract ast: TSelectOperation | TUpdateOperation | TDeleteOperation | TWhereClause;
 
   where(raw: IRawNode): this;
-  where(fn: SubWhere): this;
+  where(fn: ISubWhere): this;
   where(builder: WhereClauseBuilder): this;
   where(bool: boolean): this;
   where(obj: { [column: string]: any }): this;
@@ -61,7 +47,7 @@ export abstract class WhereClauseBuilder {
     return this.addWhere(args, OperatorEnum.AND);
   }
   andWhere(raw: IRawNode): this;
-  andWhere(fn: SubWhere): this;
+  andWhere(fn: ISubWhere): this;
   andWhere(builder: WhereClauseBuilder): this;
   andWhere(bool: boolean): this;
   andWhere(obj: { [column: string]: any }): this;
@@ -72,7 +58,7 @@ export abstract class WhereClauseBuilder {
     return this.addWhere(args, OperatorEnum.AND);
   }
   orWhere(raw: IRawNode): this;
-  orWhere(fn: SubWhere): this;
+  orWhere(fn: ISubWhere): this;
   orWhere(bool: boolean): this;
   orWhere(builder: WhereClauseBuilder): this;
   orWhere(obj: { [column: string]: any }): this;
@@ -169,6 +155,25 @@ export abstract class WhereClauseBuilder {
   orWhereNotBetween(...args: any[]) {
     return this.addWhereBetween(args, OperatorEnum.OR, OperatorEnum.NOT);
   }
+  whereExists(subQuery: SubQueryArg) {
+    return this.addWhereExists(subQuery, OperatorEnum.AND);
+  }
+  andWhereExists(subQuery: SubQueryArg) {
+    return this.addWhereExists(subQuery, OperatorEnum.AND);
+  }
+  orWhereExists(subQuery: SubQueryArg) {
+    return this.addWhereExists(subQuery, OperatorEnum.AND);
+  }
+  whereNotExists(subQuery: SubQueryArg) {
+    return this.addWhereExists(subQuery, OperatorEnum.AND, OperatorEnum.NOT);
+  }
+  andWhereNotExists(subQuery: SubQueryArg) {
+    return this.addWhereExists(subQuery, OperatorEnum.AND, OperatorEnum.NOT);
+  }
+  orWhereNotExists(subQuery: SubQueryArg) {
+    return this.addWhereExists(subQuery, OperatorEnum.AND, OperatorEnum.NOT);
+  }
+
   /**
    * Date Helpers:
    */
@@ -249,11 +254,7 @@ export abstract class WhereClauseBuilder {
     });
   }
 
-  protected addWhereIn(
-    args: [TColumnArg, SubQueryArg] | [TColumnArg, any],
-    andOr: TAndOr,
-    not: TNot = null
-  ) {
+  protected addWhereIn(args: [TColumnArg, SubQueryArg] | [TColumnArg, any], andOr: TAndOr, not: TNot = null) {
     return this;
   }
 
@@ -272,6 +273,10 @@ export abstract class WhereClauseBuilder {
     );
   }
 
+  protected addWhereExists(subQuery: SubQueryArg, andOr: TAndOr, not: TNot = null) {
+    return this;
+  }
+
   protected addWhereBetween(args: any[], andOr: TAndOr, not: TNot = null) {
     return this;
   }
@@ -287,18 +292,13 @@ export abstract class WhereClauseBuilder {
   /**
    * Compile & add a subquery to the AST
    */
-  protected whereSub(fn: SubWhere, andOr: TAndOr, not: TNot): this {
+  protected whereSub(fn: ISubWhere, andOr: TAndOr, not: TNot): this {
     return this.chain((ast: TWhereClause) => {
-      const builder = new SubWhereBuilder(
-        this.grammar.newInstance(),
-        this.dialect,
-        (fn: SubQueryArg) => this.subQuery(fn)
+      const builder = new SubWhereBuilder(this.grammar.newInstance(), this.dialect, (fn: SubQueryArg) =>
+        this.subQuery(fn)
       );
       fn.call(builder, builder);
-      return ast.set(
-        "where",
-        ast.where.push(WhereSubNode({ not, andOr, ast: builder.getAst() }))
-      );
+      return ast.set("where", ast.where.push(WhereSubNode({ not, andOr, ast: builder.getAst() })));
     });
   }
 

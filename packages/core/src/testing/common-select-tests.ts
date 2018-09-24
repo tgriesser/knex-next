@@ -56,4 +56,96 @@ export function commonSelectTests(builder: SelectBuilderFactory) {
         .orWhere("id", 4)
     );
   });
+
+  test("join + left join", () => {
+    snap(
+      builder()
+        .select("*")
+        .from("users")
+        .join("contacts", "users.id", "=", "contacts.id")
+        .leftJoin("photos", "users.id", "=", "photos.id")
+    );
+  });
+
+  test("cross join", () => {
+    snap(
+      builder()
+        .select("*")
+        .from("users")
+        .crossJoin("contracts")
+        .crossJoin("photos")
+    );
+  });
+
+  test("full outer join", () => {
+    snap(
+      builder()
+        .select("*")
+        .from("users")
+        .fullOuterJoin("contacts", "users.id", "=", "contacts.id")
+    );
+  });
+
+  test("right (outer) join", () => {
+    snap(
+      builder()
+        .select("*")
+        .from("users")
+        .rightJoin("contacts", "users.id", "=", "contacts.id")
+        .rightOuterJoin("photos", "users.id", "=", "photos.id")
+    );
+  });
+
+  test("multi-statement join", () => {
+    snap(
+      builder()
+        .select("*")
+        .from("users")
+        .join("contacts", qb => {
+          qb.on("users.id", "=", "contacts.id").orOn("users.name", "=", "contacts.name");
+        })
+    );
+  });
+
+  test("complex join with nest conditional statements", () => {
+    snap(
+      builder()
+        .select("*")
+        .from("users")
+        .join("contacts", q => {
+          q.on(j => {
+            j.on("users.id", "=", "contacts.id");
+            j.orOn("users.name", "=", "contacts.name");
+          });
+        })
+    );
+  });
+
+  test("complex join with empty in", () => {
+    snap(
+      builder()
+        .select("*")
+        .from("users")
+        .join("contacts", qb => {
+          qb.on("users.id", "=", "contacts.id").onIn("users.name", []);
+        })
+    );
+  });
+
+  test("throws with invalid operator", () => {
+    // expect(() => {
+    //   builder()
+    //     .select("*")
+    //     .from("users")
+    //     .where(
+    //       "id",
+    //       "in",
+    //       builder()
+    //         .select("*")
+    //         // @ts-ignore
+    //         .where("id", "isnt", 1)
+    //     )
+    //     .toString();
+    // }).toThrow('The operator "isnt" is not permitted');
+  });
 }

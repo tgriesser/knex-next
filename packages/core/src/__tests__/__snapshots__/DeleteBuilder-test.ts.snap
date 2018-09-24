@@ -5,6 +5,7 @@ Immutable.DeleteOperation {
   "__operation": "DELETE",
   "table": "someTable",
   "where": Immutable.List [],
+  "meta": Immutable.Map {},
 }
 `;
 
@@ -33,6 +34,7 @@ Immutable.DeleteOperation {
       "andOr": "AND",
     },
   ],
+  "meta": Immutable.Map {},
 }
 `;
 

@@ -23,8 +23,15 @@ Object {
 test("insert: select", () => {
   const query = insert()
     .into("someTable")
+    .columns("a")
     .select(qb => {
       qb.select("a").from("otherTable");
     });
   expectOp(query).toMatchSnapshot();
+});
+
+test("multiple inserts", () => {
+  const query = insert()
+    .into("users")
+    .values([{ email: "foo", name: "tim" }, { name: "kb", email: "bar" }]);
 });

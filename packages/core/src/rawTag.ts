@@ -1,4 +1,4 @@
-import { RawNode } from "./data/datatypes";
+import { RawNode } from "./data/structs";
 import { List } from "immutable";
 
 export function raw(query: TemplateStringsArray, ...bindings: any[]) {

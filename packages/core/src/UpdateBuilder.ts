@@ -1,16 +1,25 @@
 import { WhereClauseBuilder } from "./clauses/WhereClauseBuilder";
-import { updateAst, SubQueryNode } from "./data/datatypes";
+import { updateAst, SubQueryNode } from "./data/structs";
 import { ChainFnUpdate, SubQueryArg } from "./data/types";
 import { SelectBuilder } from "./SelectBuilder";
 
-export class UpdateBuilder<
-  T = { [columnName: string]: any }
-> extends WhereClauseBuilder {
+export class UpdateBuilder<T = { [columnName: string]: any }> extends WhereClauseBuilder {
   constructor(protected ast = updateAst) {
     super();
   }
+  /**
+   * Specifies the table to update in the UPDATE clause
+   */
   table(tableName: string) {}
-  set(values: T) {}
+  /**
+   * Specifies the values to SET in the update clause
+   */
+  set(values: T) {
+    //
+  }
+  /**
+   * Returns the current AST of the update builder
+   */
   getAst() {
     return this.ast;
   }
