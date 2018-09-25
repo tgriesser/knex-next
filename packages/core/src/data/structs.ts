@@ -24,6 +24,7 @@ import {
   IBindingNode,
   IAggregateNode,
   IAlterTableOperation,
+  ICondDateNode,
 } from "./types";
 
 /**
@@ -76,7 +77,9 @@ export const CondInNode = IRecord<ICondInNode>(
   {
     __typename: NodeTypeEnum.COND_IN,
     not: null,
+    column: null,
     andOr: OperatorEnum.AND,
+    value: null,
   },
   NodeTypeEnum.COND_IN
 );
@@ -100,8 +103,10 @@ export const CondNullNode = IRecord<ICondNullNode>(
 export const CondExistsNode = IRecord<ICondExistsNode>(
   {
     __typename: NodeTypeEnum.COND_EXISTS,
+    column: "",
     not: null,
     andOr: OperatorEnum.AND,
+    query: null,
   },
   NodeTypeEnum.COND_EXISTS
 );
@@ -112,10 +117,20 @@ export const CondExistsNode = IRecord<ICondExistsNode>(
 export const CondBetweenNode = IRecord<ICondBetweenNode>(
   {
     __typename: NodeTypeEnum.COND_BETWEEN,
+    column: "",
     not: null,
     andOr: OperatorEnum.AND,
+    first: null,
+    second: null,
   },
   NodeTypeEnum.COND_BETWEEN
+);
+
+export const CondDateNode = IRecord<ICondDateNode>(
+  {
+    __typename: NodeTypeEnum.COND_DATE,
+  },
+  NodeTypeEnum.COND_DATE
 );
 
 /**

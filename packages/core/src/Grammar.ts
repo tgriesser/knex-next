@@ -22,6 +22,7 @@ import {
   TConditionNode,
   TCondSubNode,
   TCondNullNode,
+  TOperator,
 } from "./data/types";
 
 export interface ToSQLValue {
@@ -32,6 +33,8 @@ export interface ToSQLValue {
 }
 
 export class Grammar {
+  static operators = new Set<TOperator>([]);
+
   public readonly dialect = null;
   public readonly dateString = "Y-m-d H:i:s";
 
@@ -45,6 +48,13 @@ export class Grammar {
   protected sqlWithValues: string = "";
   protected hasBindingValue: boolean = false;
   protected hasUndefinedValue: boolean = false;
+
+  checkOperator(op: TOperator) {
+    if (!Grammar.operators.has(op)) {
+      return false;
+    }
+    return true;
+  }
 
   newInstance(): this {
     return new (<any>this.constructor)();

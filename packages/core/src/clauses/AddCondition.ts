@@ -7,19 +7,37 @@ import {
   SubQueryArg,
   TConditionNode,
   TValueConditions,
+  TSubQueryNode,
+  TValue,
+  TColumn,
+  TQueryArg,
+  TOperatorArg,
+  TInValue,
+  TInArg,
+  SubConditionFn,
 } from "../data/types";
-import { CondNullNode, ConditionExpressionNode, RawNode } from "../data/structs";
+import {
+  CondNullNode,
+  ConditionExpressionNode,
+  CondExistsNode,
+  SubQueryNode,
+  CondInNode,
+  CondBetweenNode,
+} from "../data/structs";
 import { DateCondType, ClauseTypeEnum, OperatorEnum } from "../data/enums";
-
-interface SubConditionFn {
-  (this: AddCondition, qb: AddCondition): any;
-}
+import { isRawNode, isSelectBuilder } from "@knex/core/src/data/predicates";
+import { Grammar } from "@knex/core/src/Grammar";
+import { Record, List } from "immutable";
 
 /**
  * Most of the clause conditions (having, where, join) are similarly shaped
  * This provides the methods shared by each.
  */
 export abstract class AddCondition {
+  protected abstract ast: Record<any> | List<TConditionNode>;
+
+  protected abstract grammar: Grammar;
+
   /**
    * Handles the basic condition case:
    *
@@ -39,14 +57,7 @@ export abstract class AddCondition {
         return this.addExpressionCond(clauseType, args[0], "=", args[1], andOr, not);
       }
       case 3: {
-        return this.pushCondition(
-          clauseType,
-          ConditionExpressionNode({
-            not,
-            andOr,
-            column: this.unwrapColumn(args[0]),
-          })
-        );
+        return this.addCondAry3(clauseType, args[0], args[1], args[2], andOr, not);
       }
     }
     return this;
@@ -89,12 +100,32 @@ export abstract class AddCondition {
     return this;
   }
 
+  protected addCondAry3(
+    clauseType: ClauseTypeEnum,
+    column: TColumnArg,
+    op: TOperatorArg,
+    value: TValueArg,
+    andOr: TAndOr,
+    not: TNot = null
+  ) {
+    return this.pushCondition(
+      clauseType,
+      ConditionExpressionNode({
+        not,
+        andOr,
+        column: this.unwrapColumn(column),
+        operator: this.checkOperator(op as TOperator),
+        value: this.unwrapValue(value),
+      })
+    );
+  }
+
   /**
    * Handles the column to column comparison condition, e.g.:
    *
    * "column" >= "otherColumn"
    */
-  protected addColumnCond(args: any[], andOr: TAndOr, not: TNot = null) {
+  protected addColumnCond(clauseType: ClauseTypeEnum, args: any[], andOr: TAndOr, not: TNot = null) {
     switch (args.length) {
       case 1: {
         const arg = args[0];
@@ -116,19 +147,30 @@ export abstract class AddCondition {
       ConditionExpressionNode({
         not,
         andOr,
-        column: unpackColumn(column),
+        column: this.unwrapColumn(column),
         operator,
-        value: unpackValue(val),
+        value: this.unwrapValue(val),
       })
     );
   }
 
-  protected checkOperator(op: TOperator) {
-    return this;
+  protected checkOperator(op: TOperator): TOperator {
+    if (this.grammar.checkOperator(op)) {
+      throw new Error(`Invalid operator ${op} passed to query expression.`);
+    }
+    return op;
   }
 
-  protected addInCond(args: [TColumnArg, SubQueryArg] | [TColumnArg, any], andOr: TAndOr, not: TNot = null) {
-    return this;
+  protected addInCond(clauseType: ClauseTypeEnum, column: TColumnArg, arg: TInArg, andOr: TAndOr, not: TNot = null) {
+    return this.pushCondition(
+      clauseType,
+      CondInNode({
+        andOr,
+        not,
+        column: this.unwrapColumn(column),
+        value: this.unwrapInValue(arg),
+      })
+    );
   }
 
   protected addNullCond(clauseType: ClauseTypeEnum, column: TColumnArg, andOr: TAndOr, not: TNot = null) {
@@ -137,17 +179,39 @@ export abstract class AddCondition {
       CondNullNode({
         andOr,
         not,
-        column: unpackColumn(column),
+        column: this.unwrapColumn(column),
       })
     );
   }
 
-  protected addExistsCond(clauseType: ClauseTypeEnum, subQuery: SubQueryArg, andOr: TAndOr, not: TNot = null) {
-    return this;
+  protected addExistsCond(clauseType: ClauseTypeEnum, query: TQueryArg, andOr: TAndOr, not: TNot = null) {
+    return this.pushCondition(
+      clauseType,
+      CondExistsNode({
+        andOr,
+        not,
+        column: this.unwrapColumn(query),
+      })
+    );
   }
 
-  protected addBetweenCond(clauseType: ClauseTypeEnum, args: any[], andOr: TAndOr, not: TNot = null) {
-    return this;
+  protected addBetweenCond(
+    clauseType: ClauseTypeEnum,
+    column: TColumnArg,
+    args: [TValueArg, TValueArg],
+    andOr: TAndOr,
+    not: TNot = null
+  ) {
+    return this.pushCondition(
+      clauseType,
+      CondBetweenNode({
+        andOr,
+        not,
+        column: this.unwrapColumn(column),
+        first: this.unwrapValue(args[0]),
+        second: this.unwrapValue(args[1]),
+      })
+    );
   }
 
   protected addDateCond(type: DateCondType): this {
@@ -157,12 +221,62 @@ export abstract class AddCondition {
   /**
    * Takes an argument in a "column" slot and unwraps it so any subqueries, are performed, etc.
    */
-  protected unwrapColumn(column: TColumnArg) {}
+  protected unwrapColumn(column: TColumnArg): TColumn {
+    if (typeof column === "function") {
+      return this.subQuery(column);
+    }
+    if (typeof column === "string" || typeof column === "number") {
+      return column;
+    }
+    if (isRawNode(column)) {
+      return column;
+    }
+    if (isSelectBuilder(column)) {
+      return SubQueryNode({ ast: column.getAst() });
+    }
+    console.log(column);
+    throw new Error(`Invalid column type provided to the query builder: ${typeof column}`);
+  }
 
   /**
    * Takes an argument in a "value" slot and unwraps it so any subqueries, are performed, etc.
    */
-  protected unwrapValue() {}
+  protected unwrapValue(value: TValueArg): TValue {
+    if (value === null) {
+      return value;
+    }
+    if (typeof value === "function") {
+      return this.subQuery(value);
+    }
+    if (typeof value === "string" || typeof value === "number") {
+      return value;
+    }
+    if (isRawNode(value)) {
+      return value;
+    }
+    if (isSelectBuilder(value)) {
+      return SubQueryNode({ ast: value.getAst() });
+    }
+    console.log(value);
+    throw new Error(`Invalid value provided to the query builder: ${typeof value}`);
+  }
+
+  protected unwrapInValue(value: TInArg): TInValue {
+    if (Array.isArray(value)) {
+      return value;
+    }
+    if (typeof value === "function") {
+      return this.subQuery(value);
+    }
+    if (isRawNode(value)) {
+      return value;
+    }
+    if (isSelectBuilder(value)) {
+      return SubQueryNode({ ast: value.getAst() });
+    }
+    console.log(value);
+    throw new Error(`Invalid value provided to the where in builder: ${typeof value}`);
+  }
 
   /**
    * Creates a new wrapped condition block, calling the function with the
@@ -174,4 +288,14 @@ export abstract class AddCondition {
    * Adds a node to the AST based on the appropriate clauseType
    */
   protected abstract pushCondition(clauseType: ClauseTypeEnum, node: TConditionNode): this;
+
+  /**
+   * Creates a sub-query. Used whenever a function is passed in the place of a column or value.
+   */
+  protected abstract subQuery(fn: SubQueryArg): TSubQueryNode;
+
+  /**
+   * Get the AST of the conditions.
+   */
+  protected abstract getAst(): AddCondition["ast"];
 }

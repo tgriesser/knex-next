@@ -5,7 +5,7 @@ import { Connection } from "./Connection";
 import { Loggable } from "./contracts/Loggable";
 import { DialectEnum, JoinTypeEnum, AggregateFns, ClauseTypeEnum } from "./data/enums";
 import { isRawNode } from "./data/predicates";
-import { selectAst, SubQueryNode, UnionNode, AggregateNode } from "./data/structs";
+import { selectAst, SubQueryNode, UnionNode, AggregateNode, CondSubNode } from "./data/structs";
 import {
   ChainFnSelect,
   FromJSArg,
@@ -24,10 +24,15 @@ import {
   TConditionNode,
   TAndOr,
   TNot,
+  TOrderByDirection,
 } from "./data/types";
 import { ExecutionContext } from "./ExecutionContext";
 import { Grammar } from "./Grammar";
 import { withEventEmitter } from "./mixins/withEventEmitter";
+import { SubHavingBuilder } from "./clauses/HavingClauseBuilder";
+import { SubWhereBuilder } from "./clauses/WhereClauseBuilder";
+import { INVARIANT } from "./data/messages";
+import { List } from "immutable";
 
 export class SelectBuilder<T = any> extends WhereClauseBuilder implements PromiseLike<T>, Loggable {
   /**
@@ -142,19 +147,19 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
     }
     return this.addJoinClause(JoinTypeEnum.INNER, args);
   }
-  joinWhere(...args: any[]) {
+  joinVal(...args: any[]) {
     return this.addJoinClause(JoinTypeEnum.INNER, args, true);
   }
   leftJoin(...args: any[]) {
     return this.addJoinClause(JoinTypeEnum.LEFT, args);
   }
-  leftJoinWhere(...args: any[]) {
+  leftJoinVal(...args: any[]) {
     return this.addJoinClause(JoinTypeEnum.LEFT, args, true);
   }
   rightJoin(...args: any[]) {
     return this.addJoinClause(JoinTypeEnum.RIGHT, args);
   }
-  rightJoinWhere(...args: any[]) {
+  rightJoinVal(...args: any[]) {
     return this.addJoinClause(JoinTypeEnum.RIGHT, args, true);
   }
   leftOuterJoin(...args: any[]) {
@@ -178,7 +183,10 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
     return this.chain(ast => ast.set("join", ast.join.push(node)));
   }
 
-  protected addJoinClause(joinType: JoinTypeEnum, args: any[], asWhere = false) {
+  /**
+   * Adds a JOIN clause to the query.
+   */
+  protected addJoinClause(joinType: JoinTypeEnum, args: any[], asVal = false) {
     return this.chain(ast => {
       // const joinNode = unpackJoin(args);
       return ast;
@@ -189,16 +197,14 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
     return this.chain(ast => ast.set("group", ast.group.concat(args)));
   }
 
-  orderBy() {
+  orderBy(column: TColumnArg | TColumnArg[], direction: TOrderByDirection = "asc") {
     return this.chain(ast => {
       return ast;
     });
   }
 
-  orderByDesc() {
-    return this.chain(ast => {
-      return ast;
-    });
+  orderByDesc(column: TColumnArg | TColumnArg[]) {
+    return this.orderBy(column, "desc");
   }
 
   /**
@@ -326,8 +332,28 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
   }
 
   protected subCondition(clauseType: ClauseTypeEnum, fn: Function, andOr: TAndOr, not: TNot) {
+    let builder: SubHavingBuilder | SubWhereBuilder | null = null;
     if (clauseType === ClauseTypeEnum.HAVING) {
+      builder = new SubHavingBuilder(this.grammar.newInstance(), this.subQuery);
+    } else if (clauseType === ClauseTypeEnum.WHERE) {
+      builder = new SubWhereBuilder(this.grammar.newInstance(), this.subQuery);
     }
+    if (!builder) {
+      throw new Error(INVARIANT);
+    }
+    fn.call(builder, builder);
+    const ast = builder.getAst();
+    if (ast !== List()) {
+      return this.pushCondition(
+        clauseType,
+        CondSubNode({
+          andOr,
+          not,
+          ast,
+        })
+      );
+    }
+    return this;
   }
 
   protected pushCondition(clauseType: ClauseTypeEnum, node: TConditionNode) {
@@ -342,11 +368,11 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
     });
   }
 
-  protected subQuery(fn: SubQueryArg) {
+  protected subQuery = (fn: SubQueryArg) => {
     const builder = this.selectBuilder();
     fn.call(builder, builder);
     return SubQueryNode({ ast: builder.getAst() });
-  }
+  };
 
   protected isEmpty(val: any) {
     return val === null || val === undefined || val === "";

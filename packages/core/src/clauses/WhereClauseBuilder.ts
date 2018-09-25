@@ -1,5 +1,4 @@
 import { OperatorEnum, ClauseTypeEnum } from "../data/enums";
-import { whereClauseNode } from "../data/structs";
 import {
   ChainFnWhere,
   IRawNode,
@@ -15,9 +14,14 @@ import {
   TValueConditions,
   TWhereClause,
   TValueArg,
+  TInArg,
+  TConditionNode,
+  TAndOr,
+  TNot,
 } from "../data/types";
 import { Grammar } from "../Grammar";
-import { AddCondition } from "@knex/core/src/clauses/AddCondition";
+import { AddCondition } from "./AddCondition";
+import { List } from "immutable";
 
 export abstract class WhereClauseBuilder extends AddCondition {
   /**
@@ -28,7 +32,7 @@ export abstract class WhereClauseBuilder extends AddCondition {
   /**
    * All of the operation asts for builders inheriting the "WhereClauseBuilder"
    */
-  protected abstract ast: TSelectOperation | TUpdateOperation | TDeleteOperation | TWhereClause;
+  protected abstract ast: TSelectOperation | TUpdateOperation | TDeleteOperation | TWhereClause | List<TConditionNode>;
 
   where(raw: IRawNode): this;
   where(fn: IWrappedWhere): this;
@@ -79,39 +83,28 @@ export abstract class WhereClauseBuilder extends AddCondition {
   whereColumn(obj: { [column: string]: string }): this;
   whereColumn(conditions: TColumnConditions): this;
   whereColumn(...args: any[]) {
-    return this.addColumnCond(args, OperatorEnum.AND);
+    return this.addColumnCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND);
   }
   orWhereColumn(columnA: TColumnArg, columnB: TColumnArg): this;
   orWhereColumn(columnA: TColumnArg, op: TOperator, columnB: TColumnArg): this;
   orWhereColumn(obj: { [column: string]: TColumnArg }): this;
   orWhereColumn(conditions: TColumnConditions): this;
   orWhereColumn(...args: any[]) {
-    return this.addColumnCond(args, OperatorEnum.OR, OperatorEnum.NOT);
+    return this.addColumnCond(ClauseTypeEnum.WHERE, args, OperatorEnum.OR, OperatorEnum.NOT);
   }
-  whereIn(columnA: TColumnArg, sub: SubQueryArg): this;
-  whereIn(columnA: TColumnArg, values: any[]): this;
-  whereIn(...args: any[]) {
-    return this.addInCond(args as any, OperatorEnum.AND);
+  whereIn(column: TColumnArg, arg: TInArg) {
+    return this.addInCond(ClauseTypeEnum.WHERE, column, arg, OperatorEnum.AND);
   }
-  orWhereIn(columnA: TColumnArg, sub: SubQueryArg): this;
-  orWhereIn(columnA: TColumnArg, values: any[]): this;
-  orWhereIn(...args: any[]) {
-    return this.addInCond(args as any, OperatorEnum.OR);
+  orWhereIn(column: TColumnArg, arg: TInArg) {
+    return this.addInCond(ClauseTypeEnum.WHERE, column, arg, OperatorEnum.OR);
   }
-  whereNotIn(columnA: TColumnArg, sub: SubQueryArg): this;
-  whereNotIn(columnA: TColumnArg, values: any[]): this;
-  whereNotIn(...args: any[]) {
-    return this.addInCond(args as any, OperatorEnum.AND, OperatorEnum.NOT);
+  whereNotIn(column: TColumnArg, arg: TInArg) {
+    return this.addInCond(ClauseTypeEnum.WHERE, column, arg, OperatorEnum.AND, OperatorEnum.NOT);
   }
-  orWhereNotIn(columnA: TColumnArg, sub: SubQueryArg): this;
-  orWhereNotIn(columnA: TColumnArg, values: any[]): this;
-  orWhereNotIn(...args: any[]) {
-    return this.addInCond(args as any, OperatorEnum.OR, OperatorEnum.NOT);
+  orWhereNotIn(column: TColumnArg, arg: TInArg) {
+    return this.addInCond(ClauseTypeEnum.WHERE, column, arg, OperatorEnum.OR, OperatorEnum.NOT);
   }
   whereNull(column: TColumnArg) {
-    return this.addNullCond(ClauseTypeEnum.WHERE, column, OperatorEnum.AND);
-  }
-  andWhereNull(column: TColumnArg) {
     return this.addNullCond(ClauseTypeEnum.WHERE, column, OperatorEnum.AND);
   }
   orWhereNull(column: TColumnArg) {
@@ -120,43 +113,28 @@ export abstract class WhereClauseBuilder extends AddCondition {
   whereNotNull(column: TColumnArg) {
     return this.addNullCond(ClauseTypeEnum.WHERE, column, OperatorEnum.OR, OperatorEnum.NOT);
   }
-  andWhereNotNull(column: TColumnArg) {
-    return this.addNullCond(ClauseTypeEnum.WHERE, column, OperatorEnum.OR, OperatorEnum.NOT);
-  }
   orWhereNotNull(column: TColumnArg) {
     return this.addNullCond(ClauseTypeEnum.WHERE, column, OperatorEnum.AND, OperatorEnum.NOT);
   }
-  whereBetween(...args: any[]) {
-    return this.addBetweenCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND);
+  whereBetween(column: TColumnArg, between: [TValueArg, TValueArg]) {
+    return this.addBetweenCond(ClauseTypeEnum.WHERE, column, between, OperatorEnum.AND);
   }
-  andWhereBetween(...args: any[]) {
-    return this.addBetweenCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND);
+  orWhereBetween(column: TColumnArg, between: [TValueArg, TValueArg]) {
+    return this.addBetweenCond(ClauseTypeEnum.WHERE, column, between, OperatorEnum.OR);
   }
-  orWhereBetween(...args: any[]) {
-    return this.addBetweenCond(ClauseTypeEnum.WHERE, args, OperatorEnum.OR);
+  whereNotBetween(column: TColumnArg, between: [TValueArg, TValueArg]) {
+    return this.addBetweenCond(ClauseTypeEnum.WHERE, column, between, OperatorEnum.AND, OperatorEnum.NOT);
   }
-  whereNotBetween(...args: any[]) {
-    return this.addBetweenCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND, OperatorEnum.NOT);
-  }
-  andWhereNotBetween(...args: any[]) {
-    return this.addBetweenCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND, OperatorEnum.NOT);
-  }
-  orWhereNotBetween(...args: any[]) {
-    return this.addBetweenCond(ClauseTypeEnum.WHERE, args, OperatorEnum.OR, OperatorEnum.NOT);
+  orWhereNotBetween(column: TColumnArg, between: [TValueArg, TValueArg]) {
+    return this.addBetweenCond(ClauseTypeEnum.WHERE, column, between, OperatorEnum.OR, OperatorEnum.NOT);
   }
   whereExists(subQuery: SubQueryArg) {
-    return this.addExistsCond(ClauseTypeEnum.WHERE, subQuery, OperatorEnum.AND);
-  }
-  andWhereExists(subQuery: SubQueryArg) {
     return this.addExistsCond(ClauseTypeEnum.WHERE, subQuery, OperatorEnum.AND);
   }
   orWhereExists(subQuery: SubQueryArg) {
     return this.addExistsCond(ClauseTypeEnum.WHERE, subQuery, OperatorEnum.AND);
   }
   whereNotExists(subQuery: SubQueryArg) {
-    return this.addExistsCond(ClauseTypeEnum.WHERE, subQuery, OperatorEnum.AND, OperatorEnum.NOT);
-  }
-  andWhereNotExists(subQuery: SubQueryArg) {
     return this.addExistsCond(ClauseTypeEnum.WHERE, subQuery, OperatorEnum.AND, OperatorEnum.NOT);
   }
   orWhereNotExists(subQuery: SubQueryArg) {
@@ -202,20 +180,38 @@ export interface WhereClauseBuilder {
   andWhere: WhereClauseBuilder["where"];
   andWhereIn: WhereClauseBuilder["whereIn"];
   andWhereNotIn: WhereClauseBuilder["whereNotIn"];
+  andWhereNull: WhereClauseBuilder["whereNull"];
+  andWhereNotNull: WhereClauseBuilder["whereNotNull"];
+  andWhereBetween: WhereClauseBuilder["whereBetween"];
+  andWhereNotBetween: WhereClauseBuilder["whereNotBetween"];
+  andWhereExists: WhereClauseBuilder["whereExists"];
+  andWhereNotExists: WhereClauseBuilder["whereNotExists"];
 }
 WhereClauseBuilder.prototype.andWhere = WhereClauseBuilder.prototype.where;
 WhereClauseBuilder.prototype.andWhereIn = WhereClauseBuilder.prototype.whereIn;
+WhereClauseBuilder.prototype.andWhereNotIn = WhereClauseBuilder.prototype.whereNotIn;
+WhereClauseBuilder.prototype.andWhereNull = WhereClauseBuilder.prototype.whereNull;
+WhereClauseBuilder.prototype.andWhereNotNull = WhereClauseBuilder.prototype.whereNotNull;
+WhereClauseBuilder.prototype.andWhereBetween = WhereClauseBuilder.prototype.whereBetween;
+WhereClauseBuilder.prototype.andWhereNotBetween = WhereClauseBuilder.prototype.whereNotBetween;
+WhereClauseBuilder.prototype.andWhereExists = WhereClauseBuilder.prototype.whereExists;
+WhereClauseBuilder.prototype.andWhereNotExists = WhereClauseBuilder.prototype.whereNotExists;
 
 export class SubWhereBuilder extends WhereClauseBuilder {
-  constructor(
-    protected grammar: Grammar,
-    protected subQuery: ((fn: SubQueryArg) => TSubQueryNode),
-    protected ast = whereClauseNode
-  ) {
+  protected ast = List<TConditionNode>();
+
+  constructor(protected grammar: Grammar, protected subQuery: ((fn: SubQueryArg) => TSubQueryNode)) {
     super();
   }
-  getAst(): TWhereClause {
+  getAst() {
     return this.ast;
+  }
+  protected pushCondition(clauseType: ClauseTypeEnum.WHERE, node: TConditionNode) {
+    this.ast = this.ast.push(node);
+    return this;
+  }
+  protected subCondition(clauseType: ClauseTypeEnum.WHERE, fn: Function, andOr: TAndOr, not: TNot = null) {
+    return this;
   }
   protected chain(fn: ChainFnWhere) {
     this.ast = fn(this.ast);

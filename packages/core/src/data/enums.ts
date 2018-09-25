@@ -55,6 +55,8 @@ export enum NodeTypeEnum {
   COND_BETWEEN = "CondBetweenNode",
   COND_LIKE = "CondLikeNode",
   COND_SUB = "CondSubNode",
+  COND_RAW = "CondRawNode",
+  COND_DATE = "CondDateNode",
 }
 
 export enum AggregateFns {
