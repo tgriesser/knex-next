@@ -4,15 +4,15 @@ import {
   IJoinNode,
   IRawNode,
   ISubQuery,
-  IWhereSubNode,
+  ICondSubNode,
   IUnionNode,
   IOrderByNode,
-  IWhereBetweenNode,
-  IWhereExistsNode,
-  IWhereNullNode,
-  IWhereInNode,
-  IWhereColumnNode,
-  IWhereExprNode,
+  ICondBetweenNode,
+  ICondExistsNode,
+  ICondNullNode,
+  ICondInNode,
+  ICondColumnNode,
+  ICondExprNode,
   IWhereClauseNodes,
   ISelectOperation,
   IInsertOperation,
@@ -42,80 +42,80 @@ export const whereClauseNode = WhereClause();
 /**
  * WHERE Condition: expr [op] expr
  */
-export const WhereExprNode = IRecord<IWhereExprNode>(
+export const ConditionExpressionNode = IRecord<ICondExprNode>(
   {
-    __typename: NodeTypeEnum.WHERE_EXPR,
+    __typename: NodeTypeEnum.COND_EXPR,
     not: null,
     column: null,
     operator: null,
     value: null,
     andOr: OperatorEnum.AND,
   },
-  NodeTypeEnum.WHERE_EXPR
+  NodeTypeEnum.COND_EXPR
 );
 
 /**
  * WHERE Condition: expr [op] column
  */
-export const WhereColumnNode = IRecord<IWhereColumnNode>(
+export const CondColumnNode = IRecord<ICondColumnNode>(
   {
-    __typename: NodeTypeEnum.WHERE_COLUMN,
+    __typename: NodeTypeEnum.COND_COLUMN,
     not: null,
     column: null,
     operator: null,
     rightColumn: null,
     andOr: OperatorEnum.AND,
   },
-  NodeTypeEnum.WHERE_EXPR
+  NodeTypeEnum.COND_EXPR
 );
 
 /**
  * WHERE Condition: [NOT] IN ...
  */
-export const WhereInNode = IRecord<IWhereInNode>(
+export const CondInNode = IRecord<ICondInNode>(
   {
-    __typename: NodeTypeEnum.WHERE_IN,
+    __typename: NodeTypeEnum.COND_IN,
     not: null,
     andOr: OperatorEnum.AND,
   },
-  NodeTypeEnum.WHERE_IN
+  NodeTypeEnum.COND_IN
 );
 
 /**
  * WHERE [NOT] NULL
  */
-export const WhereNullNode = IRecord<IWhereNullNode>(
+export const CondNullNode = IRecord<ICondNullNode>(
   {
-    __typename: NodeTypeEnum.WHERE_NULL,
+    __typename: NodeTypeEnum.COND_NULL,
     not: null,
     andOr: OperatorEnum.AND,
     column: null,
   },
-  NodeTypeEnum.WHERE_NULL
+  NodeTypeEnum.COND_NULL
 );
 
 /**
  * WHERE [NOT] EXISTS
  */
-export const WhereExistsNode = IRecord<IWhereExistsNode>(
+export const CondExistsNode = IRecord<ICondExistsNode>(
   {
-    __typename: NodeTypeEnum.WHERE_EXISTS,
+    __typename: NodeTypeEnum.COND_EXISTS,
     not: null,
     andOr: OperatorEnum.AND,
   },
-  NodeTypeEnum.WHERE_EXISTS
+  NodeTypeEnum.COND_EXISTS
 );
 
 /**
  * WHERE [NOT] BETWEEN
  */
-export const WhereBetweenNode = IRecord<IWhereBetweenNode>(
+export const CondBetweenNode = IRecord<ICondBetweenNode>(
   {
-    __typename: NodeTypeEnum.WHERE_BETWEEN,
+    __typename: NodeTypeEnum.COND_BETWEEN,
     not: null,
     andOr: OperatorEnum.AND,
   },
-  NodeTypeEnum.WHERE_BETWEEN
+  NodeTypeEnum.COND_BETWEEN
 );
 
 /**
@@ -172,14 +172,14 @@ export const UnionNode = IRecord<IUnionNode>(
 /**
  * WHERE (...)
  */
-export const WhereSubNode = IRecord<IWhereSubNode>(
+export const CondSubNode = IRecord<ICondSubNode>(
   {
-    __typename: NodeTypeEnum.WHERE_SUB,
+    __typename: NodeTypeEnum.COND_SUB,
     not: null,
     andOr: OperatorEnum.AND,
-    ast: null,
+    ast: List(),
   },
-  NodeTypeEnum.WHERE_SUB
+  NodeTypeEnum.COND_SUB
 );
 
 /**

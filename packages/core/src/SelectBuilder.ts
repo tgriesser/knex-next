@@ -3,7 +3,7 @@ import invariant from "invariant";
 import { WhereClauseBuilder } from "./clauses/WhereClauseBuilder";
 import { Connection } from "./Connection";
 import { Loggable } from "./contracts/Loggable";
-import { DialectEnum, JoinTypeEnum, AggregateFns } from "./data/enums";
+import { DialectEnum, JoinTypeEnum, AggregateFns, ClauseTypeEnum } from "./data/enums";
 import { isRawNode } from "./data/predicates";
 import { selectAst, SubQueryNode, UnionNode, AggregateNode } from "./data/structs";
 import {
@@ -21,6 +21,9 @@ import {
   TUnionArg,
   TColumnArg,
   TGroupByArg,
+  TConditionNode,
+  TAndOr,
+  TNot,
 } from "./data/types";
 import { ExecutionContext } from "./ExecutionContext";
 import { Grammar } from "./Grammar";
@@ -320,6 +323,23 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
       return arg;
     }
     return null;
+  }
+
+  protected subCondition(clauseType: ClauseTypeEnum, fn: Function, andOr: TAndOr, not: TNot) {
+    if (clauseType === ClauseTypeEnum.HAVING) {
+    }
+  }
+
+  protected pushCondition(clauseType: ClauseTypeEnum, node: TConditionNode) {
+    return this.chain(ast => {
+      if (clauseType === ClauseTypeEnum.HAVING) {
+        return ast.set("having", ast.having.push(node));
+      }
+      if (clauseType === ClauseTypeEnum.JOIN) {
+        return ast.set("where", ast.where.push(node));
+      }
+      throw new Error(`Invalid `);
+    });
   }
 
   protected subQuery(fn: SubQueryArg) {

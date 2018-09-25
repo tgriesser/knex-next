@@ -96,10 +96,12 @@ export type TOperator =
   | "!!"
   | "in";
 
-export type TColumnConditions = Array<[TColumnArg, TColumnArg] | [TColumnArg, TOperator, TColumnArg]>;
-export type TValueConditions = Array<[TColumnArg, any] | [TColumnArg, TOperator, any]>;
+export type TColumnArrCondition = [TColumnArg, TColumnArg] | [TColumnArg, TOperator, TColumnArg];
+export type TColumnConditions = Array<TColumnArrCondition>;
+export type TValueArrCondition = [TColumnArg, any] | [TColumnArg, TOperator, any];
+export type TValueConditions = Array<TValueArrCondition>;
 
-export type TValueArg = null | number | string | Date | SelectBuilder | SubQueryArg;
+export type TValueArg = null | number | string | Date | SelectBuilder | SubQueryArg | TRawNode;
 
 export interface FromJSArg {}
 
@@ -142,52 +144,52 @@ export type ColumnDataType =
 
 export type ColumnIndexType = "unique" | "foreign";
 
-export type WhereNodeTypes =
-  | NodeTypeEnum.WHERE_EXPR
-  | NodeTypeEnum.WHERE_COLUMN
-  | NodeTypeEnum.WHERE_IN
-  | NodeTypeEnum.WHERE_EXISTS
-  | NodeTypeEnum.WHERE_NULL
-  | NodeTypeEnum.WHERE_BETWEEN
-  | NodeTypeEnum.WHERE_LIKE
-  | NodeTypeEnum.WHERE_SUB;
+export type ConditionNodeTypes =
+  | NodeTypeEnum.COND_EXPR
+  | NodeTypeEnum.COND_COLUMN
+  | NodeTypeEnum.COND_IN
+  | NodeTypeEnum.COND_EXISTS
+  | NodeTypeEnum.COND_NULL
+  | NodeTypeEnum.COND_BETWEEN
+  | NodeTypeEnum.COND_LIKE
+  | NodeTypeEnum.COND_SUB;
 
 export interface INode<N extends NodeTypeEnum> {
   __typename: N;
 }
 
-export interface IWhereConditionNode<N extends WhereNodeTypes> extends INode<N> {
+export interface IConditionNode<N extends ConditionNodeTypes> extends INode<N> {
   not: Maybe<OperatorEnum.NOT>;
   andOr: TAndOr;
 }
 
-export interface IWhereExprNode extends IWhereConditionNode<NodeTypeEnum.WHERE_EXPR> {
+export interface ICondExprNode extends IConditionNode<NodeTypeEnum.COND_EXPR> {
   column: Maybe<string>;
   operator: Maybe<string>;
   value: Maybe<any>;
 }
-export type TWhereExprNode = RecordOf<IWhereExprNode>;
+export type TCondExprNode = RecordOf<ICondExprNode>;
 
-export interface IWhereColumnNode extends IWhereConditionNode<NodeTypeEnum.WHERE_COLUMN> {
+export interface ICondColumnNode extends IConditionNode<NodeTypeEnum.COND_COLUMN> {
   column: Maybe<string>;
   operator: Maybe<string>;
   rightColumn: Maybe<string>;
 }
-export type TWhereColumnNode = RecordOf<IWhereColumnNode>;
+export type TCondColumnNode = RecordOf<ICondColumnNode>;
 
-export interface IWhereInNode extends IWhereConditionNode<NodeTypeEnum.WHERE_IN> {}
-export type TWhereInNode = RecordOf<IWhereInNode>;
+export interface ICondInNode extends IConditionNode<NodeTypeEnum.COND_IN> {}
+export type TCondInNode = RecordOf<ICondInNode>;
 
-export interface IWhereNullNode extends IWhereConditionNode<NodeTypeEnum.WHERE_NULL> {
+export interface ICondNullNode extends IConditionNode<NodeTypeEnum.COND_NULL> {
   column: Maybe<string>;
 }
-export type TWhereNullNode = RecordOf<IWhereNullNode>;
+export type TCondNullNode = RecordOf<ICondNullNode>;
 
-export interface IWhereExistsNode extends IWhereConditionNode<NodeTypeEnum.WHERE_EXISTS> {}
-export type TWhereExistsNode = RecordOf<IWhereExistsNode>;
+export interface ICondExistsNode extends IConditionNode<NodeTypeEnum.COND_EXISTS> {}
+export type TCondExistsNode = RecordOf<ICondExistsNode>;
 
-export interface IWhereBetweenNode extends IWhereConditionNode<NodeTypeEnum.WHERE_BETWEEN> {}
-export type TWhereBetweenNode = RecordOf<IWhereBetweenNode>;
+export interface ICondBetweenNode extends IConditionNode<NodeTypeEnum.COND_BETWEEN> {}
+export type TCondBetweenNode = RecordOf<ICondBetweenNode>;
 
 export interface IOrderByNode extends INode<NodeTypeEnum.ORDER_BY> {
   column: string | TRawNode;
@@ -200,15 +202,15 @@ export interface IUnionNode extends INode<NodeTypeEnum.UNION> {
   all: boolean;
 }
 
-export interface IWhereSubNode extends IWhereConditionNode<NodeTypeEnum.WHERE_SUB> {
-  ast: Maybe<TWhereClause>;
+export interface ICondSubNode extends IConditionNode<NodeTypeEnum.COND_SUB> {
+  ast: List<TConditionNode>;
 }
-export type TWhereSubNode = RecordOf<IWhereSubNode>;
+export type TCondSubNode = RecordOf<ICondSubNode>;
 
 export interface IJoinNode extends INode<NodeTypeEnum.JOIN> {
   joinType: JoinTypeEnum;
   column: string | TRawNode | TSelectOperation;
-  conditions: List<TWhereConditionNode>;
+  conditions: List<TConditionNode>;
 }
 export type TJoinNode = RecordOf<IJoinNode>;
 
@@ -223,13 +225,14 @@ export type TSelectNode = string | IAggregateNode | TSubQueryNode | TRawNode;
 
 export type TFromNode = string | TSubQueryNode | TRawNode;
 
-export type TWhereConditionNode =
-  | TWhereExprNode
-  | TWhereInNode
-  | TWhereBetweenNode
-  | TWhereExistsNode
-  | TWhereColumnNode
-  | TWhereSubNode;
+export type TConditionNode =
+  | TCondExprNode
+  | TCondInNode
+  | TCondNullNode
+  | TCondBetweenNode
+  | TCondExistsNode
+  | TCondColumnNode
+  | TCondSubNode;
 
 export interface IOperationNode<T> {
   __operation: T;
@@ -244,8 +247,8 @@ export interface IClause<T extends ClauseTypeEnum> {
   __clause: T;
 }
 export interface IWhereClauseNodes extends IClause<ClauseTypeEnum.WHERE> {
-  where: List<TWhereConditionNode>;
-  having: List<TWhereConditionNode>;
+  where: List<TConditionNode>;
+  having: List<TConditionNode>;
 }
 export type TWhereClause = RecordOf<IWhereClauseNodes>;
 
@@ -266,8 +269,8 @@ export interface ISelectOperation {
   group: List<string | TRawNode>;
   union: List<IUnionNode>;
   limit: Maybe<NumOrRaw>;
-  where: List<TWhereConditionNode>;
-  having: List<TWhereConditionNode>;
+  where: List<TConditionNode>;
+  having: List<TConditionNode>;
   offset: Maybe<NumOrRaw>;
   distinct: boolean;
   alias: Maybe<string | TRawNode>;
@@ -298,7 +301,7 @@ export type TUpdateOperation = RecordOf<IUpdateOperation>;
 
 export interface IDeleteOperation extends IOperationNode<OperationTypeEnum.DELETE> {
   table: string;
-  where: List<TWhereConditionNode>;
+  where: List<TConditionNode>;
   meta: IMap<string, any>;
 }
 export type TDeleteOperation = RecordOf<IDeleteOperation>;

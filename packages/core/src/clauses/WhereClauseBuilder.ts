@@ -1,307 +1,194 @@
-import { DialectEnum, OperatorEnum } from "../data/enums";
-import { whereClauseNode, WhereExprNode, WhereNullNode, WhereSubNode } from "../data/structs";
+import { OperatorEnum, ClauseTypeEnum } from "../data/enums";
+import { whereClauseNode } from "../data/structs";
 import {
   ChainFnWhere,
   IRawNode,
   IWrappedWhere,
-  Maybe,
   SubQueryArg,
-  TAndOr,
   TColumnArg,
   TColumnConditions,
   TDeleteOperation,
-  TNot,
   TOperator,
   TSelectOperation,
   TSubQueryNode,
   TUpdateOperation,
-  TValueArg,
   TValueConditions,
   TWhereClause,
+  TValueArg,
 } from "../data/types";
-import { unpackColumn, unpackValue } from "../data/utils";
 import { Grammar } from "../Grammar";
+import { AddCondition } from "@knex/core/src/clauses/AddCondition";
 
-export abstract class WhereClauseBuilder {
-  /**
-   * Useful if we want to check the builder's dialect from userland.
-   */
-  public readonly dialect: Maybe<DialectEnum> = null;
-
+export abstract class WhereClauseBuilder extends AddCondition {
   /**
    * Grammar deals with escaping / parameterizing values
    */
   protected grammar = new Grammar();
 
+  /**
+   * All of the operation asts for builders inheriting the "WhereClauseBuilder"
+   */
   protected abstract ast: TSelectOperation | TUpdateOperation | TDeleteOperation | TWhereClause;
 
   where(raw: IRawNode): this;
   where(fn: IWrappedWhere): this;
   where(builder: WhereClauseBuilder): this;
   where(bool: boolean): this;
-  where(obj: { [column: string]: any }): this;
-  where(column: TColumnArg, value: any): this;
-  where(column: TColumnArg, op: TOperator, value: any): this;
+  where(obj: { [column: string]: TValueArg }): this;
+  where(column: TColumnArg, value: TValueArg): this;
+  where(column: TColumnArg, op: TOperator, value: TValueArg): this;
   where(conditions: TValueConditions): this;
   where(...args: any[]) {
-    return this.addWhere(args, OperatorEnum.AND);
-  }
-  andWhere(raw: IRawNode): this;
-  andWhere(fn: IWrappedWhere): this;
-  andWhere(builder: WhereClauseBuilder): this;
-  andWhere(bool: boolean): this;
-  andWhere(obj: { [column: string]: any }): this;
-  andWhere(column: TColumnArg, value: any): this;
-  andWhere(column: TColumnArg, op: TOperator, value: any): this;
-  andWhere(conditions: TValueConditions): this;
-  andWhere(...args: any[]) {
-    return this.addWhere(args, OperatorEnum.AND);
+    return this.addCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND);
   }
   orWhere(raw: IRawNode): this;
   orWhere(fn: IWrappedWhere): this;
   orWhere(bool: boolean): this;
   orWhere(builder: WhereClauseBuilder): this;
-  orWhere(obj: { [column: string]: any }): this;
-  orWhere(column: TColumnArg, value: any): this;
-  orWhere(column: TColumnArg, op: TOperator, value: any): this;
+  orWhere(obj: { [column: string]: TValueArg }): this;
+  orWhere(column: TColumnArg, value: TValueArg): this;
+  orWhere(column: TColumnArg, op: TOperator, value: TValueArg): this;
   orWhere(conditions: TValueConditions): this;
   orWhere(...args: any[]) {
-    return this.addWhere(args, OperatorEnum.OR);
+    return this.addCond(ClauseTypeEnum.WHERE, args, OperatorEnum.OR);
+  }
+  whereNot(raw: IRawNode): this;
+  whereNot(fn: IWrappedWhere): this;
+  whereNot(builder: WhereClauseBuilder): this;
+  whereNot(bool: boolean): this;
+  whereNot(obj: { [column: string]: TValueArg }): this;
+  whereNot(column: TColumnArg, value: TValueArg): this;
+  whereNot(column: TColumnArg, op: TOperator, value: TValueArg): this;
+  whereNot(conditions: TValueConditions): this;
+  whereNot(...args: any[]) {
+    return this.addCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND);
+  }
+  orWhereNot(raw: IRawNode): this;
+  orWhereNot(fn: IWrappedWhere): this;
+  orWhereNot(bool: boolean): this;
+  orWhereNot(builder: WhereClauseBuilder): this;
+  orWhereNot(obj: { [column: string]: TValueArg }): this;
+  orWhereNot(column: TColumnArg, value: TValueArg): this;
+  orWhereNot(column: TColumnArg, op: TOperator, value: TValueArg): this;
+  orWhereNot(conditions: TValueConditions): this;
+  orWhereNot(...args: any[]) {
+    return this.addCond(ClauseTypeEnum.WHERE, args, OperatorEnum.OR, OperatorEnum.NOT);
   }
   whereColumn(columnA: TColumnArg, columnB: TColumnArg): this;
   whereColumn(columnA: TColumnArg, op: TOperator, columnB: TColumnArg): this;
   whereColumn(obj: { [column: string]: string }): this;
   whereColumn(conditions: TColumnConditions): this;
   whereColumn(...args: any[]) {
-    return this.addWhereColumn(args, OperatorEnum.AND);
-  }
-  andWhereColumn(columnA: TColumnArg, columnB: TColumnArg): this;
-  andWhereColumn(columnA: TColumnArg, op: TOperator, columnB: TColumnArg): this;
-  andWhereColumn(obj: { [column: string]: string }): this;
-  andWhereColumn(conditions: TColumnConditions): this;
-  andWhereColumn(...args: any[]) {
-    return this.addWhereColumn(args, OperatorEnum.AND);
+    return this.addColumnCond(args, OperatorEnum.AND);
   }
   orWhereColumn(columnA: TColumnArg, columnB: TColumnArg): this;
   orWhereColumn(columnA: TColumnArg, op: TOperator, columnB: TColumnArg): this;
-  orWhereColumn(obj: { [column: string]: string }): this;
+  orWhereColumn(obj: { [column: string]: TColumnArg }): this;
   orWhereColumn(conditions: TColumnConditions): this;
   orWhereColumn(...args: any[]) {
-    return this.addWhereColumn(args, OperatorEnum.OR, OperatorEnum.NOT);
+    return this.addColumnCond(args, OperatorEnum.OR, OperatorEnum.NOT);
   }
   whereIn(columnA: TColumnArg, sub: SubQueryArg): this;
   whereIn(columnA: TColumnArg, values: any[]): this;
   whereIn(...args: any[]) {
-    return this.addWhereIn(args as any, OperatorEnum.AND);
-  }
-  andWhereIn(columnA: TColumnArg, sub: SubQueryArg): this;
-  andWhereIn(columnA: TColumnArg, values: any[]): this;
-  andWhereIn(...args: any[]) {
-    return this.addWhereIn(args as any, OperatorEnum.AND);
+    return this.addInCond(args as any, OperatorEnum.AND);
   }
   orWhereIn(columnA: TColumnArg, sub: SubQueryArg): this;
   orWhereIn(columnA: TColumnArg, values: any[]): this;
   orWhereIn(...args: any[]) {
-    return this.addWhereIn(args as any, OperatorEnum.OR);
+    return this.addInCond(args as any, OperatorEnum.OR);
   }
   whereNotIn(columnA: TColumnArg, sub: SubQueryArg): this;
   whereNotIn(columnA: TColumnArg, values: any[]): this;
   whereNotIn(...args: any[]) {
-    return this.addWhereIn(args as any, OperatorEnum.AND);
-  }
-  andWhereNotIn(columnA: TColumnArg, sub: SubQueryArg): this;
-  andWhereNotIn(columnA: TColumnArg, values: any[]): this;
-  andWhereNotIn(...args: any[]) {
-    return this.addWhereIn(args as any, OperatorEnum.AND);
+    return this.addInCond(args as any, OperatorEnum.AND, OperatorEnum.NOT);
   }
   orWhereNotIn(columnA: TColumnArg, sub: SubQueryArg): this;
   orWhereNotIn(columnA: TColumnArg, values: any[]): this;
   orWhereNotIn(...args: any[]) {
-    return this.addWhereIn(args as any, OperatorEnum.OR);
+    return this.addInCond(args as any, OperatorEnum.OR, OperatorEnum.NOT);
   }
   whereNull(column: TColumnArg) {
-    return this.addWhereNull(column, OperatorEnum.AND);
+    return this.addNullCond(ClauseTypeEnum.WHERE, column, OperatorEnum.AND);
   }
   andWhereNull(column: TColumnArg) {
-    return this.addWhereNull(column, OperatorEnum.AND);
+    return this.addNullCond(ClauseTypeEnum.WHERE, column, OperatorEnum.AND);
   }
   orWhereNull(column: TColumnArg) {
-    return this.addWhereNull(column, OperatorEnum.OR);
+    return this.addNullCond(ClauseTypeEnum.WHERE, column, OperatorEnum.OR);
   }
   whereNotNull(column: TColumnArg) {
-    return this.addWhereNull(column, OperatorEnum.OR, OperatorEnum.NOT);
+    return this.addNullCond(ClauseTypeEnum.WHERE, column, OperatorEnum.OR, OperatorEnum.NOT);
   }
   andWhereNotNull(column: TColumnArg) {
-    return this.addWhereNull(column, OperatorEnum.OR, OperatorEnum.NOT);
+    return this.addNullCond(ClauseTypeEnum.WHERE, column, OperatorEnum.OR, OperatorEnum.NOT);
   }
   orWhereNotNull(column: TColumnArg) {
-    return this.addWhereNull(column, OperatorEnum.AND, OperatorEnum.NOT);
+    return this.addNullCond(ClauseTypeEnum.WHERE, column, OperatorEnum.AND, OperatorEnum.NOT);
   }
   whereBetween(...args: any[]) {
-    return this.addWhereBetween(args, OperatorEnum.AND);
+    return this.addBetweenCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND);
   }
   andWhereBetween(...args: any[]) {
-    return this.addWhereBetween(args, OperatorEnum.AND);
+    return this.addBetweenCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND);
   }
   orWhereBetween(...args: any[]) {
-    return this.addWhereBetween(args, OperatorEnum.OR);
+    return this.addBetweenCond(ClauseTypeEnum.WHERE, args, OperatorEnum.OR);
   }
   whereNotBetween(...args: any[]) {
-    return this.addWhereBetween(args, OperatorEnum.AND, OperatorEnum.NOT);
+    return this.addBetweenCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND, OperatorEnum.NOT);
   }
   andWhereNotBetween(...args: any[]) {
-    return this.addWhereBetween(args, OperatorEnum.AND, OperatorEnum.NOT);
+    return this.addBetweenCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND, OperatorEnum.NOT);
   }
   orWhereNotBetween(...args: any[]) {
-    return this.addWhereBetween(args, OperatorEnum.OR, OperatorEnum.NOT);
+    return this.addBetweenCond(ClauseTypeEnum.WHERE, args, OperatorEnum.OR, OperatorEnum.NOT);
   }
   whereExists(subQuery: SubQueryArg) {
-    return this.addWhereExists(subQuery, OperatorEnum.AND);
+    return this.addExistsCond(ClauseTypeEnum.WHERE, subQuery, OperatorEnum.AND);
   }
   andWhereExists(subQuery: SubQueryArg) {
-    return this.addWhereExists(subQuery, OperatorEnum.AND);
+    return this.addExistsCond(ClauseTypeEnum.WHERE, subQuery, OperatorEnum.AND);
   }
   orWhereExists(subQuery: SubQueryArg) {
-    return this.addWhereExists(subQuery, OperatorEnum.AND);
+    return this.addExistsCond(ClauseTypeEnum.WHERE, subQuery, OperatorEnum.AND);
   }
   whereNotExists(subQuery: SubQueryArg) {
-    return this.addWhereExists(subQuery, OperatorEnum.AND, OperatorEnum.NOT);
+    return this.addExistsCond(ClauseTypeEnum.WHERE, subQuery, OperatorEnum.AND, OperatorEnum.NOT);
   }
   andWhereNotExists(subQuery: SubQueryArg) {
-    return this.addWhereExists(subQuery, OperatorEnum.AND, OperatorEnum.NOT);
+    return this.addExistsCond(ClauseTypeEnum.WHERE, subQuery, OperatorEnum.AND, OperatorEnum.NOT);
   }
   orWhereNotExists(subQuery: SubQueryArg) {
-    return this.addWhereExists(subQuery, OperatorEnum.AND, OperatorEnum.NOT);
+    return this.addExistsCond(ClauseTypeEnum.WHERE, subQuery, OperatorEnum.AND, OperatorEnum.NOT);
   }
 
   /**
    * Date Helpers:
    */
-  whereDate(...args: any[]) {
-    return this.addWhereDate();
-  }
-  orWhereDate(...args: any[]) {
-    return this.addWhereDate();
-  }
   whereTime(...args: any[]) {
-    return this.addWhereDate();
+    return this.addDateCond();
   }
   orWhereTime(...args: any[]) {
-    return this.addWhereDate();
+    return this.addDateCond();
   }
   whereDay(...args: any[]) {
-    return this.addWhereDate();
+    return this.addDateCond();
   }
   orWhereDay(...args: any[]) {
-    return this.addWhereDate();
+    return this.addDateCond();
   }
   whereMonth(...args: any[]) {
-    return this.addWhereDate();
+    return this.addDateCond();
   }
   orWhereMonth(...args: any[]) {
-    return this.addWhereDate();
+    return this.addDateCond();
   }
   whereYear(...args: any[]) {
-    return this.addWhereDate();
+    return this.addDateCond();
   }
   orWhereYear(...args: any[]) {
-    return this.addWhereDate();
-  }
-  protected addWhere(args: any[], andOr: TAndOr, not: TNot = null): this {
-    switch (args.length) {
-      case 1: {
-        if (typeof args[0] === "function") {
-          return this.whereSub(args[0], andOr, not);
-        }
-        if (typeof args[0] === "boolean") {
-          return this.whereBool(args[0], andOr, not);
-        }
-        if (typeof args[0] === "object" && args[0] !== null) {
-        }
-        break;
-      }
-      case 2: {
-        if (args[1] === null) {
-          return this.whereNull(args[0]);
-        }
-        return this.addWhereExpression(args[0], "=", args[1], andOr, not);
-      }
-    }
-    return this;
-  }
-  protected addWhereColumn(args: any[], andOr: TAndOr, not: TNot = null) {
-    return this;
-  }
-
-  protected addWhereExpression(
-    column: TColumnArg,
-    operator: TOperator,
-    val: TValueArg,
-    andOr: TAndOr,
-    not: TNot = null
-  ) {
-    return this.chain((ast: TWhereClause) => {
-      return ast.set(
-        "where",
-        ast.where.push(
-          WhereExprNode({
-            not,
-            andOr,
-            column: unpackColumn(column),
-            operator,
-            value: unpackValue(val),
-          })
-        )
-      );
-    });
-  }
-
-  protected addWhereIn(args: [TColumnArg, SubQueryArg] | [TColumnArg, any], andOr: TAndOr, not: TNot = null) {
-    return this;
-  }
-
-  protected addWhereNull(column: TColumnArg, andOr: TAndOr, not: TNot = null) {
-    return this.chain(ast =>
-      ast.set(
-        "where",
-        ast.where.push(
-          WhereNullNode({
-            andOr,
-            not,
-            column: unpackColumn(column),
-          })
-        )
-      )
-    );
-  }
-
-  protected addWhereExists(subQuery: SubQueryArg, andOr: TAndOr, not: TNot = null) {
-    return this;
-  }
-
-  protected addWhereBetween(args: any[], andOr: TAndOr, not: TNot = null) {
-    return this;
-  }
-
-  protected addWhereDate(): this {
-    return this;
-  }
-
-  protected whereBool(bool: boolean, andOr: TAndOr, not: TNot) {
-    return this.addWhere([1, "=", bool ? 1 : 0], andOr, not);
-  }
-
-  /**
-   * Compile & add a subquery to the AST
-   */
-  protected whereSub(fn: IWrappedWhere, andOr: TAndOr, not: TNot): this {
-    return this.chain((ast: TWhereClause) => {
-      const builder = new SubWhereBuilder(this.grammar.newInstance(), this.dialect, (fn: SubQueryArg) =>
-        this.subQuery(fn)
-      );
-      fn.call(builder, builder);
-      return ast.set("where", ast.where.push(WhereSubNode({ not, andOr, ast: builder.getAst() })));
-    });
+    return this.addDateCond();
   }
 
   abstract getAst(): WhereClauseBuilder["ast"];
@@ -311,10 +198,17 @@ export abstract class WhereClauseBuilder {
   protected abstract subQuery(fn: SubQueryArg): TSubQueryNode;
 }
 
+export interface WhereClauseBuilder {
+  andWhere: WhereClauseBuilder["where"];
+  andWhereIn: WhereClauseBuilder["whereIn"];
+  andWhereNotIn: WhereClauseBuilder["whereNotIn"];
+}
+WhereClauseBuilder.prototype.andWhere = WhereClauseBuilder.prototype.where;
+WhereClauseBuilder.prototype.andWhereIn = WhereClauseBuilder.prototype.whereIn;
+
 export class SubWhereBuilder extends WhereClauseBuilder {
   constructor(
     protected grammar: Grammar,
-    public readonly dialect: Maybe<DialectEnum>,
     protected subQuery: ((fn: SubQueryArg) => TSubQueryNode),
     protected ast = whereClauseNode
   ) {

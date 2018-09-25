@@ -1,9 +1,14 @@
-import { TOperator, IJoinBuilderFn, ISubQuery } from "../data/types";
+import { List } from "immutable";
+import { TOperator, IJoinBuilderFn, ISubQuery, TConditionNode } from "../data/types";
+import { AddCondition } from "./AddCondition";
 
-export class JoinBuilder {
-  constructor() {}
+export class JoinBuilder extends AddCondition {
+  constructor(protected conditions = List<TConditionNode>()) {
+    super();
+  }
   on(columnA: string, columnB: string): this;
   on(columnA: string, op: TOperator, columnB: string): this;
+  on(columns: { [columnA: string]: string }): this;
   on(wrappedJoin: IJoinBuilderFn): this;
   on() {
     return this;
@@ -31,5 +36,8 @@ export class JoinBuilder {
   andNotIn() {
     return this;
   }
-  getAst() {}
+  getConditions() {
+    return this;
+  }
+  pushCondition() {}
 }

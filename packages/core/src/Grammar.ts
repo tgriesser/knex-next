@@ -14,13 +14,14 @@ import {
   TSubQueryNode,
   TTruncateOperation,
   TUpdateOperation,
-  TWhereBetweenNode,
-  TWhereColumnNode,
-  TWhereExistsNode,
-  TWhereExprNode,
-  TWhereInNode,
-  TWhereConditionNode,
-  TWhereSubNode,
+  TCondBetweenNode,
+  TCondColumnNode,
+  TCondExistsNode,
+  TCondExprNode,
+  TCondInNode,
+  TConditionNode,
+  TCondSubNode,
+  TCondNullNode,
 } from "./data/types";
 
 export interface ToSQLValue {
@@ -256,7 +257,7 @@ export class Grammar {
     }
     this.addKeyword("HAVING ");
     having.forEach((node, i) => {
-      this.addWhereCondition(node, i);
+      this.addConditionNode(node, i);
     });
   }
 
@@ -336,51 +337,62 @@ export class Grammar {
     this.addWhereClauses(ast.where);
   }
 
-  addWhereClauses(nodes: List<TWhereConditionNode>, subWhere: boolean = false) {
+  addWhereClauses(nodes: List<TConditionNode>, subWhere: boolean = false) {
     if (nodes.size === 0) {
       return;
     }
     this.addKeyword(subWhere ? "" : " WHERE ");
     nodes.forEach((node, i) => {
-      this.addWhereCondition(node, i);
+      this.addConditionNode(node, i);
     });
   }
 
-  addWhereCondition(node: TWhereConditionNode, i: number) {
+  addConditionNode(node: TConditionNode, i: number) {
     if (i > 0) {
       this.addKeyword(` ${node.andOr} `);
     }
     switch (node.__typename) {
-      case NodeTypeEnum.WHERE_EXPR:
-        this.buildWhereExpr(node);
+      case NodeTypeEnum.COND_EXPR:
+        this.addExpressionCondition(node);
         break;
-      case NodeTypeEnum.WHERE_COLUMN:
-        this.buildWhereColumn(node);
+      case NodeTypeEnum.COND_COLUMN:
+        this.addColumnCondition(node);
         break;
-      case NodeTypeEnum.WHERE_IN:
-        this.buildWhereIn(node);
+      case NodeTypeEnum.COND_IN:
+        this.addInCondition(node);
         break;
-      case NodeTypeEnum.WHERE_EXISTS:
-        this.buildWhereExists(node);
+      case NodeTypeEnum.COND_EXISTS:
+        this.addExistsCondition(node);
         break;
-      case NodeTypeEnum.WHERE_BETWEEN:
+      case NodeTypeEnum.COND_NULL:
+        this.addNullCondition(node);
+        break;
+      case NodeTypeEnum.COND_BETWEEN:
         this.buildWhereBetween(node);
         break;
-      case NodeTypeEnum.WHERE_SUB:
+      case NodeTypeEnum.COND_SUB:
         this.buildWhereSub(node);
         break;
     }
   }
 
-  buildWhereExists(node: TWhereExistsNode) {
+  addNullCondition(node: TCondNullNode) {
+    //
+    if (node.not) {
+      this.addKeyword("NOT ");
+    }
+    this.addKeyword("NULL");
+  }
+
+  addExistsCondition(node: TCondExistsNode) {
     //
   }
 
-  buildWhereBetween(node: TWhereBetweenNode) {
+  buildWhereBetween(node: TCondBetweenNode) {
     this.addKeyword("BETWEEN");
   }
 
-  buildWhereExpr(node: TWhereExprNode) {
+  addExpressionCondition(node: TCondExprNode) {
     if (!node.column) {
       return;
     }
@@ -392,21 +404,21 @@ export class Grammar {
     this.pushValue(node.value);
   }
 
-  buildWhereColumn(node: TWhereColumnNode) {
+  addColumnCondition(node: TCondColumnNode) {
     if (node.not) {
       this.addKeyword("NOT ");
     }
   }
 
-  buildWhereIn(node: TWhereInNode) {
+  addInCondition(node: TCondInNode) {
     this.addKeyword(node.not ? "NOT IN " : "IN ");
   }
 
-  buildWhereSub(node: TWhereSubNode) {
-    if (node.ast && node.ast.where.size > 0) {
+  buildWhereSub(node: TCondSubNode) {
+    if (node.ast && node.ast.size > 0) {
       this.currentFragment += "(";
-      node.ast.where.forEach((node, i) => {
-        this.addWhereCondition(node, i);
+      node.ast.forEach((node, i) => {
+        this.addConditionNode(node, i);
       });
       this.currentFragment += ")";
     }

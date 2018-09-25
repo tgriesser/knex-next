@@ -47,14 +47,14 @@ export enum NodeTypeEnum {
   UNION = "UnionNode",
   SUB_QUERY = "SubQueryNode",
   RAW = "RawNode",
-  WHERE_EXPR = "WhereExpressionNode",
-  WHERE_COLUMN = "WhereColumnNode",
-  WHERE_IN = "WhereInNode",
-  WHERE_EXISTS = "WhereExistsNode",
-  WHERE_NULL = "WhereNullNode",
-  WHERE_BETWEEN = "WhereBetweenNode",
-  WHERE_LIKE = "WhereLikeNode",
-  WHERE_SUB = "WhereSubNode",
+  COND_EXPR = "CondExpressionNode",
+  COND_COLUMN = "CondColumnNode",
+  COND_IN = "CondInNode",
+  COND_EXISTS = "CondExistsNode",
+  COND_NULL = "CondNullNode",
+  COND_BETWEEN = "CondBetweenNode",
+  COND_LIKE = "CondLikeNode",
+  COND_SUB = "CondSubNode",
 }
 
 export enum AggregateFns {
@@ -63,4 +63,12 @@ export enum AggregateFns {
   MAX = "MAX",
   SUM = "SUM",
   AVG = "AVG",
+}
+
+export enum DateCondType {
+  DATE = "DATE",
+  TIME = "TIME",
+  DAY = "DAY",
+  MONTH = "MONTH",
+  YEAR = "YEAR",
 }
