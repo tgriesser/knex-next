@@ -1,0 +1,10 @@
+{
+  "name": "knex-examples-with-schemats",
+  "version": "2.0.0-alpha",
+  "dependencies": {
+    "@knex/core": "2.0.0-alpha"
+  },
+  "devDependencies": {
+    "schemats": "^3.0.3"
+  }
+}
