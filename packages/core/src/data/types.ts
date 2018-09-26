@@ -1,6 +1,14 @@
 import { SelectBuilder } from "../SelectBuilder";
 import { SubWhereBuilder } from "../clauses/WhereClauseBuilder";
-import { OperatorEnum, NodeTypeEnum, ClauseTypeEnum, OperationTypeEnum, JoinTypeEnum, AggregateFns } from "./enums";
+import {
+  OperatorEnum,
+  NodeTypeEnum,
+  ClauseTypeEnum,
+  OperationTypeEnum,
+  JoinTypeEnum,
+  AggregateFns,
+  DateCondType,
+} from "./enums";
 import { JoinBuilder } from "../clauses/JoinBuilder";
 import { RecordOf, List, Map as IMap } from "immutable";
 import { SubHavingBuilder } from "../clauses/HavingClauseBuilder";
@@ -77,6 +85,11 @@ export type TColumnConditions = Array<TColumnArrCondition>;
 export type TValueArrCondition = [TColumnArg, any] | [TColumnArg, TOperator, any];
 
 export type TValueConditions = Array<TValueArrCondition>;
+
+/**
+ *
+ */
+export type TDateCondArgs = [TColumnArg, TValueArg] | [TColumnArg, TOperatorArg, TValueArg];
 
 /**
  * The type for a column in the AST
@@ -199,7 +212,8 @@ export type ConditionNodeTypes =
   | NodeTypeEnum.COND_BETWEEN
   | NodeTypeEnum.COND_LIKE
   | NodeTypeEnum.COND_SUB
-  | NodeTypeEnum.COND_DATE;
+  | NodeTypeEnum.COND_DATE
+  | NodeTypeEnum.COND_RAW;
 
 export interface INode<N extends NodeTypeEnum> {
   __typename: N;
@@ -212,14 +226,14 @@ export interface IConditionNode<N extends ConditionNodeTypes> extends INode<N> {
 
 export interface ICondExprNode extends IConditionNode<NodeTypeEnum.COND_EXPR> {
   column: Maybe<TColumn>;
-  operator: Maybe<TOperator>;
+  operator: TOperator;
   value: Maybe<TValue>;
 }
 export type TCondExprNode = RecordOf<ICondExprNode>;
 
 export interface ICondColumnNode extends IConditionNode<NodeTypeEnum.COND_COLUMN> {
   column: Maybe<TColumn>;
-  operator: Maybe<TOperator>;
+  operator: TOperator;
   rightColumn: Maybe<TColumn>;
 }
 export type TCondColumnNode = RecordOf<ICondColumnNode>;
@@ -242,9 +256,10 @@ export interface ICondExistsNode extends IConditionNode<NodeTypeEnum.COND_EXISTS
 export type TCondExistsNode = RecordOf<ICondExistsNode>;
 
 export interface ICondDateNode extends IConditionNode<NodeTypeEnum.COND_DATE> {
-  column: TColumn;
-  first: Maybe<TValue>;
-  second: Maybe<TValue>;
+  type: DateCondType;
+  column: Maybe<TColumn>;
+  operator: TOperator;
+  value: Maybe<TValue>;
 }
 export type TCondDateNode = RecordOf<ICondDateNode>;
 
@@ -254,6 +269,11 @@ export interface ICondBetweenNode extends IConditionNode<NodeTypeEnum.COND_BETWE
   second: Maybe<TValue>;
 }
 export type TCondBetweenNode = RecordOf<ICondBetweenNode>;
+
+export interface ICondRawNode extends IConditionNode<NodeTypeEnum.COND_RAW> {
+  value: Maybe<TRawNode>;
+}
+export type TCondRawNode = RecordOf<ICondRawNode>;
 
 export interface IOrderByNode extends INode<NodeTypeEnum.ORDER_BY> {
   column: string | TRawNode;
@@ -297,7 +317,8 @@ export type TConditionNode =
   | TCondExistsNode
   | TCondColumnNode
   | TCondSubNode
-  | TRawNode;
+  | TCondDateNode
+  | TCondRawNode;
 
 export interface IOperationNode<T> {
   __operation: T;

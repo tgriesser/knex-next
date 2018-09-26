@@ -1,4 +1,12 @@
-import { NodeTypeEnum, ClauseTypeEnum, OperatorEnum, OperationTypeEnum, JoinTypeEnum, AggregateFns } from "./enums";
+import {
+  NodeTypeEnum,
+  ClauseTypeEnum,
+  OperatorEnum,
+  OperationTypeEnum,
+  JoinTypeEnum,
+  AggregateFns,
+  DateCondType,
+} from "./enums";
 import { Record as IRecord, List, Map as IMap } from "immutable";
 import {
   IJoinNode,
@@ -25,7 +33,20 @@ import {
   IAggregateNode,
   IAlterTableOperation,
   ICondDateNode,
+  ICondRawNode,
 } from "./types";
+
+/**
+ * raw`...`
+ */
+export const RawNode = IRecord<IRawNode>(
+  {
+    __typename: NodeTypeEnum.RAW,
+    fragments: List<string>(),
+    bindings: List<string | number>(),
+  },
+  NodeTypeEnum.RAW
+);
 
 /**
  * WHERE ...
@@ -48,7 +69,7 @@ export const ConditionExpressionNode = IRecord<ICondExprNode>(
     __typename: NodeTypeEnum.COND_EXPR,
     not: null,
     column: null,
-    operator: null,
+    operator: "=",
     value: null,
     andOr: OperatorEnum.AND,
   },
@@ -63,7 +84,7 @@ export const CondColumnNode = IRecord<ICondColumnNode>(
     __typename: NodeTypeEnum.COND_COLUMN,
     not: null,
     column: null,
-    operator: null,
+    operator: "=",
     rightColumn: null,
     andOr: OperatorEnum.AND,
   },
@@ -103,9 +124,9 @@ export const CondNullNode = IRecord<ICondNullNode>(
 export const CondExistsNode = IRecord<ICondExistsNode>(
   {
     __typename: NodeTypeEnum.COND_EXISTS,
-    column: "",
     not: null,
     andOr: OperatorEnum.AND,
+    column: "",
     query: null,
   },
   NodeTypeEnum.COND_EXISTS
@@ -117,9 +138,9 @@ export const CondExistsNode = IRecord<ICondExistsNode>(
 export const CondBetweenNode = IRecord<ICondBetweenNode>(
   {
     __typename: NodeTypeEnum.COND_BETWEEN,
-    column: "",
     not: null,
     andOr: OperatorEnum.AND,
+    column: "",
     first: null,
     second: null,
   },
@@ -129,8 +150,27 @@ export const CondBetweenNode = IRecord<ICondBetweenNode>(
 export const CondDateNode = IRecord<ICondDateNode>(
   {
     __typename: NodeTypeEnum.COND_DATE,
+    not: null,
+    andOr: OperatorEnum.AND,
+    type: DateCondType.DATE,
+    column: null,
+    operator: "=",
+    value: null,
   },
   NodeTypeEnum.COND_DATE
+);
+
+/**
+ * WHERE [NOT] BETWEEN
+ */
+export const CondRawNode = IRecord<ICondRawNode>(
+  {
+    __typename: NodeTypeEnum.COND_RAW,
+    not: null,
+    andOr: OperatorEnum.AND,
+    value: null,
+  },
+  NodeTypeEnum.COND_RAW
 );
 
 /**
@@ -206,18 +246,6 @@ export const SubQueryNode = IRecord<ISubQuery>(
     ast: null,
   },
   NodeTypeEnum.SUB_QUERY
-);
-
-/**
- * raw`...`
- */
-export const RawNode = IRecord<IRawNode>(
-  {
-    __typename: NodeTypeEnum.RAW,
-    fragments: List<string>(),
-    bindings: List<string | number>(),
-  },
-  NodeTypeEnum.RAW
 );
 
 /**

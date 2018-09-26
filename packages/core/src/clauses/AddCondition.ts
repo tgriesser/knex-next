@@ -15,6 +15,7 @@ import {
   TInValue,
   TInArg,
   SubConditionFn,
+  TDateCondArgs,
 } from "../data/types";
 import {
   CondNullNode,
@@ -23,6 +24,8 @@ import {
   SubQueryNode,
   CondInNode,
   CondBetweenNode,
+  CondRawNode,
+  CondDateNode,
 } from "../data/structs";
 import { DateCondType, ClauseTypeEnum, OperatorEnum } from "../data/enums";
 import { isRawNode, isSelectBuilder } from "@knex/core/src/data/predicates";
@@ -84,6 +87,9 @@ export abstract class AddCondition {
         not
       );
     }
+    if (isRawNode(arg)) {
+      return this.pushCondition(clauseType, CondRawNode({ value: arg }));
+    }
     // Handles the { column: value } syntax
     if (typeof arg === "object" && arg !== null) {
       return this.subCondition(
@@ -114,7 +120,7 @@ export abstract class AddCondition {
         not,
         andOr,
         column: this.unwrapColumn(column),
-        operator: this.checkOperator(op as TOperator),
+        operator: this.checkOperator(op),
         value: this.unwrapValue(value),
       })
     );
@@ -154,11 +160,11 @@ export abstract class AddCondition {
     );
   }
 
-  protected checkOperator(op: TOperator): TOperator {
-    if (this.grammar.checkOperator(op)) {
+  protected checkOperator(op: TOperatorArg): TOperator {
+    if (this.grammar.checkOperator(op as TOperator)) {
       throw new Error(`Invalid operator ${op} passed to query expression.`);
     }
-    return op;
+    return op as TOperator;
   }
 
   protected addInCond(clauseType: ClauseTypeEnum, column: TColumnArg, arg: TInArg, andOr: TAndOr, not: TNot = null) {
@@ -214,8 +220,26 @@ export abstract class AddCondition {
     );
   }
 
-  protected addDateCond(type: DateCondType): this {
-    return this;
+  protected addDateCond(
+    clauseType: ClauseTypeEnum,
+    dateType: DateCondType,
+    column: TColumnArg,
+    op: TOperatorArg,
+    value: TValueArg,
+    andOr: TAndOr,
+    not: TNot = null
+  ): this {
+    return this.pushCondition(
+      clauseType,
+      CondDateNode({
+        type: dateType,
+        column: this.unwrapColumn(column),
+        operator: this.checkOperator(op),
+        value: this.unwrapValue(value),
+        andOr,
+        not,
+      })
+    );
   }
 
   /**
@@ -276,6 +300,13 @@ export abstract class AddCondition {
     }
     console.log(value);
     throw new Error(`Invalid value provided to the where in builder: ${typeof value}`);
+  }
+
+  protected normalizeExprArgs(args: TDateCondArgs): [TColumnArg, TOperatorArg, TValueArg] {
+    if (args.length === 2) {
+      return [args[0], "=", args[1]];
+    }
+    return args;
   }
 
   /**

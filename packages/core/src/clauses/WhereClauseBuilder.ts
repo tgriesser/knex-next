@@ -1,4 +1,4 @@
-import { OperatorEnum, ClauseTypeEnum } from "../data/enums";
+import { OperatorEnum, ClauseTypeEnum, DateCondType } from "../data/enums";
 import {
   ChainFnWhere,
   IRawNode,
@@ -18,6 +18,8 @@ import {
   TConditionNode,
   TAndOr,
   TNot,
+  TDateCondArgs,
+  TOperatorArg,
 } from "../data/types";
 import { Grammar } from "../Grammar";
 import { AddCondition } from "./AddCondition";
@@ -144,29 +146,65 @@ export abstract class WhereClauseBuilder extends AddCondition {
   /**
    * Date Helpers:
    */
+  whereDate(column: TColumnArg, operator: TOperatorArg, value: TValueArg): this;
+  whereDate(column: TColumnArg, value: TValueArg): this;
+  whereDate(...args: any[]) {
+    const [column, operator, value] = this.normalizeExprArgs(args as TDateCondArgs);
+    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.DATE, column, operator, value, OperatorEnum.AND);
+  }
+  orWhereDate(column: TColumnArg, operator: TOperatorArg, value: TValueArg): this;
+  orWhereDate(column: TColumnArg, value: TValueArg): this;
+  orWhereDate(...args: any[]) {
+    const [column, operator, value] = this.normalizeExprArgs(args as TDateCondArgs);
+    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.DATE, column, operator, value, OperatorEnum.OR);
+  }
+  whereTime(column: TColumnArg, operator: TOperatorArg, value: TValueArg): this;
+  whereTime(column: TColumnArg, value: TValueArg): this;
   whereTime(...args: any[]) {
-    return this.addDateCond();
+    const [column, operator, value] = this.normalizeExprArgs(args as TDateCondArgs);
+    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.TIME, column, operator, value, OperatorEnum.AND);
   }
+  orWhereTime(column: TColumnArg, operator: TOperatorArg, value: TValueArg): this;
+  orWhereTime(column: TColumnArg, value: TValueArg): this;
   orWhereTime(...args: any[]) {
-    return this.addDateCond();
+    const [column, operator, value] = this.normalizeExprArgs(args as TDateCondArgs);
+    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.TIME, column, operator, value, OperatorEnum.OR);
   }
+  whereDay(column: TColumnArg, operator: TOperatorArg, value: TValueArg): this;
+  whereDay(column: TColumnArg, value: TValueArg): this;
   whereDay(...args: any[]) {
-    return this.addDateCond();
+    const [column, operator, value] = this.normalizeExprArgs(args as TDateCondArgs);
+    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.DAY, column, operator, value, OperatorEnum.AND);
   }
+  orWhereDay(column: TColumnArg, operator: TOperatorArg, value: TValueArg): this;
+  orWhereDay(column: TColumnArg, value: TValueArg): this;
   orWhereDay(...args: any[]) {
-    return this.addDateCond();
+    const [column, operator, value] = this.normalizeExprArgs(args as TDateCondArgs);
+    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.DAY, column, operator, value, OperatorEnum.OR);
   }
+  whereMonth(column: TColumnArg, operator: TOperatorArg, value: TValueArg): this;
+  whereMonth(column: TColumnArg, value: TValueArg): this;
   whereMonth(...args: any[]) {
-    return this.addDateCond();
+    const [column, operator, value] = this.normalizeExprArgs(args as TDateCondArgs);
+    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.MONTH, column, operator, value, OperatorEnum.AND);
   }
+  orWhereMonth(column: TColumnArg, operator: TOperatorArg, value: TValueArg): this;
+  orWhereMonth(column: TColumnArg, value: TValueArg): this;
   orWhereMonth(...args: any[]) {
-    return this.addDateCond();
+    const [column, operator, value] = this.normalizeExprArgs(args as TDateCondArgs);
+    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.MONTH, column, operator, value, OperatorEnum.OR);
   }
+  whereYear(column: TColumnArg, operator: TOperatorArg, value: TValueArg): this;
+  whereYear(column: TColumnArg, value: TValueArg): this;
   whereYear(...args: any[]) {
-    return this.addDateCond();
+    const [column, operator, value] = this.normalizeExprArgs(args as TDateCondArgs);
+    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.YEAR, column, operator, value, OperatorEnum.AND);
   }
+  orWhereYear(column: TColumnArg, operator: TOperatorArg, value: TValueArg): this;
+  orWhereYear(column: TColumnArg, value: TValueArg): this;
   orWhereYear(...args: any[]) {
-    return this.addDateCond();
+    const [column, operator, value] = this.normalizeExprArgs(args as TDateCondArgs);
+    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.YEAR, column, operator, value, OperatorEnum.OR);
   }
 
   abstract getAst(): WhereClauseBuilder["ast"];
