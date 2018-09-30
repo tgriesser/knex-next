@@ -1,9 +1,16 @@
 import { WhereClauseBuilder } from "./clauses/WhereClauseBuilder";
-import { ChainFnDelete, SubQueryArg } from "./data/types";
+import { ChainFnDelete, SubQueryArg, SubConditionFn, TAndOr, TConditionNode, TNot } from "./data/types";
 import { deleteAst, SubQueryNode } from "./data/structs";
 import { SelectBuilder } from "./SelectBuilder";
+import { ClauseTypeEnum } from "./data/enums";
+import { Buildable } from "./contracts/Buildable";
+import { Grammar } from "./Grammar";
 
-export class DeleteBuilder extends WhereClauseBuilder {
+export class DeleteBuilder extends WhereClauseBuilder implements Buildable {
+  dialect = null;
+
+  grammar = new Grammar();
+
   constructor(protected ast = deleteAst) {
     super();
   }
@@ -18,6 +25,19 @@ export class DeleteBuilder extends WhereClauseBuilder {
 
   toOperation() {
     return this.grammar.toOperation(this.ast);
+  }
+
+  protected pushCondition(clauseType: ClauseTypeEnum, node: TConditionNode) {
+    return this.chain(ast => {
+      if (clauseType === ClauseTypeEnum.WHERE) {
+        return ast.set("where", ast.where.push(node));
+      }
+      return ast;
+    });
+  }
+
+  protected subCondition(clauseType: ClauseTypeEnum, fn: SubConditionFn, andOr: TAndOr, not: TNot = null) {
+    return this;
   }
 
   protected selectBuilder() {

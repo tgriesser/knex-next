@@ -1,38 +1,40 @@
 import dedent from "dedent";
 import invariant from "invariant";
-import { WhereClauseBuilder } from "./clauses/WhereClauseBuilder";
+import { List } from "immutable";
+import { SubHavingBuilder } from "./clauses/HavingClauseBuilder";
+import { JoinBuilder } from "./clauses/JoinBuilder";
+import { SubWhereBuilder, WhereClauseBuilder } from "./clauses/WhereClauseBuilder";
 import { Connection } from "./Connection";
 import { Loggable } from "./contracts/Loggable";
-import { DialectEnum, JoinTypeEnum, AggregateFns, ClauseTypeEnum } from "./data/enums";
-import { isRawNode } from "./data/predicates";
-import { selectAst, SubQueryNode, UnionNode, AggregateNode, CondSubNode } from "./data/structs";
+import { AggregateFns, ClauseTypeEnum, DialectEnum, JoinTypeEnum } from "./data/enums";
+import { NEVER } from "./data/messages";
+import { isRawNode, isSelectBuilder } from "./data/predicates";
+import { AggregateNode, CondSubNode, JoinNode, selectAst, SubQueryNode, UnionNode } from "./data/structs";
+import { SELECT_BUILDER } from "./data/symbols";
 import {
   ChainFnSelect,
   FromJSArg,
   IJoinBuilderFn,
   Maybe,
   SubQueryArg,
+  TAndOr,
+  TColumnArg,
+  TConditionNode,
+  TGroupByArg,
+  TNot,
   TOperator,
+  TOrderByDirection,
   TRawNode,
   TSelectArg,
   TSelectNode,
   TSelectOperation,
+  TTable,
   TTableArg,
   TUnionArg,
-  TColumnArg,
-  TGroupByArg,
-  TConditionNode,
-  TAndOr,
-  TNot,
-  TOrderByDirection,
 } from "./data/types";
 import { ExecutionContext } from "./ExecutionContext";
 import { Grammar } from "./Grammar";
 import { withEventEmitter } from "./mixins/withEventEmitter";
-import { SubHavingBuilder } from "./clauses/HavingClauseBuilder";
-import { SubWhereBuilder } from "./clauses/WhereClauseBuilder";
-import { INVARIANT } from "./data/messages";
-import { List } from "immutable";
 
 export class SelectBuilder<T = any> extends WhereClauseBuilder implements PromiseLike<T>, Loggable {
   /**
@@ -137,42 +139,42 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
    * Adds a JOIN clause to the query
    */
   join(raw: TRawNode): this;
-  join(tableName: string, leftCol: string, rightCol: string): this;
-  join(tableName: string, leftCol: string, op: TOperator, rightCol: string): this;
-  join(tableName: string, subJoin: IJoinBuilderFn): this;
-  join(...args: any[]) {
-    // Allow .join(raw`...`)
+  join(table: TTableArg, leftCol: string, rightCol: string): this;
+  join(table: TTableArg, leftCol: string, op: TOperator, rightCol: string): this;
+  join(table: TTableArg, subJoin: IJoinBuilderFn): this;
+  join(table: TTableArg, ...args: any[]) {
+    // Allow .join(raw`...`) for simplicity.
     if (args.length === 1 && isRawNode(args[0])) {
       return this.joinRaw(args[0]);
     }
-    return this.addJoinClause(JoinTypeEnum.INNER, args);
+    return this.addJoinClause(JoinTypeEnum.INNER, table, args);
   }
-  joinVal(...args: any[]) {
-    return this.addJoinClause(JoinTypeEnum.INNER, args, true);
+  joinVal(table: TTableArg, ...args: any[]) {
+    return this.addJoinClause(JoinTypeEnum.INNER, table, args, true);
   }
-  leftJoin(...args: any[]) {
-    return this.addJoinClause(JoinTypeEnum.LEFT, args);
+  leftJoin(table: TTableArg, ...args: any[]) {
+    return this.addJoinClause(JoinTypeEnum.LEFT, table, args);
   }
-  leftJoinVal(...args: any[]) {
-    return this.addJoinClause(JoinTypeEnum.LEFT, args, true);
+  leftJoinVal(table: TTableArg, ...args: any[]) {
+    return this.addJoinClause(JoinTypeEnum.LEFT, table, args, true);
   }
-  rightJoin(...args: any[]) {
-    return this.addJoinClause(JoinTypeEnum.RIGHT, args);
+  rightJoin(table: TTableArg, ...args: any[]) {
+    return this.addJoinClause(JoinTypeEnum.RIGHT, table, args);
   }
-  rightJoinVal(...args: any[]) {
-    return this.addJoinClause(JoinTypeEnum.RIGHT, args, true);
+  rightJoinVal(table: TTableArg, ...args: any[]) {
+    return this.addJoinClause(JoinTypeEnum.RIGHT, table, args, true);
   }
-  leftOuterJoin(...args: any[]) {
-    return this.addJoinClause(JoinTypeEnum.LEFT_OUTER, args);
+  leftOuterJoin(table: TTableArg, ...args: any[]) {
+    return this.addJoinClause(JoinTypeEnum.LEFT_OUTER, table, args);
   }
-  rightOuterJoin(...args: any[]) {
-    return this.addJoinClause(JoinTypeEnum.RIGHT_OUTER, args);
+  rightOuterJoin(table: TTableArg, ...args: any[]) {
+    return this.addJoinClause(JoinTypeEnum.RIGHT_OUTER, table, args);
   }
-  fullOuterJoin(...args: any[]) {
-    return this.addJoinClause(JoinTypeEnum.FULL_OUTER, args);
+  fullOuterJoin(table: TTableArg, ...args: any[]) {
+    return this.addJoinClause(JoinTypeEnum.FULL_OUTER, table, args);
   }
-  crossJoin(...args: any[]) {
-    return this.addJoinClause(JoinTypeEnum.CROSS, args);
+  crossJoin(table: TTableArg, ...args: any[]) {
+    return this.addJoinClause(JoinTypeEnum.CROSS, table, args);
   }
   joinRaw(node: TRawNode) {
     invariant(
@@ -186,23 +188,41 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
   /**
    * Adds a JOIN clause to the query.
    */
-  protected addJoinClause(joinType: JoinTypeEnum, args: any[], asVal = false) {
-    return this.chain(ast => {
-      // const joinNode = unpackJoin(args);
-      return ast;
-    });
+  protected addJoinClause(joinType: JoinTypeEnum, table: TTableArg, args: any[], asVal = false) {
+    const builder = new JoinBuilder(this.grammar.newInstance(), this.subQuery);
+    const conditions = builder.getAst();
+    return this.chain(ast =>
+      ast.set(
+        "join",
+        ast.join.concat(
+          JoinNode({
+            table: this.unwrapTable(table),
+            conditions,
+          })
+        )
+      )
+    );
   }
 
+  /**
+   * Adds a GROUP BY ... clause to the query
+   */
   groupBy(...args: TGroupByArg[]) {
     return this.chain(ast => ast.set("group", ast.group.concat(args)));
   }
 
+  /**
+   * Adds an ORDER BY clause to the query
+   */
   orderBy(column: TColumnArg | TColumnArg[], direction: TOrderByDirection = "asc") {
     return this.chain(ast => {
       return ast;
     });
   }
 
+  /**
+   * Shorthand for orderBy(column, "desc")
+   */
   orderByDesc(column: TColumnArg | TColumnArg[]) {
     return this.orderBy(column, "desc");
   }
@@ -221,10 +241,16 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
     return this.chain(ast => ast.set("limit", value));
   }
 
+  /**
+   * Add a UNION clause to the query
+   */
   union(...args: Array<TUnionArg>) {
     return this.addUnionClauses(args);
   }
 
+  /**
+   * Add a UNION ALL clause to the query
+   */
   unionAll(...args: Array<TUnionArg>) {
     return this.addUnionClauses(args, true);
   }
@@ -247,11 +273,9 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
   lock(value: boolean | string = true) {
     return this.chain(ast => ast.set("lock", value));
   }
-
   lockForUpdate() {
     return this.lock(true);
   }
-
   sharedLock() {
     return this.lock(false);
   }
@@ -262,19 +286,15 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
   countDistinct(column: TColumnArg) {
     return this.addAggregate(AggregateFns.COUNT, column, true);
   }
-
   min(column: TColumnArg) {
     return this.addAggregate(AggregateFns.MIN, column);
   }
-
   max(column: TColumnArg) {
     return this.addAggregate(AggregateFns.MAX, column);
   }
-
   sum(column: TColumnArg) {
     return this.addAggregate(AggregateFns.SUM, column);
   }
-
   avg(column: TColumnArg) {
     return this.addAggregate(AggregateFns.AVG, column);
   }
@@ -339,7 +359,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
       builder = new SubWhereBuilder(this.grammar.newInstance(), this.subQuery);
     }
     if (!builder) {
-      throw new Error(INVARIANT);
+      throw new Error(NEVER);
     }
     fn.call(builder, builder);
     const ast = builder.getAst();
@@ -361,7 +381,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
       if (clauseType === ClauseTypeEnum.HAVING) {
         return ast.set("having", ast.having.push(node));
       }
-      if (clauseType === ClauseTypeEnum.JOIN) {
+      if (clauseType === ClauseTypeEnum.WHERE) {
         return ast.set("where", ast.where.push(node));
       }
       throw new Error(`Invalid `);
@@ -445,6 +465,27 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
     return this._promise.catch(onRejected);
   }
 
+  /**
+   * Takes an argument in a "table" slot and unwraps it so any subqueries / raw values are
+   * properly handled.
+   */
+  protected unwrapTable(column: TTableArg): TTable {
+    if (typeof column === "function") {
+      return this.subQuery(column);
+    }
+    if (typeof column === "string" || typeof column === "number") {
+      return column;
+    }
+    if (isRawNode(column)) {
+      return column;
+    }
+    if (isSelectBuilder(column)) {
+      return SubQueryNode({ ast: column.getAst() });
+    }
+    console.log(column);
+    throw new Error(`Invalid column type provided to the query builder: ${typeof column}`);
+  }
+
   protected getExecutionContext() {
     if (!this.executionContext) {
       this.makeExecutionContext();
@@ -507,6 +548,8 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
       now moved to it's own 
     `);
   }
+
+  [SELECT_BUILDER]: true;
 }
 
 withEventEmitter(SelectBuilder);

@@ -54,8 +54,8 @@ export class JoinBuilder extends AddCondition {
     return this.addNullCond(ClauseTypeEnum.JOIN, column, OperatorEnum.OR);
   }
 
-  getConditions() {
-    return this;
+  getAst() {
+    return this.ast;
   }
 
   protected pushCondition(clauseType: ClauseTypeEnum.JOIN, node: TConditionNode) {
@@ -66,12 +66,8 @@ export class JoinBuilder extends AddCondition {
   protected subCondition(clauseType: ClauseTypeEnum.JOIN, fn: SubConditionFn, andOr: TAndOr, not: TNot) {
     const builder = new JoinBuilder(this.grammar.newInstance(), this.subQuery);
     fn.call(builder, builder);
-    this.pushCondition(clauseType, CondSubNode({ andOr, not, ast: builder.getAst() }));
+    this.pushCondition(clauseType, CondSubNode({ andOr, not, ast: builder.getConditions() }));
     return this;
-  }
-
-  getAst() {
-    return this.ast;
   }
 }
 

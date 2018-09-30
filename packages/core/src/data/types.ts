@@ -68,7 +68,7 @@ export type TValueArg = null | number | string | Date | SelectBuilder | SubQuery
 
 export type TSelectArg = TColumnArg | TColumnArg[];
 
-export type TTableArg = string | SubQueryArg | TRawNode;
+export type TTableArg = string | SubQueryArg | SelectBuilder | TRawNode;
 
 export type TQueryArg = SubQueryArg | SelectBuilder | TRawNode;
 
@@ -87,14 +87,19 @@ export type TValueArrCondition = [TColumnArg, any] | [TColumnArg, TOperator, any
 export type TValueConditions = Array<TValueArrCondition>;
 
 /**
- *
+ * Valid arguments to the date conditions
  */
 export type TDateCondArgs = [TColumnArg, TValueArg] | [TColumnArg, TOperatorArg, TValueArg];
 
 /**
- * The type for a column in the AST
+ * The type for a column (or place for a column) in the AST
  */
 export type TColumn = string | number | TRawNode | TSubQueryNode;
+
+/**
+ * The type for a column in the AST
+ */
+export type TTable = string | TRawNode | TSubQueryNode;
 
 /**
  * The type for a value in the AST
@@ -293,7 +298,7 @@ export type TCondSubNode = RecordOf<ICondSubNode>;
 
 export interface IJoinNode extends INode<NodeTypeEnum.JOIN> {
   joinType: JoinTypeEnum;
-  column: string | TRawNode | TSelectOperation;
+  table: string | TRawNode | TSelectOperation;
   conditions: List<TConditionNode>;
 }
 export type TJoinNode = RecordOf<IJoinNode>;
@@ -388,6 +393,7 @@ export type TUpdateOperation = RecordOf<IUpdateOperation>;
 export interface IDeleteOperation extends IOperationNode<OperationTypeEnum.DELETE> {
   table: string;
   where: List<TConditionNode>;
+  join: List<TJoinNode>;
   meta: IMap<string, any>;
 }
 export type TDeleteOperation = RecordOf<IDeleteOperation>;

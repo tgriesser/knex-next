@@ -194,7 +194,7 @@ export const JoinNode = IRecord<IJoinNode>(
   {
     __typename: NodeTypeEnum.JOIN,
     joinType: JoinTypeEnum.INNER,
-    column: "",
+    table: "",
     conditions: List(),
   },
   NodeTypeEnum.JOIN
@@ -317,6 +317,7 @@ export const DeleteBindings = IRecord<IDeleteOperation>(
     __operation: OperationTypeEnum.DELETE,
     table: "",
     where: List(),
+    join: List(),
     meta: IMap(),
   },
   "DeleteOperation"

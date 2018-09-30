@@ -243,7 +243,8 @@ export abstract class AddCondition {
   }
 
   /**
-   * Takes an argument in a "column" slot and unwraps it so any subqueries, are performed, etc.
+   * Takes an argument in a "column" slot and unwraps it so any subqueries / raw values
+   * are properly handled.
    */
   protected unwrapColumn(column: TColumnArg): TColumn {
     if (typeof column === "function") {
@@ -263,7 +264,8 @@ export abstract class AddCondition {
   }
 
   /**
-   * Takes an argument in a "value" slot and unwraps it so any subqueries, are performed, etc.
+   * Takes an argument in a "value" slot and unwraps it so any subqueries / raw values
+   * are properly handled.
    */
   protected unwrapValue(value: TValueArg): TValue {
     if (value === null) {

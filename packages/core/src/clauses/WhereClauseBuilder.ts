@@ -29,7 +29,7 @@ export abstract class WhereClauseBuilder extends AddCondition {
   /**
    * Grammar deals with escaping / parameterizing values
    */
-  protected grammar = new Grammar();
+  protected abstract grammar: Grammar;
 
   /**
    * All of the operation asts for builders inheriting the "WhereClauseBuilder"
@@ -244,13 +244,16 @@ export class SubWhereBuilder extends WhereClauseBuilder {
   getAst() {
     return this.ast;
   }
+
   protected pushCondition(clauseType: ClauseTypeEnum.WHERE, node: TConditionNode) {
     this.ast = this.ast.push(node);
     return this;
   }
+
   protected subCondition(clauseType: ClauseTypeEnum.WHERE, fn: Function, andOr: TAndOr, not: TNot = null) {
     return this;
   }
+
   protected chain(fn: ChainFnWhere) {
     this.ast = fn(this.ast);
     return this;
