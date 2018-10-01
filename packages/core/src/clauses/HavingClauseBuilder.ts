@@ -9,7 +9,7 @@ import {
   TColumnArg,
   TColumnConditions,
   TNot,
-  TOperator,
+  TOperatorArg,
   TSelectOperation,
   TSubQueryNode,
   TValueConditions,
@@ -40,7 +40,7 @@ export abstract class HavingClauseBuilder extends AddCondition {
   having(bool: boolean): this;
   having(obj: { [column: string]: any }): this;
   having(column: TColumnArg, value: any): this;
-  having(column: TColumnArg, op: TOperator, value: any): this;
+  having(column: TColumnArg, op: TOperatorArg, value: any): this;
   having(conditions: TValueConditions): this;
   having(...args: any[]) {
     return this.addCond(ClauseTypeEnum.HAVING, args, OperatorEnum.AND);
@@ -51,20 +51,20 @@ export abstract class HavingClauseBuilder extends AddCondition {
   orHaving(builder: HavingClauseBuilder): this;
   orHaving(obj: { [column: string]: any }): this;
   orHaving(column: TColumnArg, value: any): this;
-  orHaving(column: TColumnArg, op: TOperator, value: any): this;
+  orHaving(column: TColumnArg, op: TOperatorArg, value: any): this;
   orHaving(conditions: TValueConditions): this;
   orHaving(...args: any[]) {
     return this.addCond(ClauseTypeEnum.HAVING, args, OperatorEnum.OR);
   }
   havingColumn(columnA: TColumnArg, columnB: TColumnArg): this;
-  havingColumn(columnA: TColumnArg, op: TOperator, columnB: TColumnArg): this;
+  havingColumn(columnA: TColumnArg, op: TOperatorArg, columnB: TColumnArg): this;
   havingColumn(obj: { [column: string]: string }): this;
   havingColumn(conditions: TColumnConditions): this;
   havingColumn(...args: any[]) {
     return this.addColumnCond(ClauseTypeEnum.HAVING, args, OperatorEnum.AND);
   }
   orHavingColumn(columnA: TColumnArg, columnB: TColumnArg): this;
-  orHavingColumn(columnA: TColumnArg, op: TOperator, columnB: TColumnArg): this;
+  orHavingColumn(columnA: TColumnArg, op: TOperatorArg, columnB: TColumnArg): this;
   orHavingColumn(obj: { [column: string]: string }): this;
   orHavingColumn(conditions: TColumnConditions): this;
   orHavingColumn(...args: any[]) {

@@ -9,7 +9,7 @@ import { Grammar } from "./Grammar";
 export class DeleteBuilder extends WhereClauseBuilder implements Buildable {
   dialect = null;
 
-  grammar = new Grammar();
+  protected grammar = new Grammar();
 
   constructor(protected ast = deleteAst) {
     super();

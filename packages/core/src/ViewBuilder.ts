@@ -4,7 +4,7 @@ import { SubQueryArg } from "./data/types";
 import { SelectBuilder } from "./SelectBuilder";
 
 export class ViewBuilder {
-  grammar = new Grammar();
+  protected grammar = new Grammar();
 
   protected subQuery(fn: SubQueryArg) {
     const builder = new SelectBuilder();

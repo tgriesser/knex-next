@@ -6,10 +6,10 @@ import { JoinBuilder } from "./clauses/JoinBuilder";
 import { SubWhereBuilder, WhereClauseBuilder } from "./clauses/WhereClauseBuilder";
 import { Connection } from "./Connection";
 import { Loggable } from "./contracts/Loggable";
-import { AggregateFns, ClauseTypeEnum, DialectEnum, JoinTypeEnum } from "./data/enums";
+import { AggregateFns, ClauseTypeEnum, DialectEnum, JoinTypeEnum, NodeTypeEnum, OrderByEnum } from "./data/enums";
 import { NEVER } from "./data/messages";
-import { isRawNode, isSelectBuilder } from "./data/predicates";
-import { AggregateNode, CondSubNode, JoinNode, selectAst, SubQueryNode, UnionNode } from "./data/structs";
+import { isRawNode, isSelectBuilder, isNodeOf } from "./data/predicates";
+import { AggregateNode, CondSubNode, JoinNode, selectAst, SubQueryNode, UnionNode, OrderByNode } from "./data/structs";
 import { SELECT_BUILDER } from "./data/symbols";
 import {
   ChainFnSelect,
@@ -22,7 +22,6 @@ import {
   TConditionNode,
   TGroupByArg,
   TNot,
-  TOperator,
   TOrderByDirection,
   TRawNode,
   TSelectArg,
@@ -31,6 +30,11 @@ import {
   TTable,
   TTableArg,
   TUnionArg,
+  TAggregateArg,
+  IAggregateNode,
+  Omit,
+  TAliasObj,
+  TOperatorArg,
 } from "./data/types";
 import { ExecutionContext } from "./ExecutionContext";
 import { Grammar } from "./Grammar";
@@ -139,8 +143,9 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
    * Adds a JOIN clause to the query
    */
   join(raw: TRawNode): this;
+  join(table: TTableArg, aliasObj: TAliasObj): this;
   join(table: TTableArg, leftCol: string, rightCol: string): this;
-  join(table: TTableArg, leftCol: string, op: TOperator, rightCol: string): this;
+  join(table: TTableArg, leftCol: string, op: TOperatorArg, rightCol: string): this;
   join(table: TTableArg, subJoin: IJoinBuilderFn): this;
   join(table: TTableArg, ...args: any[]) {
     // Allow .join(raw`...`) for simplicity.
@@ -190,22 +195,38 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
    * Adds a GROUP BY ... clause to the query
    */
   groupBy(...args: TGroupByArg[]) {
+    if (arguments.length === 0) {
+      return this;
+    }
     return this.chain(ast => ast.set("group", ast.group.concat(args)));
   }
 
   /**
    * Adds an ORDER BY clause to the query
+   *
+   * .orderBy('something', 'asc').orderBy('somethingElse', 'desc')
    */
-  orderBy(column: TColumnArg | TColumnArg[], direction: TOrderByDirection = "asc") {
-    return this.chain(ast => {
-      return ast;
-    });
+  orderBy(column: TColumnArg, direction: TOrderByDirection = "asc") {
+    if (arguments.length === 0 || column === null || column === undefined) {
+      return this;
+    }
+    return this.chain(ast =>
+      ast.set(
+        "order",
+        ast.order.push(
+          OrderByNode({
+            column: this.unwrapIdentVal(column),
+            direction: direction.toUpperCase() as OrderByEnum,
+          })
+        )
+      )
+    );
   }
 
   /**
    * Shorthand for orderBy(column, "desc")
    */
-  orderByDesc(column: TColumnArg | TColumnArg[]) {
+  orderByDesc(column: TColumnArg) {
     return this.orderBy(column, "desc");
   }
 
@@ -247,23 +268,29 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
     return this.lock(false);
   }
 
-  count(column: TColumnArg) {
+  count(column: TAggregateArg) {
     return this.addAggregate(AggregateFns.COUNT, column);
   }
-  countDistinct(column: TColumnArg) {
+  countDistinct(column: TAggregateArg) {
     return this.addAggregate(AggregateFns.COUNT, column, true);
   }
-  min(column: TColumnArg) {
+  min(column: TAggregateArg) {
     return this.addAggregate(AggregateFns.MIN, column);
   }
-  max(column: TColumnArg) {
+  max(column: TAggregateArg) {
     return this.addAggregate(AggregateFns.MAX, column);
   }
-  sum(column: TColumnArg) {
+  sum(column: TAggregateArg) {
     return this.addAggregate(AggregateFns.SUM, column);
   }
-  avg(column: TColumnArg) {
+  sumDistinct(column: TAggregateArg) {
+    return this.addAggregate(AggregateFns.SUM, column, true);
+  }
+  avg(column: TAggregateArg) {
     return this.addAggregate(AggregateFns.AVG, column);
+  }
+  avgDistinct(column: TAggregateArg) {
+    return this.addAggregate(AggregateFns.AVG, column, true);
   }
 
   as(val: string) {
@@ -360,6 +387,41 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
     `);
   }
 
+  /**
+   * Clears any SELECT expressions set on the builder
+   */
+  clearSelect() {
+    return this.chain(ast => ast.set("select", selectAst.select));
+  }
+
+  /**
+   * Clears any WHERE conditions set on the builder
+   */
+  clearWhere() {
+    return this.chain(ast => ast.set("where", selectAst.where));
+  }
+
+  /**
+   * Clears any HAVING conditions set on the builder
+   */
+  clearHaving() {
+    return this.chain(ast => ast.set("having", selectAst.having));
+  }
+
+  /**
+   * Clears any UNION clauses set on the builder
+   */
+  clearUnion() {
+    return this.chain(ast => ast.set("union", selectAst.union));
+  }
+
+  /**
+   * Clears any GROUP BY set on the builder
+   */
+  clearGroup() {
+    return this.chain(ast => ast.set("group", selectAst.group));
+  }
+
   protected addUnionClauses(args: Array<TUnionArg>, unionAll: boolean = false) {
     return this.chain(ast => {
       return ast.set(
@@ -378,8 +440,32 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
   /**
    * Adds a JOIN clause to the query.
    */
-  protected addJoinClause(joinType: JoinTypeEnum, table: TTableArg, args: any[], asVal = false) {
+  protected addJoinClause(joinType: JoinTypeEnum, table: TTableArg, args: any[], asVal = false): this {
     const builder = new JoinBuilder(this.grammar.newInstance(), this.subQuery);
+    switch (args.length) {
+      case 1: {
+        if (typeof args[0] === "function") {
+          args[0].call(builder, builder);
+          // {table.column: table.column} syntax
+        } else if (typeof args[0] === "object") {
+          Object.keys(args[0]).forEach(key => {
+            builder.on(key, args[0][key]);
+          });
+        }
+        break;
+      }
+      case 2: {
+        return this.addJoinClause(joinType, table, [args[0], "=", args[1]], asVal);
+      }
+      case 3: {
+        if (asVal) {
+          builder.on(args[0], args[1], args[2]);
+        } else {
+          builder.onVal(args[0], args[1], args[2]);
+        }
+        break;
+      }
+    }
     const conditions = builder.getAst();
     const joinNode = JoinNode({
       joinType,
@@ -392,18 +478,22 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
   /**
    * Adds an aggregate value to the SELECT clause
    */
-  protected addAggregate(fn: AggregateFns, column: TSelectArg, distinct: boolean = false) {
-    return this.chain(ast =>
-      ast.set(
-        "select",
-        ast.select.push(
-          AggregateNode({
-            fn,
-            distinct,
-          })
-        )
-      )
-    );
+  protected addAggregate(fn: AggregateFns, column: TAggregateArg, distinct: boolean = false) {
+    const unwrappedColumn = Array.isArray(column) ? column : this.unwrapIdent(column);
+    const opts: Omit<IAggregateNode, "__typename"> = isNodeOf(unwrappedColumn, NodeTypeEnum.ALIASED)
+      ? {
+          fn,
+          column: unwrappedColumn.ident,
+          alias: unwrappedColumn.alias,
+          distinct,
+        }
+      : {
+          fn,
+          column: unwrappedColumn,
+          distinct,
+          alias: null,
+        };
+    return this.chain(ast => ast.set("select", ast.select.push(AggregateNode(opts))));
   }
 
   /**
@@ -420,7 +510,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
     if (typeof arg === "function") {
       return this.subQuery(arg);
     }
-    if (arg instanceof SelectBuilder) {
+    if (isSelectBuilder(arg)) {
       return SubQueryNode({ ast: arg.getAst() });
     }
     if (isRawNode(arg)) {
@@ -544,8 +634,12 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
     this.executionContext = new ExecutionContext();
     return this.executionContext;
   }
+}
 
+export interface SelectBuilder {
   [SELECT_BUILDER]: true;
 }
+
+SelectBuilder.prototype[SELECT_BUILDER] = true;
 
 withEventEmitter(SelectBuilder);

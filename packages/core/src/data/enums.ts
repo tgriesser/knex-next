@@ -10,9 +10,9 @@ export enum JoinTypeEnum {
   INNER = "INNER",
   LEFT = "LEFT",
   RIGHT = "RIGHT",
-  LEFT_OUTER = "LEFT_OUTER",
-  RIGHT_OUTER = "RIGHT_OUTER",
-  FULL_OUTER = "FULL_OUTER",
+  LEFT_OUTER = "LEFT OUTER",
+  RIGHT_OUTER = "RIGHT OUTER",
+  FULL_OUTER = "FULL OUTER",
   OUTER = "OUTER",
   CROSS = "CROSS",
 }
@@ -40,6 +40,7 @@ export enum ClauseTypeEnum {
 }
 
 export enum NodeTypeEnum {
+  ALIASED = "AliasedIdentNode",
   AGGREGATE = "AggregateNode",
   BINDING = "BindingNode",
   JOIN = "JoinNode",
@@ -73,4 +74,9 @@ export enum DateCondType {
   DAY = "DAY",
   MONTH = "MONTH",
   YEAR = "YEAR",
+}
+
+export enum OrderByEnum {
+  ASC = "ASC",
+  DESC = "DESC",
 }

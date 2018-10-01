@@ -2,7 +2,6 @@ import {
   TAndOr,
   TNot,
   TColumnArg,
-  TOperator,
   TValueArg,
   SubQueryArg,
   TConditionNode,
@@ -16,6 +15,9 @@ import {
   TInArg,
   SubConditionFn,
   TDateCondArgs,
+  TAliasedIdentNode,
+  TRawNode,
+  TColumnVal,
 } from "../data/types";
 import {
   CondNullNode,
@@ -26,12 +28,15 @@ import {
   CondBetweenNode,
   CondRawNode,
   CondDateNode,
+  CondColumnNode,
+  RawNode,
 } from "../data/structs";
 import { DateCondType, ClauseTypeEnum, OperatorEnum } from "../data/enums";
-import { isRawNode, isSelectBuilder } from "@knex/core/src/data/predicates";
-import { Grammar } from "@knex/core/src/Grammar";
+import { isRawNode, isSelectBuilder } from "../data/predicates";
+import { Grammar } from "../Grammar";
 import { Record, List } from "immutable";
 import invariant from "invariant";
+import { isInOrBetween } from "../data/regexes";
 
 /**
  * Most of the clause conditions (having, where, join) are similarly shaped
@@ -49,25 +54,48 @@ export abstract class AddCondition {
    *
    * creates a wrapped context if necessary, otherwise
    */
-  protected addCond(clauseType: ClauseTypeEnum, args: any[], andOr: TAndOr, not: TNot = null): this {
+  protected addCond(
+    clauseType: ClauseTypeEnum,
+    args: any[],
+    andOr: TAndOr,
+    not: TNot = null,
+    asCol: boolean = false
+  ): this {
     switch (args.length) {
       case 1: {
-        return this.addCondAry1(clauseType, args[0], andOr, not);
+        return this.addCondAry1(asCol, clauseType, args[0], andOr, not);
       }
       case 2: {
         if (args[1] === null) {
           return this.addNullCond(clauseType, args[0], andOr, not);
         }
-        return this.addExpressionCond(clauseType, args[0], "=", args[1], andOr, not);
+        if (asCol) {
+          return this.addColumnCondNode(clauseType, args[0], "=", args[1], andOr, not);
+        } else {
+          return this.addExpressionCondNode(clauseType, args[0], "=", args[1], andOr, not);
+        }
       }
       case 3: {
-        return this.addCondAry3(clauseType, args[0], args[1], args[2], andOr, not);
+        const matches = isInOrBetween(args[1]);
+        if (matches === null) {
+          if (asCol) {
+            return this.addColumnCondNode(clauseType, args[0], args[1], args[2], andOr, not);
+          } else {
+            return this.addExpressionCondNode(clauseType, args[0], args[1], args[2], andOr, not);
+          }
+        }
+        const [, isNot, inOrBetween] = matches;
+        const newNot = isNot ? (not ? null : OperatorEnum.NOT) : OperatorEnum.NOT;
+        if (inOrBetween.toUpperCase() === "IN") {
+          return this.addInCond(clauseType, args[0], args[2], andOr, newNot);
+        }
+        return this.addBetweenCond(clauseType, args[0], args[2], andOr, newNot);
       }
     }
     return this;
   }
 
-  protected addCondAry1(clauseType: ClauseTypeEnum, arg: any, andOr: TAndOr, not: TNot = null) {
+  protected addCondAry1(asCol: boolean, clauseType: ClauseTypeEnum, arg: any, andOr: TAndOr, not: TNot = null) {
     if (typeof arg === "function") {
       return this.subCondition(clauseType, arg, andOr, not);
     }
@@ -81,7 +109,7 @@ export abstract class AddCondition {
         clauseType,
         qb => {
           (arg as TValueConditions).forEach(cond => {
-            qb.addCond(clauseType, cond, OperatorEnum.AND);
+            qb.addCond(clauseType, cond, OperatorEnum.AND, null, asCol);
           });
         },
         andOr,
@@ -97,7 +125,11 @@ export abstract class AddCondition {
         clauseType,
         qb => {
           Object.keys(arg).forEach(col => {
-            qb.addExpressionCond(clauseType, col, "=", arg[col], OperatorEnum.AND);
+            if (asCol) {
+              qb.addColumnCondNode(clauseType, col, "=", arg[col], OperatorEnum.AND);
+            } else {
+              qb.addExpressionCondNode(clauseType, col, "=", arg[col], OperatorEnum.AND);
+            }
           });
         },
         andOr,
@@ -107,44 +139,39 @@ export abstract class AddCondition {
     return this;
   }
 
-  protected addCondAry3(
-    clauseType: ClauseTypeEnum,
-    column: TColumnArg,
-    op: TOperatorArg,
-    value: TValueArg,
-    andOr: TAndOr,
-    not: TNot = null
-  ) {
-    return this.pushCondition(
-      clauseType,
-      ConditionExpressionNode({
-        not,
-        andOr,
-        column: this.unwrapColumn(column),
-        operator: this.checkOperator(op),
-        value: this.unwrapValue(value),
-      })
-    );
-  }
-
   /**
    * Handles the column to column comparison condition, e.g.:
    *
    * "column" >= "otherColumn"
    */
-  protected addColumnCond(clauseType: ClauseTypeEnum, args: any[], andOr: TAndOr, not: TNot = null) {
-    switch (args.length) {
-      case 1: {
-        const arg = args[0];
-      }
-    }
-    return this;
+  protected addColumnCond(clauseType: ClauseTypeEnum, args: any[], andOr: TAndOr, not: TNot = null): this {
+    return this.addCond(clauseType, args, andOr, not, true);
   }
 
-  protected addExpressionCond(
+  protected addColumnCondNode(
     clauseType: ClauseTypeEnum,
     column: TColumnArg,
-    operator: TOperator,
+    operator: TOperatorArg,
+    rightColumn: TColumnArg,
+    andOr: TAndOr,
+    not: TNot = null
+  ) {
+    return this.pushCondition(
+      clauseType,
+      CondColumnNode({
+        not,
+        andOr,
+        column: this.unwrapIdent(column),
+        operator: operator,
+        rightColumn: this.unwrapIdent(rightColumn),
+      })
+    );
+  }
+
+  protected addExpressionCondNode(
+    clauseType: ClauseTypeEnum,
+    column: TColumnArg,
+    operator: TOperatorArg,
     val: TValueArg,
     andOr: TAndOr,
     not: TNot = null
@@ -154,18 +181,11 @@ export abstract class AddCondition {
       ConditionExpressionNode({
         not,
         andOr,
-        column: this.unwrapColumn(column),
+        column: this.unwrapIdent(column),
         operator,
         value: this.unwrapValue(val),
       })
     );
-  }
-
-  protected checkOperator(op: TOperatorArg): TOperator {
-    if (this.grammar.checkOperator(op as TOperator)) {
-      throw new Error(`Invalid operator ${op} passed to query expression.`);
-    }
-    return op as TOperator;
   }
 
   protected addInCond(clauseType: ClauseTypeEnum, column: TColumnArg, arg: TInArg, andOr: TAndOr, not: TNot = null) {
@@ -174,7 +194,7 @@ export abstract class AddCondition {
       CondInNode({
         andOr,
         not,
-        column: this.unwrapColumn(column),
+        column: this.unwrapIdent(column),
         value: this.unwrapInValue(arg),
       })
     );
@@ -186,7 +206,7 @@ export abstract class AddCondition {
       CondNullNode({
         andOr,
         not,
-        column: this.unwrapColumn(column),
+        column: this.unwrapIdent(column),
       })
     );
   }
@@ -197,7 +217,7 @@ export abstract class AddCondition {
       CondExistsNode({
         andOr,
         not,
-        column: this.unwrapColumn(query),
+        column: this.unwrapIdent(query),
       })
     );
   }
@@ -214,7 +234,7 @@ export abstract class AddCondition {
       CondBetweenNode({
         andOr,
         not,
-        column: this.unwrapColumn(column),
+        column: this.unwrapIdent(column),
         first: this.unwrapValue(args[0]),
         second: this.unwrapValue(args[1]),
       })
@@ -225,7 +245,7 @@ export abstract class AddCondition {
     clauseType: ClauseTypeEnum,
     dateType: DateCondType,
     column: TColumnArg,
-    op: TOperatorArg,
+    op: string | TRawNode,
     value: TValueArg,
     andOr: TAndOr,
     not: TNot = null
@@ -234,8 +254,8 @@ export abstract class AddCondition {
       clauseType,
       CondDateNode({
         type: dateType,
-        column: this.unwrapColumn(column),
-        operator: this.checkOperator(op),
+        column: this.unwrapIdent(column),
+        operator: op,
         value: this.unwrapValue(value),
         andOr,
         not,
@@ -243,16 +263,32 @@ export abstract class AddCondition {
     );
   }
 
+  protected unwrapIdentArr(column: TColumnArg[]): TColumn[] {
+    return column.map(col => this.unwrapIdent(col));
+  }
+
   /**
    * Takes an argument in a "column" slot and unwraps it so any subqueries / raw values
    * are properly handled.
    */
-  protected unwrapColumn(column: TColumnArg): TColumn {
+  protected unwrapIdent(column: TColumnArg): TColumn {
+    if (typeof column === "string") {
+      return this.unwrapAlias(column);
+    }
+    return this.unwrapIdentVal(column);
+  }
+
+  /**
+   * Takes a column/table reference in a "value" slot and unwraps it
+   */
+  protected unwrapIdentVal(column: TColumnArg): TColumnVal {
     if (typeof column === "function") {
       return this.subQuery(column);
     }
-    if (typeof column === "string" || typeof column === "number") {
-      return column;
+    if (typeof column === "number") {
+      return RawNode({
+        fragments: List([`${column}`]),
+      });
     }
     if (isRawNode(column)) {
       return column;
@@ -262,6 +298,10 @@ export abstract class AddCondition {
     }
     console.log(column);
     throw new Error(`Invalid column type provided to the query builder: ${typeof column}`);
+  }
+
+  protected unwrapAlias(column: string): string | TAliasedIdentNode {
+    return column;
   }
 
   /**

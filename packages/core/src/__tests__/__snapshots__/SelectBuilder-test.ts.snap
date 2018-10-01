@@ -5,7 +5,15 @@ Immutable.SelectNodes {
   "__operation": "SELECT",
   "from": null,
   "where": Immutable.List [],
-  "select": Immutable.List [],
+  "select": Immutable.List [
+    Immutable.AggregateNode {
+      "__typename": "AggregateNode",
+      "fn": "AVG",
+      "column": "logins",
+      "alias": null,
+      "distinct": false,
+    },
+  ],
   "join": Immutable.List [],
   "having": Immutable.List [],
   "group": Immutable.List [],
@@ -23,10 +31,49 @@ Immutable.SelectNodes {
 exports[`@knex/core - SelectBuilder aggregate: avg 2`] = `
 Object {
   "fragments": Array [
-    "SELECT *",
+    "SELECT",
   ],
-  "query": "SELECT *",
-  "sql": "SELECT *",
+  "query": "SELECT",
+  "sql": "SELECT",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - SelectBuilder aggregate: avgDistinct 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "from": null,
+  "where": Immutable.List [],
+  "select": Immutable.List [
+    Immutable.AggregateNode {
+      "__typename": "AggregateNode",
+      "fn": "AVG",
+      "column": "logins",
+      "alias": null,
+      "distinct": true,
+    },
+  ],
+  "join": Immutable.List [],
+  "having": Immutable.List [],
+  "group": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "alias": null,
+  "distinct": false,
+  "lock": null,
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - SelectBuilder aggregate: avgDistinct 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT",
+  ],
+  "query": "SELECT",
+  "sql": "SELECT",
   "values": Array [],
 }
 `;
@@ -36,7 +83,15 @@ Immutable.SelectNodes {
   "__operation": "SELECT",
   "from": null,
   "where": Immutable.List [],
-  "select": Immutable.List [],
+  "select": Immutable.List [
+    Immutable.AggregateNode {
+      "__typename": "AggregateNode",
+      "fn": "COUNT",
+      "column": "logins",
+      "alias": null,
+      "distinct": false,
+    },
+  ],
   "join": Immutable.List [],
   "having": Immutable.List [],
   "group": Immutable.List [],
@@ -54,10 +109,88 @@ Immutable.SelectNodes {
 exports[`@knex/core - SelectBuilder aggregate: count 2`] = `
 Object {
   "fragments": Array [
-    "SELECT *",
+    "SELECT",
   ],
-  "query": "SELECT *",
-  "sql": "SELECT *",
+  "query": "SELECT",
+  "sql": "SELECT",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - SelectBuilder aggregate: count with alias 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "from": null,
+  "where": Immutable.List [],
+  "select": Immutable.List [
+    Immutable.AggregateNode {
+      "__typename": "AggregateNode",
+      "fn": "COUNT",
+      "column": "logins",
+      "alias": null,
+      "distinct": false,
+    },
+  ],
+  "join": Immutable.List [],
+  "having": Immutable.List [],
+  "group": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "alias": null,
+  "distinct": false,
+  "lock": null,
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - SelectBuilder aggregate: count with alias 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT",
+  ],
+  "query": "SELECT",
+  "sql": "SELECT",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - SelectBuilder aggregate: countDistinct 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "from": null,
+  "where": Immutable.List [],
+  "select": Immutable.List [
+    Immutable.AggregateNode {
+      "__typename": "AggregateNode",
+      "fn": "COUNT",
+      "column": "logins",
+      "alias": null,
+      "distinct": true,
+    },
+  ],
+  "join": Immutable.List [],
+  "having": Immutable.List [],
+  "group": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "alias": null,
+  "distinct": false,
+  "lock": null,
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - SelectBuilder aggregate: countDistinct 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT",
+  ],
+  "query": "SELECT",
+  "sql": "SELECT",
   "values": Array [],
 }
 `;
@@ -67,7 +200,15 @@ Immutable.SelectNodes {
   "__operation": "SELECT",
   "from": null,
   "where": Immutable.List [],
-  "select": Immutable.List [],
+  "select": Immutable.List [
+    Immutable.AggregateNode {
+      "__typename": "AggregateNode",
+      "fn": "SUM",
+      "column": "logins",
+      "alias": null,
+      "distinct": false,
+    },
+  ],
   "join": Immutable.List [],
   "having": Immutable.List [],
   "group": Immutable.List [],
@@ -85,10 +226,49 @@ Immutable.SelectNodes {
 exports[`@knex/core - SelectBuilder aggregate: sum 2`] = `
 Object {
   "fragments": Array [
-    "SELECT *",
+    "SELECT",
   ],
-  "query": "SELECT *",
-  "sql": "SELECT *",
+  "query": "SELECT",
+  "sql": "SELECT",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - SelectBuilder aggregate: sumDistinct 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "from": null,
+  "where": Immutable.List [],
+  "select": Immutable.List [
+    Immutable.AggregateNode {
+      "__typename": "AggregateNode",
+      "fn": "SUM",
+      "column": "logins",
+      "alias": null,
+      "distinct": true,
+    },
+  ],
+  "join": Immutable.List [],
+  "having": Immutable.List [],
+  "group": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "alias": null,
+  "distinct": false,
+  "lock": null,
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - SelectBuilder aggregate: sumDistinct 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT",
+  ],
+  "query": "SELECT",
+  "sql": "SELECT",
   "values": Array [],
 }
 `;
@@ -101,7 +281,30 @@ Immutable.SelectNodes {
   "select": Immutable.List [
     "*",
   ],
-  "join": Immutable.List [],
+  "join": Immutable.List [
+    Immutable.JoinNode {
+      "__typename": "JoinNode",
+      "joinType": "INNER",
+      "table": "contacts",
+      "conditions": Immutable.List [
+        Immutable.CondExpressionNode {
+          "__typename": "CondColumnNode",
+          "not": null,
+          "column": "users.id",
+          "operator": "=",
+          "rightColumn": "contacts.id",
+          "andOr": "AND",
+        },
+        Immutable.CondInNode {
+          "__typename": "CondInNode",
+          "not": null,
+          "column": "users.name",
+          "andOr": "AND",
+          "value": Array [],
+        },
+      ],
+    },
+  ],
   "having": Immutable.List [],
   "group": Immutable.List [],
   "order": Immutable.List [],
@@ -118,10 +321,10 @@ Immutable.SelectNodes {
 exports[`@knex/core - SelectBuilder complex join with empty in 2`] = `
 Object {
   "fragments": Array [
-    "SELECT * FROM users",
+    "SELECT * FROM users INNER JOIN contacts ON users.id = contacts.id AND users.name IN ",
   ],
-  "query": "SELECT * FROM users",
-  "sql": "SELECT * FROM users",
+  "query": "SELECT * FROM users INNER JOIN contacts ON users.id = contacts.id AND users.name IN ",
+  "sql": "SELECT * FROM users INNER JOIN contacts ON users.id = contacts.id AND users.name IN ",
   "values": Array [],
 }
 `;
@@ -134,7 +337,38 @@ Immutable.SelectNodes {
   "select": Immutable.List [
     "*",
   ],
-  "join": Immutable.List [],
+  "join": Immutable.List [
+    Immutable.JoinNode {
+      "__typename": "JoinNode",
+      "joinType": "INNER",
+      "table": "contacts",
+      "conditions": Immutable.List [
+        Immutable.CondSubNode {
+          "__typename": "CondSubNode",
+          "not": null,
+          "andOr": "AND",
+          "ast": Immutable.List [
+            Immutable.CondExpressionNode {
+              "__typename": "CondColumnNode",
+              "not": null,
+              "column": "users.id",
+              "operator": "=",
+              "rightColumn": "contacts.id",
+              "andOr": "AND",
+            },
+            Immutable.CondExpressionNode {
+              "__typename": "CondColumnNode",
+              "not": null,
+              "column": "users.name",
+              "operator": "=",
+              "rightColumn": "contacts.name",
+              "andOr": "OR",
+            },
+          ],
+        },
+      ],
+    },
+  ],
   "having": Immutable.List [],
   "group": Immutable.List [],
   "order": Immutable.List [],
@@ -151,10 +385,10 @@ Immutable.SelectNodes {
 exports[`@knex/core - SelectBuilder complex join with nest conditional statements 2`] = `
 Object {
   "fragments": Array [
-    "SELECT * FROM users",
+    "SELECT * FROM users INNER JOIN contacts ON (users.id = contacts.id OR users.name = contacts.name)",
   ],
-  "query": "SELECT * FROM users",
-  "sql": "SELECT * FROM users",
+  "query": "SELECT * FROM users INNER JOIN contacts ON (users.id = contacts.id OR users.name = contacts.name)",
+  "sql": "SELECT * FROM users INNER JOIN contacts ON (users.id = contacts.id OR users.name = contacts.name)",
   "values": Array [],
 }
 `;
@@ -167,7 +401,20 @@ Immutable.SelectNodes {
   "select": Immutable.List [
     "*",
   ],
-  "join": Immutable.List [],
+  "join": Immutable.List [
+    Immutable.JoinNode {
+      "__typename": "JoinNode",
+      "joinType": "CROSS",
+      "table": "contracts",
+      "conditions": Immutable.List [],
+    },
+    Immutable.JoinNode {
+      "__typename": "JoinNode",
+      "joinType": "CROSS",
+      "table": "photos",
+      "conditions": Immutable.List [],
+    },
+  ],
   "having": Immutable.List [],
   "group": Immutable.List [],
   "order": Immutable.List [],
@@ -184,10 +431,10 @@ Immutable.SelectNodes {
 exports[`@knex/core - SelectBuilder cross join 2`] = `
 Object {
   "fragments": Array [
-    "SELECT * FROM users",
+    "SELECT * FROM users CROSS JOIN contracts CROSS JOIN photos",
   ],
-  "query": "SELECT * FROM users",
-  "sql": "SELECT * FROM users",
+  "query": "SELECT * FROM users CROSS JOIN contracts CROSS JOIN photos",
+  "sql": "SELECT * FROM users CROSS JOIN contracts CROSS JOIN photos",
   "values": Array [],
 }
 `;
@@ -200,7 +447,23 @@ Immutable.SelectNodes {
   "select": Immutable.List [
     "*",
   ],
-  "join": Immutable.List [],
+  "join": Immutable.List [
+    Immutable.JoinNode {
+      "__typename": "JoinNode",
+      "joinType": "FULL OUTER",
+      "table": "contacts",
+      "conditions": Immutable.List [
+        Immutable.CondExpressionNode {
+          "__typename": "CondExpressionNode",
+          "not": null,
+          "column": "users.id",
+          "operator": "=",
+          "value": "contacts.id",
+          "andOr": "AND",
+        },
+      ],
+    },
+  ],
   "having": Immutable.List [],
   "group": Immutable.List [],
   "order": Immutable.List [],
@@ -217,11 +480,14 @@ Immutable.SelectNodes {
 exports[`@knex/core - SelectBuilder full outer join 2`] = `
 Object {
   "fragments": Array [
-    "SELECT * FROM users",
+    "SELECT * FROM users FULL OUTER JOIN contacts ON users.id = ",
+    "",
   ],
-  "query": "SELECT * FROM users",
-  "sql": "SELECT * FROM users",
-  "values": Array [],
+  "query": "SELECT * FROM users FULL OUTER JOIN contacts ON users.id = ?",
+  "sql": "SELECT * FROM users FULL OUTER JOIN contacts ON users.id = contacts.id",
+  "values": Array [
+    "contacts.id",
+  ],
 }
 `;
 
@@ -233,7 +499,38 @@ Immutable.SelectNodes {
   "select": Immutable.List [
     "*",
   ],
-  "join": Immutable.List [],
+  "join": Immutable.List [
+    Immutable.JoinNode {
+      "__typename": "JoinNode",
+      "joinType": "INNER",
+      "table": "contacts",
+      "conditions": Immutable.List [
+        Immutable.CondExpressionNode {
+          "__typename": "CondExpressionNode",
+          "not": null,
+          "column": "users.id",
+          "operator": "=",
+          "value": "contacts.id",
+          "andOr": "AND",
+        },
+      ],
+    },
+    Immutable.JoinNode {
+      "__typename": "JoinNode",
+      "joinType": "LEFT",
+      "table": "photos",
+      "conditions": Immutable.List [
+        Immutable.CondExpressionNode {
+          "__typename": "CondExpressionNode",
+          "not": null,
+          "column": "users.id",
+          "operator": "=",
+          "value": "photos.id",
+          "andOr": "AND",
+        },
+      ],
+    },
+  ],
   "having": Immutable.List [],
   "group": Immutable.List [],
   "order": Immutable.List [],
@@ -250,11 +547,16 @@ Immutable.SelectNodes {
 exports[`@knex/core - SelectBuilder join + left join 2`] = `
 Object {
   "fragments": Array [
-    "SELECT * FROM users",
+    "SELECT * FROM users INNER JOIN contacts ON users.id = ",
+    " LEFT JOIN photos ON users.id = ",
+    "",
   ],
-  "query": "SELECT * FROM users",
-  "sql": "SELECT * FROM users",
-  "values": Array [],
+  "query": "SELECT * FROM users INNER JOIN contacts ON users.id = ? LEFT JOIN photos ON users.id = ?",
+  "sql": "SELECT * FROM users INNER JOIN contacts ON users.id = contacts.id LEFT JOIN photos ON users.id = photos.id",
+  "values": Array [
+    "contacts.id",
+    "photos.id",
+  ],
 }
 `;
 
@@ -266,7 +568,31 @@ Immutable.SelectNodes {
   "select": Immutable.List [
     "*",
   ],
-  "join": Immutable.List [],
+  "join": Immutable.List [
+    Immutable.JoinNode {
+      "__typename": "JoinNode",
+      "joinType": "INNER",
+      "table": "contacts",
+      "conditions": Immutable.List [
+        Immutable.CondExpressionNode {
+          "__typename": "CondColumnNode",
+          "not": null,
+          "column": "users.id",
+          "operator": "=",
+          "rightColumn": "contacts.id",
+          "andOr": "AND",
+        },
+        Immutable.CondExpressionNode {
+          "__typename": "CondColumnNode",
+          "not": null,
+          "column": "users.name",
+          "operator": "=",
+          "rightColumn": "contacts.name",
+          "andOr": "OR",
+        },
+      ],
+    },
+  ],
   "having": Immutable.List [],
   "group": Immutable.List [],
   "order": Immutable.List [],
@@ -283,10 +609,10 @@ Immutable.SelectNodes {
 exports[`@knex/core - SelectBuilder multi-statement join 2`] = `
 Object {
   "fragments": Array [
-    "SELECT * FROM users",
+    "SELECT * FROM users INNER JOIN contacts ON users.id = contacts.id OR users.name = contacts.name",
   ],
-  "query": "SELECT * FROM users",
-  "sql": "SELECT * FROM users",
+  "query": "SELECT * FROM users INNER JOIN contacts ON users.id = contacts.id OR users.name = contacts.name",
+  "sql": "SELECT * FROM users INNER JOIN contacts ON users.id = contacts.id OR users.name = contacts.name",
   "values": Array [],
 }
 `;
@@ -299,7 +625,38 @@ Immutable.SelectNodes {
   "select": Immutable.List [
     "*",
   ],
-  "join": Immutable.List [],
+  "join": Immutable.List [
+    Immutable.JoinNode {
+      "__typename": "JoinNode",
+      "joinType": "RIGHT",
+      "table": "contacts",
+      "conditions": Immutable.List [
+        Immutable.CondExpressionNode {
+          "__typename": "CondExpressionNode",
+          "not": null,
+          "column": "users.id",
+          "operator": "=",
+          "value": "contacts.id",
+          "andOr": "AND",
+        },
+      ],
+    },
+    Immutable.JoinNode {
+      "__typename": "JoinNode",
+      "joinType": "RIGHT OUTER",
+      "table": "photos",
+      "conditions": Immutable.List [
+        Immutable.CondExpressionNode {
+          "__typename": "CondExpressionNode",
+          "not": null,
+          "column": "users.id",
+          "operator": "=",
+          "value": "photos.id",
+          "andOr": "AND",
+        },
+      ],
+    },
+  ],
   "having": Immutable.List [],
   "group": Immutable.List [],
   "order": Immutable.List [],
@@ -316,11 +673,16 @@ Immutable.SelectNodes {
 exports[`@knex/core - SelectBuilder right (outer) join 2`] = `
 Object {
   "fragments": Array [
-    "SELECT * FROM users",
+    "SELECT * FROM users RIGHT JOIN contacts ON users.id = ",
+    " RIGHT OUTER JOIN photos ON users.id = ",
+    "",
   ],
-  "query": "SELECT * FROM users",
-  "sql": "SELECT * FROM users",
-  "values": Array [],
+  "query": "SELECT * FROM users RIGHT JOIN contacts ON users.id = ? RIGHT OUTER JOIN photos ON users.id = ?",
+  "sql": "SELECT * FROM users RIGHT JOIN contacts ON users.id = contacts.id RIGHT OUTER JOIN photos ON users.id = photos.id",
+  "values": Array [
+    "contacts.id",
+    "photos.id",
+  ],
 }
 `;
 
@@ -489,13 +851,73 @@ Object {
 }
 `;
 
+exports[`@knex/core - SelectBuilder throws with invalid operator 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "from": "users",
+  "where": Immutable.List [
+    Immutable.CondInNode {
+      "__typename": "CondInNode",
+      "not": "NOT",
+      "column": "id",
+      "andOr": "AND",
+      "value": Immutable.SubQueryNode {
+        "__typename": "SubQueryNode",
+        "ast": Immutable.SelectNodes {
+          "__operation": "SELECT",
+          "from": null,
+          "where": Immutable.List [
+            Immutable.CondExpressionNode {
+              "__typename": "CondExpressionNode",
+              "not": null,
+              "column": "id",
+              "operator": "isnt",
+              "value": 1,
+              "andOr": "AND",
+            },
+          ],
+          "select": Immutable.List [
+            "*",
+          ],
+          "join": Immutable.List [],
+          "having": Immutable.List [],
+          "group": Immutable.List [],
+          "order": Immutable.List [],
+          "union": Immutable.List [],
+          "limit": null,
+          "offset": null,
+          "alias": null,
+          "distinct": false,
+          "lock": null,
+          "meta": Immutable.Map {},
+        },
+      },
+    },
+  ],
+  "select": Immutable.List [
+    "*",
+  ],
+  "join": Immutable.List [],
+  "having": Immutable.List [],
+  "group": Immutable.List [],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "alias": null,
+  "distinct": false,
+  "lock": null,
+  "meta": Immutable.Map {},
+}
+`;
+
 exports[`@knex/core - SelectBuilder where clause 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",
   "from": "users",
   "where": Immutable.List [
-    Immutable.WhereExpressionNode {
-      "__typename": "WhereExpressionNode",
+    Immutable.CondExpressionNode {
+      "__typename": "CondExpressionNode",
       "not": null,
       "column": "id",
       "operator": "=",
@@ -537,34 +959,31 @@ Immutable.SelectNodes {
   "__operation": "SELECT",
   "from": "users",
   "where": Immutable.List [
-    Immutable.WhereSubNode {
-      "__typename": "WhereSubNode",
+    Immutable.CondSubNode {
+      "__typename": "CondSubNode",
       "not": null,
       "andOr": "AND",
-      "ast": Immutable.WhereClauseNodes {
-        "__clause": "WhereClause",
-        "where": Immutable.List [
-          Immutable.WhereExpressionNode {
-            "__typename": "WhereExpressionNode",
-            "not": null,
-            "column": "id",
-            "operator": "=",
-            "value": 1,
-            "andOr": "AND",
-          },
-          Immutable.WhereExpressionNode {
-            "__typename": "WhereExpressionNode",
-            "not": null,
-            "column": "id",
-            "operator": "=",
-            "value": 2,
-            "andOr": "AND",
-          },
-        ],
-      },
+      "ast": Immutable.List [
+        Immutable.CondExpressionNode {
+          "__typename": "CondExpressionNode",
+          "not": null,
+          "column": "id",
+          "operator": "=",
+          "value": 1,
+          "andOr": "AND",
+        },
+        Immutable.CondExpressionNode {
+          "__typename": "CondExpressionNode",
+          "not": null,
+          "column": "id",
+          "operator": "=",
+          "value": 2,
+          "andOr": "AND",
+        },
+      ],
     },
-    Immutable.WhereExpressionNode {
-      "__typename": "WhereExpressionNode",
+    Immutable.CondExpressionNode {
+      "__typename": "CondExpressionNode",
       "not": null,
       "column": "id",
       "operator": "=",

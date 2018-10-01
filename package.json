@@ -8,7 +8,8 @@
   "license": "MIT",
   "scripts": {
     "build": "lerna run build",
-    "dev": "lerna run dev"
+    "dev": "lerna run dev",
+    "test": "jest --watch"
   },
   "devDependencies": {
     "@types/jest": "^23.3.2",

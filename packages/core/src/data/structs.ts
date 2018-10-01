@@ -34,6 +34,7 @@ import {
   IAlterTableOperation,
   ICondDateNode,
   ICondRawNode,
+  IAliasedIdentNode,
 } from "./types";
 
 /**
@@ -206,7 +207,7 @@ export const JoinNode = IRecord<IJoinNode>(
 export const OrderByNode = IRecord<IOrderByNode>(
   {
     __typename: NodeTypeEnum.ORDER_BY,
-    column: "",
+    column: null,
     direction: "ASC",
   },
   NodeTypeEnum.ORDER_BY
@@ -246,6 +247,18 @@ export const SubQueryNode = IRecord<ISubQuery>(
     ast: null,
   },
   NodeTypeEnum.SUB_QUERY
+);
+
+/**
+ * ___ AS ___
+ */
+export const AliasedIdentNode = IRecord<IAliasedIdentNode>(
+  {
+    __typename: NodeTypeEnum.ALIASED,
+    ident: "",
+    alias: "",
+  },
+  NodeTypeEnum.ALIASED
 );
 
 /**

@@ -1,6 +1,6 @@
 import { List } from "immutable";
 import {
-  TOperator,
+  TOperatorArg,
   IJoinBuilderFn,
   TConditionNode,
   TInArg,
@@ -11,11 +11,12 @@ import {
   SubConditionFn,
   TAndOr,
   TNot,
+  TValueArg,
 } from "../data/types";
 import { AddCondition } from "./AddCondition";
 import { ClauseTypeEnum, OperatorEnum } from "../data/enums";
 import { Grammar } from "../Grammar";
-import { CondSubNode } from "@knex/core/src/data/structs";
+import { CondSubNode } from "../data/structs";
 
 export class JoinBuilder extends AddCondition {
   protected ast = List<TConditionNode>();
@@ -24,18 +25,28 @@ export class JoinBuilder extends AddCondition {
   }
   on(raw: IRawNode): this;
   on(columnA: TColumnArg, columnB: TColumnArg): this;
-  on(columnA: TColumnArg, op: TOperator, columnB: TColumnArg): this;
+  on(columnA: TColumnArg, op: TOperatorArg, columnB: TColumnArg): this;
   on(columns: { [columnA: string]: string }): this;
   on(wrappedJoin: IJoinBuilderFn): this;
   on(...args: any[]) {
     return this.addColumnCond(ClauseTypeEnum.JOIN, args, OperatorEnum.AND);
   }
+  onVal(columnA: TColumnArg, columnB: TValueArg): this;
+  onVal(columnA: TColumnArg, op: TOperatorArg, columnB: TValueArg): this;
+  onVal(...args: any[]) {
+    return this.addCond(ClauseTypeEnum.JOIN, args, OperatorEnum.AND);
+  }
   orOn(raw: IRawNode): this;
   orOn(columnA: TColumnArg, columnB: TColumnArg): this;
-  orOn(columnA: TColumnArg, op: TOperator, columnB: TColumnArg): this;
+  orOn(columnA: TColumnArg, op: TOperatorArg, columnB: TColumnArg): this;
   orOn(wrappedJoin: IJoinBuilderFn): this;
   orOn(...args: any[]) {
     return this.addColumnCond(ClauseTypeEnum.JOIN, args, OperatorEnum.OR);
+  }
+  orOnVal(columnA: TColumnArg, columnB: TValueArg): this;
+  orOnVal(columnA: TColumnArg, op: TOperatorArg, columnB: TValueArg): this;
+  orOnVal(...args: any[]) {
+    return this.addCond(ClauseTypeEnum.JOIN, args, OperatorEnum.OR);
   }
 
   onIn(column: TColumnArg, arg: TInArg) {

@@ -14,6 +14,8 @@ import { RecordOf, List, Map as IMap } from "immutable";
 import { SubHavingBuilder } from "../clauses/HavingClauseBuilder";
 import { AddCondition } from "../clauses/AddCondition";
 
+export type Omit<T, K> = Pick<T, Exclude<keyof T, K>>;
+
 export type Maybe<T> = null | T;
 
 export interface ChainFn<T> {
@@ -59,14 +61,29 @@ export interface SubConditionFn {
 /**
  * Argument for a column, what's passed into the query builder
  */
-export type TColumnArg = string | number | SubQueryArg | SelectBuilder | TRawNode;
+export type TColumnArg = string | SubQueryArg | SelectBuilder | TRawNode;
+
+/**
+ * Allow numbers in select arguments, but not elsewhere
+ */
+export type TSelectColumnArg = number | TColumnArg;
 
 /**
  * Argument for a value
  */
 export type TValueArg = null | number | string | Date | SelectBuilder | SubQueryArg | TRawNode;
 
-export type TSelectArg = TColumnArg | TColumnArg[];
+export type TSelectArg = TAliasObj | TSelectColumnArg | TSelectColumnArg[];
+
+/**
+ * {alias: identifier} syntax
+ */
+export type TAliasObj = { [aliasIdent: string]: string };
+
+/**
+ * Argument for an aggregate
+ */
+export type TAggregateArg = string | string[] | TRawNode | SubQueryArg | SelectBuilder;
 
 export type TTableArg = string | SubQueryArg | SelectBuilder | TRawNode;
 
@@ -78,11 +95,11 @@ export type TAndOr = OperatorEnum.AND | OperatorEnum.OR;
 
 export type TGroupByArg = string | TRawNode;
 
-export type TColumnArrCondition = [TColumnArg, TColumnArg] | [TColumnArg, TOperator, TColumnArg];
+export type TColumnArrCondition = [TColumnArg, TColumnArg] | [TColumnArg, TOperatorArg, TColumnArg];
 
 export type TColumnConditions = Array<TColumnArrCondition>;
 
-export type TValueArrCondition = [TColumnArg, any] | [TColumnArg, TOperator, any];
+export type TValueArrCondition = [TColumnArg, any] | [TColumnArg, TOperatorArg, any];
 
 export type TValueConditions = Array<TValueArrCondition>;
 
@@ -94,12 +111,18 @@ export type TDateCondArgs = [TColumnArg, TValueArg] | [TColumnArg, TOperatorArg,
 /**
  * The type for a column (or place for a column) in the AST
  */
-export type TColumn = string | number | TRawNode | TSubQueryNode;
+export type TColumn = string | TAliasedIdentNode | TRawNode | TSubQueryNode;
 
 /**
  * The type for a column in the AST
  */
-export type TTable = string | TRawNode | TSubQueryNode;
+export type TTable = string | TAliasedIdentNode | TRawNode | TSubQueryNode;
+
+/**
+ * Like a column, but when it's used as a value rather than aliased like in GROUP BY / ORDER BY
+ * or in the right side of a column condition
+ */
+export type TColumnVal = string | TRawNode | TSubQueryNode;
 
 /**
  * The type for a value in the AST
@@ -119,53 +142,9 @@ export type TInValue = Array<any> | TRawNode | TSubQueryNode;
 /**
  * All of the valid arguments for where an operator will be used.
  */
-export type TOperatorArg = TOperator | "in" | "not in";
+export type TOperatorArg = string | TRawNode;
 
 export type TOrderByDirection = "asc" | "ASC" | "desc" | "DESC";
-
-/**
- * Valid operators, this type may be augmented by different dialects
- */
-export type TOperator =
-  | "="
-  | "<"
-  | ">"
-  | "<="
-  | ">="
-  | "<>"
-  | "!="
-  | "like"
-  | "not like"
-  | "between"
-  | "not between"
-  | "ilike"
-  | "not ilike"
-  | "exists"
-  | "not exist"
-  | "rlike"
-  | "not rlike"
-  | "regexp"
-  | "not regexp"
-  | "&"
-  | "|"
-  | "^"
-  | "<<"
-  | ">>"
-  | "~"
-  | "~*"
-  | "!~"
-  | "!~*"
-  | "#"
-  | "&&"
-  | "@>"
-  | "<@"
-  | "||"
-  | "&<"
-  | "&>"
-  | "-|-"
-  | "@@"
-  | "!!"
-  | "in";
 
 export interface FromJSArg {}
 
@@ -231,14 +210,14 @@ export interface IConditionNode<N extends ConditionNodeTypes> extends INode<N> {
 
 export interface ICondExprNode extends IConditionNode<NodeTypeEnum.COND_EXPR> {
   column: Maybe<TColumn>;
-  operator: TOperator;
+  operator: TOperatorArg;
   value: Maybe<TValue>;
 }
 export type TCondExprNode = RecordOf<ICondExprNode>;
 
 export interface ICondColumnNode extends IConditionNode<NodeTypeEnum.COND_COLUMN> {
   column: Maybe<TColumn>;
-  operator: TOperator;
+  operator: TOperatorArg;
   rightColumn: Maybe<TColumn>;
 }
 export type TCondColumnNode = RecordOf<ICondColumnNode>;
@@ -263,7 +242,7 @@ export type TCondExistsNode = RecordOf<ICondExistsNode>;
 export interface ICondDateNode extends IConditionNode<NodeTypeEnum.COND_DATE> {
   type: DateCondType;
   column: Maybe<TColumn>;
-  operator: TOperator;
+  operator: string | TRawNode;
   value: Maybe<TValue>;
 }
 export type TCondDateNode = RecordOf<ICondDateNode>;
@@ -281,7 +260,7 @@ export interface ICondRawNode extends IConditionNode<NodeTypeEnum.COND_RAW> {
 export type TCondRawNode = RecordOf<ICondRawNode>;
 
 export interface IOrderByNode extends INode<NodeTypeEnum.ORDER_BY> {
-  column: string | TRawNode;
+  column: Maybe<TColumn>;
   direction: "ASC" | "DESC";
 }
 export type TOrderByNode = RecordOf<IOrderByNode>;
@@ -298,21 +277,28 @@ export type TCondSubNode = RecordOf<ICondSubNode>;
 
 export interface IJoinNode extends INode<NodeTypeEnum.JOIN> {
   joinType: JoinTypeEnum;
-  table: string | TRawNode | TSubQueryNode;
+  table: TTable;
   conditions: List<TConditionNode>;
 }
 export type TJoinNode = RecordOf<IJoinNode>;
 
 export interface IAggregateNode extends INode<NodeTypeEnum.AGGREGATE> {
   fn: AggregateFns;
-  column: string | TRawNode | TSelectOperation;
+  column: string | string[] | TColumn;
   alias: Maybe<string>;
   distinct: boolean;
 }
+export type TAggregateNode = RecordOf<IAggregateNode>;
 
-export type TSelectNode = string | IAggregateNode | TSubQueryNode | TRawNode;
+export interface IAliasedIdentNode extends INode<NodeTypeEnum.ALIASED> {
+  ident: string;
+  alias: string;
+}
+export type TAliasedIdentNode = RecordOf<IAliasedIdentNode>;
 
-export type TFromNode = string | TSubQueryNode | TRawNode;
+export type TSelectNode = string | TAliasedIdentNode | TAggregateNode | TSubQueryNode | TRawNode;
+
+export type TFromNode = string | TAliasedIdentNode | TSubQueryNode | TRawNode;
 
 export type TConditionNode =
   | TCondExprNode

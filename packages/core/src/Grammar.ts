@@ -1,6 +1,6 @@
 import { List } from "immutable";
 import { NodeTypeEnum, OperationTypeEnum } from "./data/enums";
-import { isRawNode } from "./data/predicates";
+import { isRawNode, isSubQueryNode } from "./data/predicates";
 import { deleteAst, selectAst, updateAst } from "./data/structs";
 import {
   Maybe,
@@ -22,8 +22,11 @@ import {
   TConditionNode,
   TCondSubNode,
   TCondNullNode,
-  TOperator,
+  TColumn,
+  TTable,
+  TOperatorArg,
 } from "./data/types";
+import { validOperators } from "@knex/core/src/data/operators";
 
 export interface ToSQLValue {
   sql: string;
@@ -33,7 +36,7 @@ export interface ToSQLValue {
 }
 
 export class Grammar {
-  static operators = new Set<TOperator>([]);
+  operators = validOperators;
 
   public readonly dialect = null;
   public readonly dateString = "Y-m-d H:i:s";
@@ -48,13 +51,6 @@ export class Grammar {
   protected sqlWithValues: string = "";
   protected hasBindingValue: boolean = false;
   protected hasUndefinedValue: boolean = false;
-
-  checkOperator(op: TOperator) {
-    if (!Grammar.operators.has(op)) {
-      return false;
-    }
-    return true;
-  }
 
   newInstance(): this {
     return new (<any>this.constructor)();
@@ -258,9 +254,20 @@ export class Grammar {
     if (joins.size === 0) {
       return;
     }
-    this.addKeyword("");
     joins.forEach(join => {
-      //
+      switch (join.__typename) {
+        case NodeTypeEnum.RAW:
+          break;
+        case NodeTypeEnum.JOIN:
+          this.addKeyword(` ${join.joinType} JOIN `);
+          this.addIdentifier(join.table);
+          if (join.conditions.size > 0) {
+            this.addKeyword(" ON ");
+            join.conditions.forEach((cond, i) => {
+              this.addConditionNode(cond, i);
+            });
+          }
+      }
     });
   }
 
@@ -390,7 +397,11 @@ export class Grammar {
   }
 
   addNullCondition(node: TCondNullNode) {
-    //
+    if (!node.column) {
+      return;
+    }
+    this.addIdentifier(node.column);
+    this.addKeyword(" IS ");
     if (node.not) {
       this.addKeyword("NOT ");
     }
@@ -412,8 +423,8 @@ export class Grammar {
     if (node.not) {
       this.addKeyword("NOT ");
     }
-    this.currentFragment += this.escapeId(node.column);
-    this.currentFragment += ` ${node.operator} `;
+    this.addIdentifier(node.column);
+    this.addOperator(node.operator);
     this.pushValue(node.value);
   }
 
@@ -421,10 +432,20 @@ export class Grammar {
     if (node.not) {
       this.addKeyword("NOT ");
     }
+    this.addIdentifier(node.column!);
+    this.addOperator(node.operator);
+    this.addIdentifier(node.rightColumn!);
   }
 
   addInCondition(node: TCondInNode) {
-    this.addKeyword(node.not ? "NOT IN " : "IN ");
+    this.addIdentifier(node.column!);
+    this.addKeyword(node.not ? " NOT IN " : " IN ");
+    if (isRawNode(node.value)) {
+      return this.addRawNode(node.value);
+    }
+    if (isSubQueryNode(node.value)) {
+      return this.addSubQueryNode(node.value);
+    }
   }
 
   buildWhereSub(node: TCondSubNode) {
@@ -442,6 +463,31 @@ export class Grammar {
       this.addKeyword("TRUNCATE TABLE ");
       this.currentFragment += this.escapeId(node.table);
     }
+  }
+
+  addIdentifier(ident: TColumn | TTable) {
+    if (typeof ident === "number") {
+      this.currentFragment += ident;
+    }
+    if (typeof ident === "string") {
+      this.currentFragment += this.escapeId(ident);
+    }
+    if (isRawNode(ident)) {
+      return this.addRawNode(ident);
+    }
+    if (isSubQueryNode(ident)) {
+      return this.addSubQueryNode(ident);
+    }
+  }
+
+  addOperator(op: TOperatorArg) {
+    if (isRawNode(op)) {
+      return this.addRawNode(op);
+    }
+    if (!this.operators.has(op)) {
+      throw new Error(`The operator "${op}" is not permitted`);
+    }
+    this.currentFragment += ` ${op} `;
   }
 
   addKeyword(keyword: string) {

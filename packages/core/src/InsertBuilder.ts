@@ -8,7 +8,7 @@ import { SelectBuilder } from "./SelectBuilder";
 export class InsertBuilder<T = { [columnName: string]: any }> implements Loggable, Buildable {
   public readonly dialect = null;
 
-  grammar = new Grammar();
+  protected grammar = new Grammar();
 
   constructor(protected ast = insertAst) {}
 
@@ -43,17 +43,6 @@ export class InsertBuilder<T = { [columnName: string]: any }> implements Loggabl
     return this.grammar.toOperation(this.ast);
   }
 
-  protected subQuery(arg: SubQueryArg) {
-    const builder = new SelectBuilder();
-    arg.call(builder, builder);
-    return builder.getAst();
-  }
-
-  protected chain(fn: ChainFnInsert) {
-    this.ast = fn(this.ast);
-    return this;
-  }
-
   log(msg: string) {
     console.log(msg);
   }
@@ -64,5 +53,16 @@ export class InsertBuilder<T = { [columnName: string]: any }> implements Loggabl
 
   warn(warning: string | Error) {
     console.warn(warning);
+  }
+
+  protected subQuery(arg: SubQueryArg) {
+    const builder = new SelectBuilder();
+    arg.call(builder, builder);
+    return builder.getAst();
+  }
+
+  protected chain(fn: ChainFnInsert) {
+    this.ast = fn(this.ast);
+    return this;
   }
 }

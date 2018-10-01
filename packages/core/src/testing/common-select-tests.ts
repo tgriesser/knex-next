@@ -8,8 +8,13 @@ interface SelectBuilderFactory {
 export function commonSelectTests(builder: SelectBuilderFactory) {
   function snap(b: SelectBuilder) {
     expect(b.getAst()).toMatchSnapshot();
-    expect(b.toOperation()).toMatchSnapshot();
+    const op = b.toOperation();
+    expect(op).toMatchSnapshot();
+    // Return this so we can chain .toMatchInlineSnapshot for a quick visual
+    // debug/sanity check without switching files. This should be removed
+    return expect(op.sql);
   }
+
   test("select columns", () => {
     snap(builder().select("a", "b"));
   });
@@ -133,20 +138,20 @@ export function commonSelectTests(builder: SelectBuilderFactory) {
   });
 
   test("throws with invalid operator", () => {
-    // expect(() => {
-    //   builder()
-    //     .select("*")
-    //     .from("users")
-    //     .where(
-    //       "id",
-    //       "in",
-    //       builder()
-    //         .select("*")
-    //         // @ts-ignore
-    //         .where("id", "isnt", 1)
-    //     )
-    //     .toString();
-    // }).toThrow('The operator "isnt" is not permitted');
+    expect(() => {
+      snap(
+        builder()
+          .select("*")
+          .from("users")
+          .where(
+            "id",
+            "in",
+            builder()
+              .select("*")
+              .where("id", "isnt", 1)
+          )
+      );
+    }).toThrow('The operator "isnt" is not permitted');
   });
 
   test("aggregate: sum", () => {
@@ -159,5 +164,21 @@ export function commonSelectTests(builder: SelectBuilderFactory) {
 
   test("aggregate: count", () => {
     snap(builder().count("logins"));
+  });
+
+  test("aggregate: count with alias", () => {
+    snap(builder().count("logins"));
+  });
+
+  test("aggregate: sumDistinct", () => {
+    snap(builder().sumDistinct("logins"));
+  });
+
+  test("aggregate: avgDistinct", () => {
+    snap(builder().avgDistinct("logins"));
+  });
+
+  test("aggregate: countDistinct", () => {
+    snap(builder().countDistinct("logins"));
   });
 }

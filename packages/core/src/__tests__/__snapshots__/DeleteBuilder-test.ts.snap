@@ -5,6 +5,7 @@ Immutable.DeleteOperation {
   "__operation": "DELETE",
   "table": "someTable",
   "where": Immutable.List [],
+  "join": Immutable.List [],
   "meta": Immutable.Map {},
 }
 `;
@@ -25,8 +26,8 @@ Immutable.DeleteOperation {
   "__operation": "DELETE",
   "table": "someTable",
   "where": Immutable.List [
-    Immutable.WhereExpressionNode {
-      "__typename": "WhereExpressionNode",
+    Immutable.CondExpressionNode {
+      "__typename": "CondExpressionNode",
       "not": null,
       "column": "id",
       "operator": "=",
@@ -34,6 +35,7 @@ Immutable.DeleteOperation {
       "andOr": "AND",
     },
   ],
+  "join": Immutable.List [],
   "meta": Immutable.Map {},
 }
 `;

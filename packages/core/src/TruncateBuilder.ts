@@ -4,7 +4,7 @@ import { truncateAst } from "./data/structs";
 import { ChainFnTruncate } from "@knex/core/src/data/types";
 
 export class TruncateBuilder implements Buildable {
-  grammar = new Grammar();
+  protected grammar = new Grammar();
 
   constructor(protected ast = truncateAst) {}
 
