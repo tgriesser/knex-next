@@ -31,6 +31,7 @@ import { DateCondType, ClauseTypeEnum, OperatorEnum } from "../data/enums";
 import { isRawNode, isSelectBuilder } from "@knex/core/src/data/predicates";
 import { Grammar } from "@knex/core/src/Grammar";
 import { Record, List } from "immutable";
+import invariant from "invariant";
 
 /**
  * Most of the clause conditions (having, where, join) are similarly shaped
@@ -308,6 +309,7 @@ export abstract class AddCondition {
     if (args.length === 2) {
       return [args[0], "=", args[1]];
     }
+    invariant(args.length === 3, "Invalid arguments, expected 2 or 3, saw %s", args.length);
     return args;
   }
 

@@ -66,7 +66,7 @@ export class JoinBuilder extends AddCondition {
   protected subCondition(clauseType: ClauseTypeEnum.JOIN, fn: SubConditionFn, andOr: TAndOr, not: TNot) {
     const builder = new JoinBuilder(this.grammar.newInstance(), this.subQuery);
     fn.call(builder, builder);
-    this.pushCondition(clauseType, CondSubNode({ andOr, not, ast: builder.getConditions() }));
+    this.pushCondition(clauseType, CondSubNode({ andOr, not, ast: builder.getAst() }));
     return this;
   }
 }

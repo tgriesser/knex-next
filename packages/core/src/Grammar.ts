@@ -60,7 +60,10 @@ export class Grammar {
     return new (<any>this.constructor)();
   }
 
-  escapeId(arg: string) {
+  escapeId(arg: string | number) {
+    if (typeof arg === "number") {
+      return arg;
+    }
     return arg
       .split(".")
       .map(f => (f === "*" ? "*" : this.escapeIdFragment(f)))

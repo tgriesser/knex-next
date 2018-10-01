@@ -1,11 +1,15 @@
 import { SchemaBuilder } from "./SchemaBuilder";
 
 export class Migration extends SchemaBuilder {
-  createTable() {}
+  createTable() {
+    return;
+  }
 
-  alterTable() {}
+  alterTable() {
+    return;
+  }
 
-  createTableIfNotExists() {}
-
-  createView() {}
+  createView() {
+    return;
+  }
 }

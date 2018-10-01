@@ -298,7 +298,7 @@ export type TCondSubNode = RecordOf<ICondSubNode>;
 
 export interface IJoinNode extends INode<NodeTypeEnum.JOIN> {
   joinType: JoinTypeEnum;
-  table: string | TRawNode | TSelectOperation;
+  table: string | TRawNode | TSubQueryNode;
   conditions: List<TConditionNode>;
 }
 export type TJoinNode = RecordOf<IJoinNode>;

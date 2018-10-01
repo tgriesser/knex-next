@@ -176,6 +176,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
   crossJoin(table: TTableArg, ...args: any[]) {
     return this.addJoinClause(JoinTypeEnum.CROSS, table, args);
   }
+
   joinRaw(node: TRawNode) {
     invariant(
       isRawNode(node),
@@ -183,25 +184,6 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
       typeof node
     );
     return this.chain(ast => ast.set("join", ast.join.push(node)));
-  }
-
-  /**
-   * Adds a JOIN clause to the query.
-   */
-  protected addJoinClause(joinType: JoinTypeEnum, table: TTableArg, args: any[], asVal = false) {
-    const builder = new JoinBuilder(this.grammar.newInstance(), this.subQuery);
-    const conditions = builder.getAst();
-    return this.chain(ast =>
-      ast.set(
-        "join",
-        ast.join.concat(
-          JoinNode({
-            table: this.unwrapTable(table),
-            conditions,
-          })
-        )
-      )
-    );
   }
 
   /**
@@ -255,21 +237,6 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
     return this.addUnionClauses(args, true);
   }
 
-  protected addUnionClauses(args: Array<TUnionArg>, unionAll: boolean = false) {
-    return this.chain(ast => {
-      return ast.set(
-        "union",
-        args.reduce((result, arg) => {
-          if (typeof arg === "function") {
-            const ast = this.selectBuilder().getAst();
-            return result.push(UnionNode({ ast, all: unionAll }));
-          }
-          return result;
-        }, ast.union)
-      );
-    });
-  }
-
   lock(value: boolean | string = true) {
     return this.chain(ast => ast.set("lock", value));
   }
@@ -299,6 +266,129 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
     return this.addAggregate(AggregateFns.AVG, column);
   }
 
+  as(val: string) {
+    return this.chain(ast => ast.set("alias", val));
+  }
+
+  toString() {
+    return `[${this.constructor.name}]`;
+  }
+
+  toSql() {
+    return this.grammar.toSql(this.ast);
+  }
+
+  toOperation() {
+    return this.grammar.toOperation(this.ast);
+  }
+
+  fromJS(obj: FromJSArg) {
+    return this;
+  }
+
+  getAst(): TSelectOperation {
+    return this.ast;
+  }
+
+  toImmutable() {
+    if (this.executionContext) {
+      throw new Error(dedent`
+        Oops, looks like you're trying to convert a builder which has already begun execution to an immutable instance.
+        Execution is defined as:
+          - calling .then() or .catch(), either directly or indirectly via async / await
+          - calling any of the EventEmitter methods (.on, .off, etc.)
+          - beginning async iteration
+        As an alternative, you may instead call .clone() which clones the builder's AST and then call .toImmutable on 
+      `);
+    }
+    const builder = this.clone();
+    builder.mutable = false;
+    return builder;
+  }
+
+  toMutable() {
+    if (this.mutable) {
+      return this;
+    }
+    const builder = this.clone();
+    builder.mutable = true;
+    return builder;
+  }
+
+  setConnection(connection: Connection) {
+    this.connection = connection;
+    return this;
+  }
+
+  then<TResult1 = T, TResult2 = never>(
+    onFulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>),
+    onRejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
+  ): Promise<TResult1 | TResult2> {
+    if (!this._promise) {
+      try {
+        this._promise = this.getExecutionContext().asPromise();
+      } catch (e) {
+        return Promise.reject(e);
+      }
+    }
+    return this._promise.then(onFulfilled, onRejected);
+  }
+
+  catch<TResult = never>(onRejected: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null) {
+    if (!this._promise) {
+      return this.then().catch(onRejected);
+    }
+    return this._promise.catch(onRejected);
+  }
+
+  log(msg: string) {
+    console.log(msg);
+  }
+
+  error(err: Error) {
+    console.error(err);
+  }
+
+  warn(warning: string | Error) {
+    console.warn(warning);
+  }
+
+  update() {
+    throw new Error(dedent`
+      The .update() method is no longer chained off of a select query, it is now 
+      moved to it's own UpdateBuilder class. Check the docs for migration.
+    `);
+  }
+
+  protected addUnionClauses(args: Array<TUnionArg>, unionAll: boolean = false) {
+    return this.chain(ast => {
+      return ast.set(
+        "union",
+        args.reduce((result, arg) => {
+          if (typeof arg === "function") {
+            const ast = this.selectBuilder().getAst();
+            return result.push(UnionNode({ ast, all: unionAll }));
+          }
+          return result;
+        }, ast.union)
+      );
+    });
+  }
+
+  /**
+   * Adds a JOIN clause to the query.
+   */
+  protected addJoinClause(joinType: JoinTypeEnum, table: TTableArg, args: any[], asVal = false) {
+    const builder = new JoinBuilder(this.grammar.newInstance(), this.subQuery);
+    const conditions = builder.getAst();
+    const joinNode = JoinNode({
+      joinType,
+      table: this.unwrapTable(table),
+      conditions,
+    });
+    return this.chain(ast => ast.set("join", ast.join.push(joinNode)));
+  }
+
   /**
    * Adds an aggregate value to the SELECT clause
    */
@@ -314,18 +404,6 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
         )
       )
     );
-  }
-
-  toString() {
-    return `[${this.constructor.name}]`;
-  }
-
-  toSql() {
-    return this.grammar.toSql(this.ast);
-  }
-
-  toOperation() {
-    return this.grammar.toOperation(this.ast);
   }
 
   /**
@@ -406,65 +484,6 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
     return new (<typeof SelectBuilder>this.constructor)(fn(this.ast)) as this;
   }
 
-  fromJS(obj: FromJSArg) {
-    return this;
-  }
-
-  getAst(): TSelectOperation {
-    return this.ast;
-  }
-
-  toImmutable() {
-    if (this.executionContext) {
-      throw new Error(dedent`
-        Oops, looks like you're trying to convert a builder which has already begun execution to an immutable instance.
-        Execution is defined as:
-          - calling .then() or .catch(), either directly or indirectly via async / await
-          - calling any of the EventEmitter methods (.on, .off, etc.)
-          - beginning async iteration
-        As an alternative, you may instead call .clone() which clones the builder's AST and then call .toImmutable on 
-      `);
-    }
-    const builder = this.clone();
-    builder.mutable = false;
-    return builder;
-  }
-
-  toMutable() {
-    if (this.mutable) {
-      return this;
-    }
-    const builder = this.clone();
-    builder.mutable = true;
-    return builder;
-  }
-
-  setConnection(connection: Connection) {
-    this.connection = connection;
-    return this;
-  }
-
-  then<TResult1 = T, TResult2 = never>(
-    onFulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>),
-    onRejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
-  ): Promise<TResult1 | TResult2> {
-    if (!this._promise) {
-      try {
-        this._promise = this.getExecutionContext().asPromise();
-      } catch (e) {
-        return Promise.reject(e);
-      }
-    }
-    return this._promise.then(onFulfilled, onRejected);
-  }
-
-  catch<TResult = never>(onRejected: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null) {
-    if (!this._promise) {
-      return this.then().catch(onRejected);
-    }
-    return this._promise.catch(onRejected);
-  }
-
   /**
    * Takes an argument in a "table" slot and unwraps it so any subqueries / raw values are
    * properly handled.
@@ -524,29 +543,6 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
     }
     this.executionContext = new ExecutionContext();
     return this.executionContext;
-  }
-
-  as(val: string) {
-    return this.chain(ast => ast.set("alias", val));
-  }
-
-  log(msg: string) {
-    console.log(msg);
-  }
-
-  error(err: Error) {
-    console.error(err);
-  }
-
-  warn(warning: string | Error) {
-    console.warn(warning);
-  }
-
-  update() {
-    throw new Error(dedent`
-      The .update() method is no longer chained off of a select query, and is 
-      now moved to it's own 
-    `);
   }
 
   [SELECT_BUILDER]: true;
