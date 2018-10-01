@@ -1,7 +1,8 @@
 import Immutable from "immutable";
 import { DialectEnum } from "../data/enums";
+import { Connection } from "../Connection";
 
-export interface Buildable {
+export interface IBuilder {
   /**
    * The dialect of the builder, exposed publicly if multi-dialect
    * consumers need to follow separate code paths for equivalent behavior,

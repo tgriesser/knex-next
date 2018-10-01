@@ -13,6 +13,9 @@ export class AlterTableBuilder {
     //
   }
 
+  /**
+   * ALTER TABLE ____ CHANGE COLUMN ____
+   */
   alterColumn() {
     //
   }

@@ -5,7 +5,6 @@ import { SubHavingBuilder } from "./clauses/HavingClauseBuilder";
 import { JoinBuilder } from "./clauses/JoinBuilder";
 import { SubWhereBuilder, WhereClauseBuilder } from "./clauses/WhereClauseBuilder";
 import { Connection } from "./Connection";
-import { Loggable } from "./contracts/Loggable";
 import { AggregateFns, ClauseTypeEnum, DialectEnum, JoinTypeEnum, NodeTypeEnum, OrderByEnum } from "./data/enums";
 import { NEVER } from "./data/messages";
 import { isRawNode, isSelectBuilder, isNodeOf } from "./data/predicates";
@@ -35,12 +34,15 @@ import {
   Omit,
   TAliasObj,
   TOperatorArg,
+  ExecutableBuilder,
 } from "./data/types";
 import { ExecutionContext } from "./ExecutionContext";
 import { Grammar } from "./Grammar";
 import { withEventEmitter } from "./mixins/withEventEmitter";
+import { IBuilder } from "./contracts/Buildable";
+import { withExecutionMethods } from "@knex/core/src/mixins/withExecutionMethods";
 
-export class SelectBuilder<T = any> extends WhereClauseBuilder implements PromiseLike<T>, Loggable {
+export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuilder {
   /**
    * Whether the builder is "mutable". Immutable builders are useful
    * when building subQueries or statements we want to ensure aren't
@@ -305,10 +307,6 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
     return this.grammar.toSql(this.ast);
   }
 
-  toOperation() {
-    return this.grammar.toOperation(this.ast);
-  }
-
   fromJS(obj: FromJSArg) {
     return this;
   }
@@ -340,32 +338,6 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
     const builder = this.clone();
     builder.mutable = true;
     return builder;
-  }
-
-  setConnection(connection: Connection) {
-    this.connection = connection;
-    return this;
-  }
-
-  then<TResult1 = T, TResult2 = never>(
-    onFulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>),
-    onRejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
-  ): Promise<TResult1 | TResult2> {
-    if (!this._promise) {
-      try {
-        this._promise = this.getExecutionContext().asPromise();
-      } catch (e) {
-        return Promise.reject(e);
-      }
-    }
-    return this._promise.then(onFulfilled, onRejected);
-  }
-
-  catch<TResult = never>(onRejected: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null) {
-    if (!this._promise) {
-      return this.then().catch(onRejected);
-    }
-    return this._promise.catch(onRejected);
   }
 
   log(msg: string) {
@@ -459,9 +431,9 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
       }
       case 3: {
         if (asVal) {
-          builder.on(args[0], args[1], args[2]);
-        } else {
           builder.onVal(args[0], args[1], args[2]);
+        } else {
+          builder.on(args[0], args[1], args[2]);
         }
         break;
       }
@@ -552,7 +524,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
       if (clauseType === ClauseTypeEnum.WHERE) {
         return ast.set("where", ast.where.push(node));
       }
-      throw new Error(`Invalid `);
+      throw new Error(NEVER);
     });
   }
 
@@ -636,10 +608,11 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Promis
   }
 }
 
-export interface SelectBuilder {
+export interface SelectBuilder<T = any> extends ExecutableBuilder<T> {
   [SELECT_BUILDER]: true;
 }
 
 SelectBuilder.prototype[SELECT_BUILDER] = true;
 
 withEventEmitter(SelectBuilder);
+withExecutionMethods(SelectBuilder);

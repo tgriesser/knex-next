@@ -1,12 +1,23 @@
 import { WhereClauseBuilder } from "./clauses/WhereClauseBuilder";
-import { ChainFnDelete, SubQueryArg, SubConditionFn, TAndOr, TConditionNode, TNot } from "./data/types";
+import {
+  ChainFnDelete,
+  SubQueryArg,
+  SubConditionFn,
+  TAndOr,
+  TConditionNode,
+  TNot,
+  Maybe,
+  ExecutableBuilder,
+} from "./data/types";
 import { deleteAst, SubQueryNode } from "./data/structs";
 import { SelectBuilder } from "./SelectBuilder";
 import { ClauseTypeEnum } from "./data/enums";
-import { Buildable } from "./contracts/Buildable";
+import { IBuilder } from "./contracts/Buildable";
 import { Grammar } from "./Grammar";
 
-export class DeleteBuilder extends WhereClauseBuilder implements Buildable {
+export interface DeleteBuilder extends ExecutableBuilder {}
+
+export class DeleteBuilder extends WhereClauseBuilder implements IBuilder {
   dialect = null;
 
   protected grammar = new Grammar();
@@ -21,10 +32,6 @@ export class DeleteBuilder extends WhereClauseBuilder implements Buildable {
 
   getAst() {
     return this.ast;
-  }
-
-  toOperation() {
-    return this.grammar.toOperation(this.ast);
   }
 
   protected pushCondition(clauseType: ClauseTypeEnum, node: TConditionNode) {

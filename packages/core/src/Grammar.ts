@@ -1,4 +1,5 @@
 import { List } from "immutable";
+import sqlstring from "sqlstring";
 import { NodeTypeEnum, OperationTypeEnum } from "./data/enums";
 import { isRawNode, isSubQueryNode } from "./data/predicates";
 import { deleteAst, selectAst, updateAst } from "./data/structs";
@@ -25,15 +26,9 @@ import {
   TColumn,
   TTable,
   TOperatorArg,
+  ToSQLValue,
 } from "./data/types";
 import { validOperators } from "@knex/core/src/data/operators";
-
-export interface ToSQLValue {
-  sql: string;
-  query: string;
-  values: any[];
-  fragments: string[];
-}
 
 export class Grammar {
   operators = validOperators;
@@ -75,7 +70,7 @@ export class Grammar {
   }
 
   escapeValue(value: null | string | number | Date | Object) {
-    return value;
+    return sqlstring.escape(value);
   }
 
   getBinding(index: number) {
@@ -146,7 +141,7 @@ export class Grammar {
     this.addOrderByClause(ast);
     this.addLimit(ast.limit);
     this.addOffset(ast.offset);
-    this.addUnions(ast);
+    this.addUnions(ast.union);
     this.buildSelectLock(ast);
   }
 
@@ -225,9 +220,14 @@ export class Grammar {
    * If it's a "raw node" it could have any number of values mixed in
    */
   addRawNode(node: TRawNode) {
+    this.currentFragment += ` ${node.fragments.get(0)}`;
     if (node.bindings.size === 0) {
-      this.currentFragment += ` ${node.fragments.get(0)}`;
+      return;
     }
+    node.bindings.forEach((binding, i) => {
+      this.pushValue(binding);
+      this.currentFragment += node.fragments.get(i + 1);
+    });
   }
 
   addSubQueryNode(node: TSubQueryNode) {
@@ -295,30 +295,40 @@ export class Grammar {
     if (ast.order.size === 0) {
       return;
     }
-    this.addKeyword(" ORDER BY");
+    this.addKeyword(" ORDER BY ");
     ast.order.forEach(order => {
       //
     });
   }
 
-  addLimit(limit: TSelectOperation["limit"]) {
-    if (limit === null) {
+  addLimit(val: TSelectOperation["limit"]) {
+    if (val === null) {
       return;
     }
-    this.addKeyword(" LIMIT");
-    if (typeof limit === "number") {
-      this.currentFragment += limit;
+    this.addKeyword(" LIMIT ");
+    if (isRawNode(val)) {
+      this.addRawNode(val);
     } else {
-      this.addRawNode(limit);
+      this.pushValue(val);
     }
   }
 
-  addOffset(offset: TSelectOperation["offset"]) {
-    //
+  addOffset(val: TSelectOperation["offset"]) {
+    if (val === null) {
+      return;
+    }
+    this.addKeyword(" OFFSET ");
+    if (isRawNode(val)) {
+      this.addRawNode(val);
+    } else {
+      this.pushValue(val);
+    }
   }
 
-  addUnions(ast: TSelectOperation) {
-    //
+  addUnions(ast: TSelectOperation["union"]) {
+    if (ast.size === 0) {
+      return;
+    }
   }
 
   buildSelectLock(ast: TSelectOperation) {

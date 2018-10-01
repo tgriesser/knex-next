@@ -1,12 +1,99 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`insert: select 1`] = `
+exports[`@knex/core - InsertBuilder insert: select 1`] = `
+Immutable.InsertOperation {
+  "__operation": "INSERT",
+  "table": "someTable",
+  "chunkSize": null,
+  "columns": Immutable.List [
+    "a",
+  ],
+  "values": Immutable.List [],
+  "select": Immutable.SelectNodes {
+    "__operation": "SELECT",
+    "from": "otherTable",
+    "where": Immutable.List [],
+    "select": Immutable.List [
+      "a",
+    ],
+    "join": Immutable.List [],
+    "having": Immutable.List [],
+    "group": Immutable.List [],
+    "order": Immutable.List [],
+    "union": Immutable.List [],
+    "limit": null,
+    "offset": null,
+    "alias": null,
+    "distinct": false,
+    "lock": null,
+    "meta": Immutable.Map {},
+  },
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - InsertBuilder insert: select 2`] = `
 Object {
   "fragments": Array [
     "INSERT INTO someTable SELECT a FROM otherTable",
   ],
   "query": "INSERT INTO someTable SELECT a FROM otherTable",
   "sql": "INSERT INTO someTable SELECT a FROM otherTable",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - InsertBuilder insert: values 1`] = `
+Immutable.InsertOperation {
+  "__operation": "INSERT",
+  "table": "some_table",
+  "chunkSize": null,
+  "columns": Immutable.List [],
+  "values": Immutable.List [],
+  "select": null,
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - InsertBuilder insert: values 2`] = `
+Object {
+  "fragments": Array [
+    "INSERT INTO some_table",
+  ],
+  "query": "INSERT INTO some_table",
+  "sql": "INSERT INTO some_table",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - InsertBuilder multiple inserts 1`] = `
+Immutable.InsertOperation {
+  "__operation": "INSERT",
+  "table": "users",
+  "chunkSize": null,
+  "columns": Immutable.List [],
+  "values": Immutable.List [
+    Object {
+      "email": "foo",
+      "name": "tim",
+    },
+    Object {
+      "email": "bar",
+      "name": "kb",
+    },
+  ],
+  "select": null,
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - InsertBuilder multiple inserts 2`] = `
+Object {
+  "fragments": Array [
+    "INSERT INTO users",
+  ],
+  "query": "INSERT INTO users",
+  "sql": "INSERT INTO users",
   "values": Array [],
 }
 `;

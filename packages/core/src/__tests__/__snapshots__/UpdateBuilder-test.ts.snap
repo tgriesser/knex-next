@@ -1,0 +1,74 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`@knex/core - UpdateBuilder skips undefined keys 1`] = `
+Immutable.UpdateOperation {
+  "__operation": "UPDATE",
+  "table": "foo",
+  "join": Immutable.List [],
+  "where": Immutable.List [],
+  "values": Immutable.Map {
+    "key": 1,
+    "bar": undefined,
+  },
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - UpdateBuilder skips undefined keys 2`] = `
+Object {
+  "fragments": Array [
+    "UPDATE foo",
+  ],
+  "query": "UPDATE foo",
+  "sql": "UPDATE foo",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - UpdateBuilder update().table("tableName").set({key: value}) 1`] = `
+Immutable.UpdateOperation {
+  "__operation": "UPDATE",
+  "table": "tableName",
+  "join": Immutable.List [],
+  "where": Immutable.List [],
+  "values": Immutable.Map {
+    "key": 1,
+  },
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - UpdateBuilder update().table("tableName").set({key: value}) 2`] = `
+Object {
+  "fragments": Array [
+    "UPDATE tableName",
+  ],
+  "query": "UPDATE tableName",
+  "sql": "UPDATE tableName",
+  "values": Array [],
+}
+`;
+
+exports[`@knex/core - UpdateBuilder update().table("tableName").set(key, value) 1`] = `
+Immutable.UpdateOperation {
+  "__operation": "UPDATE",
+  "table": "tableName",
+  "join": Immutable.List [],
+  "where": Immutable.List [],
+  "values": Immutable.Map {
+    "key": 1,
+  },
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - UpdateBuilder update().table("tableName").set(key, value) 2`] = `
+Object {
+  "fragments": Array [
+    "UPDATE tableName",
+  ],
+  "query": "UPDATE tableName",
+  "sql": "UPDATE tableName",
+  "values": Array [],
+}
+`;

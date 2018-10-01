@@ -1,20 +1,12 @@
 import { SelectBuilder } from "../SelectBuilder";
 import { raw } from "../rawTag";
+import { snap } from "./snap";
 
 interface SelectBuilderFactory {
   (): SelectBuilder;
 }
 
 export function commonSelectTests(builder: SelectBuilderFactory) {
-  function snap(b: SelectBuilder) {
-    expect(b.getAst()).toMatchSnapshot();
-    const op = b.toOperation();
-    expect(op).toMatchSnapshot();
-    // Return this so we can chain .toMatchInlineSnapshot for a quick visual
-    // debug/sanity check without switching files. This should be removed
-    return expect(op.sql);
-  }
-
   test("select columns", () => {
     snap(builder().select("a", "b"));
   });
@@ -154,31 +146,81 @@ export function commonSelectTests(builder: SelectBuilderFactory) {
     }).toThrow('The operator "isnt" is not permitted');
   });
 
-  test("aggregate: sum", () => {
-    snap(builder().sum("logins"));
+  describe("AGGREGATES", () => {
+    test("aggregate: sum", () => {
+      snap(builder().sum("logins"));
+    });
+
+    test("aggregate: avg", () => {
+      snap(builder().avg("logins"));
+    });
+
+    test("aggregate: count", () => {
+      snap(builder().count("logins"));
+    });
+
+    test("aggregate: count with alias", () => {
+      snap(builder().count("logins"));
+    });
+
+    test("aggregate: sumDistinct", () => {
+      snap(builder().sumDistinct("logins"));
+    });
+
+    test("aggregate: avgDistinct", () => {
+      snap(builder().avgDistinct("logins"));
+    });
+
+    test("aggregate: countDistinct", () => {
+      snap(builder().countDistinct("logins"));
+    });
   });
 
-  test("aggregate: avg", () => {
-    snap(builder().avg("logins"));
-  });
+  describe("LIMIT / OFFSET", () => {
+    test("limit", () => {
+      snap(
+        builder()
+          .select("*")
+          .from("users")
+          .limit(10)
+      );
+    });
 
-  test("aggregate: count", () => {
-    snap(builder().count("logins"));
-  });
+    test("limit 0", () => {
+      snap(
+        builder()
+          .select("*")
+          .from("users")
+          .limit(0)
+      );
+    });
 
-  test("aggregate: count with alias", () => {
-    snap(builder().count("logins"));
-  });
+    test("limits and offsets", () => {
+      snap(
+        builder()
+          .select("*")
+          .from("users")
+          .offset(5)
+          .limit(10)
+      );
+    });
 
-  test("aggregate: sumDistinct", () => {
-    snap(builder().sumDistinct("logins"));
-  });
+    test("limits and raw selects", () => {
+      snap(
+        builder()
+          .select(raw`name = ${"john"} as isJohn`)
+          .from("users")
+          .limit(1)
+      );
+    });
 
-  test("aggregate: avgDistinct", () => {
-    snap(builder().avgDistinct("logins"));
-  });
-
-  test("aggregate: countDistinct", () => {
-    snap(builder().countDistinct("logins"));
+    test("offset only", () => {
+      snap(
+        builder()
+          .select("*")
+          .from("users")
+          .offset(5)
+      );
+    });
   });
 }

@@ -1,10 +1,15 @@
 import { DeleteBuilder } from "../DeleteBuilder";
+import { WhereClauseBuilder } from "../clauses/WhereClauseBuilder";
 
 export function commonDeleteTests(del: () => DeleteBuilder) {
   function snap(b: DeleteBuilder) {
     expect(b.getAst()).toMatchSnapshot();
     expect(b.toOperation()).toMatchSnapshot();
   }
+
+  test("Delete has where builder methods", () => {
+    expect(del()).toBeInstanceOf(WhereClauseBuilder);
+  });
 
   test("from table", () => {
     snap(del().from("someTable"));

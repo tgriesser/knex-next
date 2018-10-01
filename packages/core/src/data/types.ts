@@ -13,6 +13,7 @@ import { JoinBuilder } from "../clauses/JoinBuilder";
 import { RecordOf, List, Map as IMap } from "immutable";
 import { SubHavingBuilder } from "../clauses/HavingClauseBuilder";
 import { AddCondition } from "../clauses/AddCondition";
+import { Connection } from "../Connection";
 
 export type Omit<T, K> = Pick<T, Exclude<keyof T, K>>;
 
@@ -73,6 +74,9 @@ export type TSelectColumnArg = number | TColumnArg;
  */
 export type TValueArg = null | number | string | Date | SelectBuilder | SubQueryArg | TRawNode;
 
+/**
+ * Argument for a select column
+ */
 export type TSelectArg = TAliasObj | TSelectColumnArg | TSelectColumnArg[];
 
 /**
@@ -370,8 +374,9 @@ export type TInsertOperation = RecordOf<IInsertOperation>;
 export interface IUpdateOperation extends IOperationNode<OperationTypeEnum.UPDATE> {
   __operation: OperationTypeEnum.UPDATE;
   table: string;
+  where: List<TConditionNode>;
   join: List<TJoinNode | TRawNode>;
-  values: List<object>;
+  values: IMap<string, TValue>;
   meta: IMap<string, any>;
 }
 export type TUpdateOperation = RecordOf<IUpdateOperation>;
@@ -417,3 +422,39 @@ export interface IBindingNode extends INode<NodeTypeEnum.BINDING> {
   name: string;
   type: Maybe<string>;
 }
+
+export interface ToSQLValue {
+  sql: string;
+  query: string;
+  values: any[];
+  fragments: string[];
+}
+
+/**
+ * When a Builder is executable, it is a promise and contains all of these methods
+ */
+export interface ExecutableBuilder<T = any> extends Promise<T> {
+  /**
+   * Sets the current connection on the class
+   */
+  setConnection(connection: Connection): this;
+  /**
+   * Logs a message
+   */
+  log(msg: string): void;
+  /**
+   * Logs an error
+   */
+  error(err: Error): void;
+  /**
+   * Logs a warning
+   */
+  warn(msg: string | Error): void;
+  /**
+   * Build the query
+   */
+  toOperation(): ToSQLValue;
+}
+
+export type ArgumentType<F extends Function> = F extends (...args: infer A) => any ? A[0] : never;
+export type ArgumentTypes<F extends Function> = F extends (...args: infer A) => any ? A : never;

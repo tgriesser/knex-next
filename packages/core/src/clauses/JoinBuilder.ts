@@ -18,17 +18,19 @@ import { ClauseTypeEnum, OperatorEnum } from "../data/enums";
 import { Grammar } from "../Grammar";
 import { CondSubNode } from "../data/structs";
 
+export type OnArgs =
+  | [IRawNode]
+  | [TColumnArg, TColumnArg]
+  | [TColumnArg, TOperatorArg, TColumnArg]
+  | [{ [columnA: string]: string }]
+  | [IJoinBuilderFn];
+
 export class JoinBuilder extends AddCondition {
   protected ast = List<TConditionNode>();
   constructor(protected grammar: Grammar, protected subQuery: ((fn: SubQueryArg) => TSubQueryNode)) {
     super();
   }
-  on(raw: IRawNode): this;
-  on(columnA: TColumnArg, columnB: TColumnArg): this;
-  on(columnA: TColumnArg, op: TOperatorArg, columnB: TColumnArg): this;
-  on(columns: { [columnA: string]: string }): this;
-  on(wrappedJoin: IJoinBuilderFn): this;
-  on(...args: any[]) {
+  on(...args: OnArgs) {
     return this.addColumnCond(ClauseTypeEnum.JOIN, args, OperatorEnum.AND);
   }
   onVal(columnA: TColumnArg, columnB: TValueArg): this;
@@ -36,11 +38,7 @@ export class JoinBuilder extends AddCondition {
   onVal(...args: any[]) {
     return this.addCond(ClauseTypeEnum.JOIN, args, OperatorEnum.AND);
   }
-  orOn(raw: IRawNode): this;
-  orOn(columnA: TColumnArg, columnB: TColumnArg): this;
-  orOn(columnA: TColumnArg, op: TOperatorArg, columnB: TColumnArg): this;
-  orOn(wrappedJoin: IJoinBuilderFn): this;
-  orOn(...args: any[]) {
+  orOn(...args: OnArgs[]) {
     return this.addColumnCond(ClauseTypeEnum.JOIN, args, OperatorEnum.OR);
   }
   orOnVal(columnA: TColumnArg, columnB: TValueArg): this;

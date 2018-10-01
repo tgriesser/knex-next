@@ -78,7 +78,7 @@ export const ConditionExpressionNode = IRecord<ICondExprNode>(
 );
 
 /**
- * WHERE Condition: expr [op] column
+ * WHERE Condition: column [op] otherColumn
  */
 export const CondColumnNode = IRecord<ICondColumnNode>(
   {
@@ -89,7 +89,7 @@ export const CondColumnNode = IRecord<ICondColumnNode>(
     rightColumn: null,
     andOr: OperatorEnum.AND,
   },
-  NodeTypeEnum.COND_EXPR
+  NodeTypeEnum.COND_COLUMN
 );
 
 /**
@@ -315,7 +315,8 @@ export const UpdateOperation = IRecord<IUpdateOperation>(
     __operation: OperationTypeEnum.UPDATE,
     table: "",
     join: List(),
-    values: List(),
+    where: List(),
+    values: IMap(),
     meta: IMap(),
   },
   "UpdateOperation"

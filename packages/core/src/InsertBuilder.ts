@@ -1,16 +1,24 @@
-import { ChainFnInsert, SubQueryArg, TRawNode } from "./data/types";
+import { ChainFnInsert, SubQueryArg, TRawNode, Maybe, ExecutableBuilder } from "./data/types";
 import { Grammar } from "./Grammar";
 import { insertAst } from "./data/structs";
-import { Loggable } from "./contracts/Loggable";
-import { Buildable } from "./contracts/Buildable";
+import { IBuilder } from "./contracts/Buildable";
 import { SelectBuilder } from "./SelectBuilder";
+import { Connection } from "./Connection";
 
-export class InsertBuilder<T = { [columnName: string]: any }> implements Loggable, Buildable {
+export interface InsertBuilder extends ExecutableBuilder {}
+
+export class InsertBuilder<T = { [columnName: string]: any }> implements IBuilder {
   public readonly dialect = null;
 
   protected grammar = new Grammar();
 
   constructor(protected ast = insertAst) {}
+
+  protected connection: Maybe<Connection> = null;
+
+  clearValues() {
+    return this.chain(ast => ast.set("values", insertAst.values));
+  }
 
   into(tableName: string) {
     return this.chain(ast => ast.set("table", tableName));
@@ -37,22 +45,6 @@ export class InsertBuilder<T = { [columnName: string]: any }> implements Loggabl
 
   getAst() {
     return this.ast;
-  }
-
-  toOperation() {
-    return this.grammar.toOperation(this.ast);
-  }
-
-  log(msg: string) {
-    console.log(msg);
-  }
-
-  error(err: Error) {
-    console.error(err);
-  }
-
-  warn(warning: string | Error) {
-    console.warn(warning);
   }
 
   protected subQuery(arg: SubQueryArg) {
