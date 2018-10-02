@@ -16,7 +16,13 @@ import {
 import { Grammar } from "../Grammar";
 import { AddCondition } from "./AddCondition";
 import { List } from "immutable";
+import { CondSubNode } from "../data/structs";
 
+/**
+ * The advanced HAVING builder. Since HAVING clauses aren't as common,
+ * this is only accessed by passing a function to the having method off the
+ * SelectBuilder.
+ */
 export abstract class HavingClauseBuilder extends AddCondition {
   /**
    * Useful if we want to check the builder's dialect from userland.
@@ -121,21 +127,6 @@ HavingClauseBuilder.prototype.andHavingNotBetween = HavingClauseBuilder.prototyp
 HavingClauseBuilder.prototype.andHavingExists = HavingClauseBuilder.prototype.havingExists;
 HavingClauseBuilder.prototype.andHavingNotExists = HavingClauseBuilder.prototype.havingNotExists;
 
-// All having methods we wish to attach to the select builder.
-// prettier-ignore
-export const HAVING_METHODS = [
-  'having', 'andHaving', 'orHaving',
-  'havingColumn', 'andHavingColumn', 'orHavingColumn',
-  'havingIn', 'andHavingIn', 'orHavingIn', 
-  'havingNotIn', 'andHavingNotIn', 'orHavingNotIn', 
-  'havingNull', 'andHavingNull', 'orHavingNull',
-  'havingNotNull', 'andHavingNotNull', 'orHavingNotNull',
-  'havingBetween', 'andHavingBetween', 'orHavingBetween',
-  'havingNotBetween', 'andHavingNotBetween', 'orHavingNotBetween',
-  'havingExists', 'andHavingExists', 'orHavingExists',
-  'havingNotExists', 'andHavingNotExists', 'orHavingNotExists',
-]
-
 export class SubHavingBuilder extends HavingClauseBuilder {
   protected ast = List();
 
@@ -156,7 +147,7 @@ export class SubHavingBuilder extends HavingClauseBuilder {
     const builder = new SubHavingBuilder(this.grammar.newInstance(), this.subQuery);
     fn.call(builder, builder);
     if (builder.getAst().size > 0) {
-      //
+      return this.pushCondition(clauseType, CondSubNode({ andOr, not, ast: builder.getAst() }));
     }
     return this;
   }

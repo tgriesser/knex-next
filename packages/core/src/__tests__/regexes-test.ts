@@ -1,6 +1,6 @@
-import { isInOrBetween } from "../data/regexes";
+import { isInOrBetween, extractAlias } from "../data/regexes";
 
-test("IN_OR_BETWEEN", () => {
+test("inOrBetween", () => {
   expect(isInOrBetween("isnt")).toEqual(null);
   expect(isInOrBetween("isnt in")).toEqual(null);
   expect(isInOrBetween("in")).toEqual(["in", undefined, "in"]);
@@ -13,4 +13,10 @@ test("IN_OR_BETWEEN", () => {
   expect(isInOrBetween("NOT BETWEEN")).toEqual(["NOT BETWEEN", "NOT ", "BETWEEN"]);
   expect(isInOrBetween("  NOT BETWEEN  ")).toEqual(["  NOT BETWEEN  ", "NOT ", "BETWEEN"]);
   expect(isInOrBetween("  noT BEtween  ")).toEqual(["  noT BEtween  ", "noT ", "BEtween"]);
+});
+
+test("extractAlias", () => {
+  expect(extractAlias("some.column as value")).toEqual(["some.column as value", "some.column", "value"]);
+  expect(extractAlias("some.column AS value")).toEqual(["some.column AS value", "some.column", "value"]);
+  expect(extractAlias("  some.column AS value  ")).toEqual(["  some.column AS value  ", "some.column", "value"]);
 });

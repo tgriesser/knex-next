@@ -7,7 +7,6 @@ import {
   TSelectOperation,
   TSubQueryNode,
   TUpdateOperation,
-  TWhereClause,
   TValueArg,
   TInArg,
   TConditionNode,
@@ -18,6 +17,7 @@ import {
   TWhereConditionValueArgs,
   TWhereBuilderFn,
   TConditionValueArgs,
+  TQueryArg,
 } from "../data/types";
 import { Grammar } from "../Grammar";
 import { AddCondition } from "./AddCondition";
@@ -33,7 +33,7 @@ export abstract class WhereClauseBuilder extends AddCondition {
   /**
    * All of the operation asts for builders inheriting the "WhereClauseBuilder"
    */
-  protected abstract ast: TSelectOperation | TUpdateOperation | TDeleteOperation | TWhereClause | List<TConditionNode>;
+  protected abstract ast: TSelectOperation | TUpdateOperation | TDeleteOperation | List<TConditionNode>;
 
   where(...args: TConditionValueArgs<TWhereBuilderFn>) {
     return this.addValueCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND);
@@ -89,17 +89,17 @@ export abstract class WhereClauseBuilder extends AddCondition {
   orWhereNotBetween(column: TColumnArg, between: [TValueArg, TValueArg]) {
     return this.addBetweenCond(ClauseTypeEnum.WHERE, column, between, OperatorEnum.OR, OperatorEnum.NOT);
   }
-  whereExists(subQuery: SubQueryArg) {
-    return this.addExistsCond(ClauseTypeEnum.WHERE, subQuery, OperatorEnum.AND);
+  whereExists(query: TQueryArg) {
+    return this.addExistsCond(ClauseTypeEnum.WHERE, query, OperatorEnum.AND);
   }
-  orWhereExists(subQuery: SubQueryArg) {
-    return this.addExistsCond(ClauseTypeEnum.WHERE, subQuery, OperatorEnum.AND);
+  orWhereExists(query: TQueryArg) {
+    return this.addExistsCond(ClauseTypeEnum.WHERE, query, OperatorEnum.AND);
   }
-  whereNotExists(subQuery: SubQueryArg) {
-    return this.addExistsCond(ClauseTypeEnum.WHERE, subQuery, OperatorEnum.AND, OperatorEnum.NOT);
+  whereNotExists(query: TQueryArg) {
+    return this.addExistsCond(ClauseTypeEnum.WHERE, query, OperatorEnum.AND, OperatorEnum.NOT);
   }
-  orWhereNotExists(subQuery: SubQueryArg) {
-    return this.addExistsCond(ClauseTypeEnum.WHERE, subQuery, OperatorEnum.AND, OperatorEnum.NOT);
+  orWhereNotExists(query: TQueryArg) {
+    return this.addExistsCond(ClauseTypeEnum.WHERE, query, OperatorEnum.AND, OperatorEnum.NOT);
   }
 
   /**

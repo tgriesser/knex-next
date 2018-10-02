@@ -35,13 +35,14 @@ import {
   CondDateNode,
   CondColumnNode,
   RawNode,
+  AliasedIdentNode,
 } from "../data/structs";
 import { DateCondType, ClauseTypeEnum, OperatorEnum } from "../data/enums";
 import { isRawNode, isSelectBuilder } from "../data/predicates";
 import { Grammar } from "../Grammar";
 import { Record, List } from "immutable";
 import invariant from "invariant";
-import { isInOrBetween } from "../data/regexes";
+import { isInOrBetween, extractAlias } from "../data/regexes";
 
 /**
  * Most of the clause conditions (having, where, join) are similarly shaped
@@ -237,7 +238,7 @@ export abstract class AddCondition {
       CondExistsNode({
         andOr,
         not,
-        column: this.unwrapIdent(query),
+        query: this.unwrapSubQuery(query),
       })
     );
   }
@@ -301,14 +302,18 @@ export abstract class AddCondition {
   /**
    * Takes a column/table reference in a "value" slot and unwraps it
    */
-  protected unwrapIdentVal(column: TColumnArg | TQueryArg): TColumnVal {
-    if (typeof column === "function") {
-      return this.subQuery(column);
-    }
+  protected unwrapIdentVal(column: number | TQueryArg): TColumnVal {
     if (typeof column === "number") {
       return RawNode({
         fragments: List([`${column}`]),
       });
+    }
+    return this.unwrapSubQuery(column);
+  }
+
+  protected unwrapSubQuery(column: TQueryArg) {
+    if (typeof column === "function") {
+      return this.subQuery(column);
     }
     if (isRawNode(column)) {
       return column;
@@ -321,7 +326,11 @@ export abstract class AddCondition {
   }
 
   protected unwrapAlias(column: string): string | TAliasedIdentNode {
-    return column;
+    const aliased = extractAlias(column);
+    if (!aliased) {
+      return column;
+    }
+    return AliasedIdentNode({ ident: aliased[1], alias: aliased[2] });
   }
 
   /**

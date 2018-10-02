@@ -113,7 +113,6 @@ export const CondExistsNode = IRecord<ICondExistsNode>(
     __typename: NodeTypeEnum.COND_EXISTS,
     not: null,
     andOr: OperatorEnum.AND,
-    column: "",
     query: null,
   },
   NodeTypeEnum.COND_EXISTS

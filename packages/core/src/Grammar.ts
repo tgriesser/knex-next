@@ -5,7 +5,6 @@ import { isRawNode, isSubQueryNode } from "./data/predicates";
 import { deleteAst, selectAst, updateAst } from "./data/structs";
 import {
   Maybe,
-  TClauseAst,
   TDeleteOperation,
   TInsertOperation,
   TOperationAst,
@@ -27,8 +26,11 @@ import {
   TTable,
   TOperatorArg,
   ToSQLValue,
+  TCondRawNode,
+  TAggregateNode,
+  TNot,
 } from "./data/types";
-import { validOperators } from "@knex/core/src/data/operators";
+import { validOperators } from "./data/operators";
 
 export class Grammar {
   operators = validOperators;
@@ -36,7 +38,7 @@ export class Grammar {
   public readonly dialect = null;
   public readonly dateString = "Y-m-d H:i:s";
 
-  protected lastAst: Maybe<TOperationAst | TClauseAst> = null;
+  protected lastAst: Maybe<TOperationAst> = null;
 
   protected currentFragment: string = "";
   protected fragments: string[] = [];
@@ -136,16 +138,16 @@ export class Grammar {
     this.addSelectFrom(ast);
     this.addJoinClauses(ast.join);
     this.addWhereClauses(ast.where);
-    this.addGroupBy(ast);
+    this.addGroupBy(ast.group);
     this.addHavingClause(ast.having);
     this.addOrderByClause(ast.order);
     this.addLimit(ast.limit);
     this.addOffset(ast);
     this.addUnions(ast.union);
-    this.buildSelectLock(ast);
+    this.addSelectLock(ast);
   }
 
-  protected cacheSqlValue(ast: TOperationAst | TClauseAst) {
+  protected cacheSqlValue(ast: TOperationAst) {
     this.pushFragment();
     const { fragments, sqlValues } = this;
     let sql = fragments[0];
@@ -162,24 +164,20 @@ export class Grammar {
     return this.sqlValue();
   }
 
-  pushValue(value: any) {
-    this.pushFragment();
-    this.sqlValues.push(value);
-  }
-
   pushFragment() {
     this.fragments.push(this.currentFragment);
     this.currentFragment = "";
   }
 
   addSelectColumns(select: TSelectOperation["select"]) {
+    this.addSpace();
     if (select.size === 0) {
-      this.currentFragment += " *";
+      this.currentFragment += "*";
     }
     select.forEach((node, i) => {
-      this.buildSelectColumn(node);
+      this.addSelectColumn(node);
       if (i < select.size - 1) {
-        this.currentFragment += ",";
+        this.addComma();
       }
     });
   }
@@ -201,12 +199,15 @@ export class Grammar {
     }
   }
 
-  buildSelectColumn(node: TSelectNode) {
+  addSelectColumn(node: TSelectNode) {
     if (typeof node === "string") {
-      this.currentFragment += ` ${this.escapeId(node)}`;
+      this.currentFragment += this.escapeId(node);
       return;
     }
     switch (node.__typename) {
+      case NodeTypeEnum.AGGREGATE:
+        this.addAggregateNode(node);
+        break;
       case NodeTypeEnum.SUB_QUERY:
         this.addSubQueryNode(node);
         break;
@@ -216,38 +217,64 @@ export class Grammar {
     }
   }
 
+  addAggregateNode({ fn, distinct, column, alias }: TAggregateNode) {
+    this.addIdentifier(fn.toUpperCase());
+    this.wrapParens(() => {
+      if (distinct) {
+        this.addIdentifier("DISTINCT ");
+      }
+      if (Array.isArray(column)) {
+        column.forEach((node, i) => {
+          this.addSelectColumn(node);
+          if (i < column.length - 1) {
+            this.addComma();
+          }
+        });
+      } else {
+        this.addIdentifier(column);
+      }
+    });
+    if (alias) {
+      this.addAlias(alias);
+    }
+  }
+
   /**
    * If it's a "raw node" it could have any number of values mixed in
    */
   addRawNode(node: TRawNode) {
-    this.currentFragment += ` ${node.fragments.get(0)}`;
+    this.currentFragment += `${node.fragments.get(0)}`;
     if (node.bindings.size === 0) {
       return;
     }
     node.bindings.forEach((binding, i) => {
-      this.pushValue(binding);
+      this.addValue(binding);
       this.currentFragment += node.fragments.get(i + 1);
     });
   }
 
-  addSubQueryNode(node: TSubQueryNode) {
-    if (node.ast && node.ast !== selectAst) {
-      this.currentFragment += " (";
-      this.buildSelect(node.ast);
-      this.currentFragment += ")";
-      if (node.ast.alias) {
-        this.addAlias(node.ast.alias);
+  addSubQueryNode({ ast }: TSubQueryNode) {
+    if (ast && ast !== selectAst) {
+      this.wrapParens(() => {
+        this.buildSelect(ast);
+      });
+      if (ast.alias) {
+        this.addAlias(ast.alias);
       }
     }
   }
 
   addAlias(alias: typeof selectAst["alias"]) {
     if (typeof alias === "string") {
-      this.addKeyword(" AS ");
+      this.addAliasSeparator();
       this.currentFragment += this.escapeId(alias);
     } else if (isRawNode(alias)) {
       this.addRawNode(alias);
     }
+  }
+
+  addAliasSeparator() {
+    this.addKeyword(" AS ");
   }
 
   addJoinClauses(joins: TSelectOperation["join"]) {
@@ -271,23 +298,26 @@ export class Grammar {
     });
   }
 
-  addHavingClause(having: TSelectOperation["having"], subHaving: boolean = false) {
+  addHavingClause(having: TSelectOperation["having"]) {
     if (having.size === 0) {
       return;
     }
-    this.addKeyword("HAVING ");
+    this.addKeyword(" HAVING ");
     having.forEach((node, i) => {
       this.addConditionNode(node, i);
     });
   }
 
-  addGroupBy(ast: TSelectOperation) {
-    if (ast.group.size === 0) {
+  addGroupBy(value: TSelectOperation["group"]) {
+    if (value.size === 0) {
       return;
     }
-    this.addKeyword(" GROUP BY");
-    ast.group.forEach(group => {
-      //
+    this.addKeyword(" GROUP BY ");
+    value.forEach((group, i) => {
+      this.addIdentifier(group);
+      if (i < value.size - 1) {
+        this.addComma();
+      }
     });
   }
 
@@ -306,11 +336,7 @@ export class Grammar {
       return;
     }
     this.addKeyword(" LIMIT ");
-    if (isRawNode(val)) {
-      this.addRawNode(val);
-    } else {
-      this.pushValue(val);
-    }
+    this.addValue(val);
   }
 
   addOffset(ast: TSelectOperation) {
@@ -318,11 +344,7 @@ export class Grammar {
       return;
     }
     this.addKeyword(" OFFSET ");
-    if (isRawNode(ast.offset)) {
-      this.addRawNode(ast.offset);
-    } else {
-      this.pushValue(ast.offset);
-    }
+    this.addValue(ast.offset);
   }
 
   addUnions(ast: TSelectOperation["union"]) {
@@ -331,7 +353,7 @@ export class Grammar {
     }
   }
 
-  buildSelectLock(ast: TSelectOperation) {
+  addSelectLock(ast: TSelectOperation) {
     //
   }
 
@@ -367,11 +389,11 @@ export class Grammar {
     this.addWhereClauses(ast.where);
   }
 
-  addWhereClauses(nodes: List<TConditionNode>, subWhere: boolean = false) {
+  addWhereClauses(nodes: List<TConditionNode>) {
     if (nodes.size === 0) {
       return;
     }
-    this.addKeyword(subWhere ? "" : " WHERE ");
+    this.addKeyword(" WHERE ");
     nodes.forEach((node, i) => {
       this.addConditionNode(node, i);
     });
@@ -398,10 +420,13 @@ export class Grammar {
         this.addNullCondition(node);
         break;
       case NodeTypeEnum.COND_BETWEEN:
-        this.buildWhereBetween(node);
+        this.addBetweenCondition(node);
         break;
       case NodeTypeEnum.COND_SUB:
-        this.buildWhereSub(node);
+        this.addSubCondition(node);
+        break;
+      case NodeTypeEnum.COND_RAW:
+        this.addRawCondition(node);
         break;
     }
   }
@@ -418,11 +443,30 @@ export class Grammar {
     this.addKeyword("NULL");
   }
 
-  addExistsCondition(node: TCondExistsNode) {
-    //
+  addExistsCondition({ query }: TCondExistsNode) {
+    if (!query) {
+      return;
+    }
+    if (isRawNode(query)) {
+      this.addKeyword("EXISTS ");
+      return this.addRawNode(query);
+    }
+    const { ast } = query;
+    if (ast && ast !== selectAst) {
+      this.addKeyword("EXISTS ");
+      this.wrapParens(() => {
+        this.buildSelect(ast);
+      });
+    }
   }
 
-  buildWhereBetween(node: TCondBetweenNode) {
+  addRawCondition(node: TCondRawNode) {
+    if (isRawNode(node.value)) {
+      this.addRawNode(node.value);
+    }
+  }
+
+  addBetweenCondition(node: TCondBetweenNode) {
     this.addKeyword("BETWEEN");
   }
 
@@ -435,7 +479,7 @@ export class Grammar {
     }
     this.addIdentifier(node.column);
     this.addOperator(node.operator);
-    this.pushValue(node.value);
+    this.addValue(node.value);
   }
 
   addColumnCondition(node: TCondColumnNode) {
@@ -447,24 +491,33 @@ export class Grammar {
     this.addIdentifier(node.rightColumn!);
   }
 
-  addInCondition(node: TCondInNode) {
-    this.addIdentifier(node.column!);
-    this.addKeyword(node.not ? " NOT IN " : " IN ");
-    if (isRawNode(node.value)) {
-      return this.addRawNode(node.value);
+  addInCondition({ value, column, not }: TCondInNode) {
+    if (Array.isArray(value) && value.length === 0) {
+      return this.falsyCondition(not);
     }
-    if (isSubQueryNode(node.value)) {
-      return this.addSubQueryNode(node.value);
+    this.addIdentifier(column!);
+    this.addKeyword(not ? " NOT IN " : " IN ");
+    if (Array.isArray(value)) {
+      this.wrapParens(() => {
+        value.forEach((v, i) => {
+          this.addValue(v);
+          if (i < value.length - 1) {
+            this.addComma();
+          }
+        });
+      });
+    } else {
+      this.addValue(value);
     }
   }
 
-  buildWhereSub(node: TCondSubNode) {
+  addSubCondition(node: TCondSubNode) {
     if (node.ast && node.ast.size > 0) {
-      this.currentFragment += "(";
-      node.ast.forEach((node, i) => {
-        this.addConditionNode(node, i);
+      this.wrapParens(() => {
+        node.ast.forEach((node, i) => {
+          this.addConditionNode(node, i);
+        });
       });
-      this.currentFragment += ")";
     }
   }
 
@@ -500,7 +553,36 @@ export class Grammar {
     this.currentFragment += ` ${op} `;
   }
 
+  addValue(value: any) {
+    if (isRawNode(value)) {
+      return this.addRawNode(value);
+    }
+    if (isSubQueryNode(value)) {
+      return this.addSubQueryNode(value);
+    }
+    this.pushFragment();
+    this.sqlValues.push(value);
+  }
+
+  addComma() {
+    this.currentFragment += ", ";
+  }
+
+  addSpace() {
+    this.currentFragment += " ";
+  }
+
   addKeyword(keyword: string) {
     this.currentFragment += keyword;
+  }
+
+  falsyCondition(not: TNot) {
+    this.currentFragment += `1 = ${not ? 1 : 0} `;
+  }
+
+  wrapParens(fn: Function) {
+    this.currentFragment += "(";
+    fn();
+    this.currentFragment += ")";
   }
 }

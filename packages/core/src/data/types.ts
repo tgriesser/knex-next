@@ -1,14 +1,6 @@
 import { SelectBuilder } from "../SelectBuilder";
 import { WhereClauseBuilder } from "../clauses/WhereClauseBuilder";
-import {
-  OperatorEnum,
-  NodeTypeEnum,
-  ClauseTypeEnum,
-  OperationTypeEnum,
-  JoinTypeEnum,
-  AggregateFns,
-  DateCondType,
-} from "./enums";
+import { OperatorEnum, NodeTypeEnum, OperationTypeEnum, JoinTypeEnum, AggregateFns, DateCondType } from "./enums";
 import { JoinBuilder } from "../clauses/JoinBuilder";
 import { RecordOf, List, Map as IMap } from "immutable";
 import { HavingClauseBuilder } from "../clauses/HavingClauseBuilder";
@@ -227,8 +219,7 @@ export interface ICondNullNode extends IConditionNode<NodeTypeEnum.COND_NULL> {
 export type TCondNullNode = RecordOf<ICondNullNode>;
 
 export interface ICondExistsNode extends IConditionNode<NodeTypeEnum.COND_EXISTS> {
-  column: TColumn;
-  query: Maybe<TColumn>;
+  query: Maybe<TSubQueryNode | TRawNode>;
 }
 export type TCondExistsNode = RecordOf<ICondExistsNode>;
 
@@ -277,7 +268,7 @@ export type TJoinNode = RecordOf<IJoinNode>;
 
 export interface IAggregateNode extends INode<NodeTypeEnum.AGGREGATE> {
   fn: AggregateFns;
-  column: string | string[] | TColumn;
+  column: string | string[] | TSubQueryNode | TRawNode;
   alias: Maybe<string>;
   distinct: boolean;
 }
@@ -396,8 +387,6 @@ export type TOperationAst =
   | TInsertOperation
   | TTruncateOperation;
 
-export type TClauseAst = TWhereClause;
-
 export interface IBindingNode extends INode<NodeTypeEnum.BINDING> {
   name: string;
   type: Maybe<string>;
@@ -449,10 +438,7 @@ export type TWhereConditionValueArgs = TConditionValueArgs<TWhereBuilderFn>;
 
 export type THavingConditionValueArgs = TConditionValueArgs<THavingBuilderFn>;
 
-export type TJoinConditionValueArgs =
-  | [IRawNode | boolean | number | TValueCondition[] | { [column: string]: TValueArg }]
-  | TValueCondition2
-  | TValueCondition3;
+export type TJoinConditionValueArgs = TConditionValueArgs<never>;
 
 export type TJoinConditionColumnArgs =
   | [TJoinBuilderFn | TColumnCondition[] | { [column: string]: string }]

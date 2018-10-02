@@ -5,7 +5,15 @@ import { SubHavingBuilder } from "./clauses/HavingClauseBuilder";
 import { JoinBuilder } from "./clauses/JoinBuilder";
 import { SubWhereBuilder, WhereClauseBuilder } from "./clauses/WhereClauseBuilder";
 import { Connection } from "./Connection";
-import { AggregateFns, ClauseTypeEnum, DialectEnum, JoinTypeEnum, NodeTypeEnum, OrderByEnum } from "./data/enums";
+import {
+  AggregateFns,
+  ClauseTypeEnum,
+  DialectEnum,
+  JoinTypeEnum,
+  NodeTypeEnum,
+  OrderByEnum,
+  OperatorEnum,
+} from "./data/enums";
 import { NEVER } from "./data/messages";
 import { isRawNode, isSelectBuilder, isNodeOf } from "./data/predicates";
 import { AggregateNode, CondSubNode, JoinNode, selectAst, SubQueryNode, UnionNode, OrderByNode } from "./data/structs";
@@ -36,8 +44,6 @@ import {
   TOperatorArg,
   ExecutableBuilder,
   THavingConditionValueArgs,
-  TConditionValueArgs,
-  THavingBuilderFn,
 } from "./data/types";
 import { ExecutionContext } from "./ExecutionContext";
 import { Grammar } from "./Grammar";
@@ -199,9 +205,13 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
   }
 
   /**
-   * Adds a HAVING clause to the query
+   * Adds a HAVING clause to the query, for more advanced HAVING clauses,
+   * make the first parameter a function and you'll get the advanced
+   * having clause builder.
    */
-  having() {}
+  having(...args: THavingConditionValueArgs) {
+    return this.addValueCond(ClauseTypeEnum.HAVING, args, OperatorEnum.AND);
+  }
 
   /**
    * Adds an ORDER BY clause to the query
@@ -217,7 +227,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
         "order",
         ast.order.push(
           OrderByNode({
-            column: this.unwrapIdentVal(column),
+            column: this.unwrapIdent(column),
             direction: direction.toUpperCase() as OrderByEnum,
           })
         )
@@ -594,16 +604,9 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
     this.executionContext = new ExecutionContext();
     return this.executionContext;
   }
-
-  protected addHavingClause(args: THavingConditionValueArgs) {
-    return this;
-  }
 }
 
 export interface SelectBuilder<T = any> extends ExecutableBuilder<T> {
-  having(...args: THavingConditionValueArgs): this;
-  orHaving(...args: THavingConditionValueArgs): this;
-  andHaving(...args: THavingConditionValueArgs): this;
   [SELECT_BUILDER]: true;
 }
 
