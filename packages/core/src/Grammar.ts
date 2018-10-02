@@ -1,36 +1,9 @@
 import { List } from "immutable";
 import sqlstring from "sqlstring";
-import { NodeTypeEnum, OperationTypeEnum } from "./data/enums";
 import { isRawNode, isSubQueryNode } from "./data/predicates";
 import { deleteAst, selectAst, updateAst } from "./data/structs";
-import {
-  Maybe,
-  TDeleteOperation,
-  TInsertOperation,
-  TOperationAst,
-  TRawNode,
-  TSelectNode,
-  TSelectOperation,
-  TSubQueryNode,
-  TTruncateOperation,
-  TUpdateOperation,
-  TCondBetweenNode,
-  TCondColumnNode,
-  TCondExistsNode,
-  TCondExprNode,
-  TCondInNode,
-  TConditionNode,
-  TCondSubNode,
-  TCondNullNode,
-  TColumn,
-  TTable,
-  TOperatorArg,
-  ToSQLValue,
-  TCondRawNode,
-  TAggregateNode,
-  TNot,
-} from "./data/types";
 import { validOperators } from "./data/operators";
+import { Types, Enums } from "./data";
 
 export class Grammar {
   operators = validOperators;
@@ -38,7 +11,7 @@ export class Grammar {
   public readonly dialect = null;
   public readonly dateString = "Y-m-d H:i:s";
 
-  protected lastAst: Maybe<TOperationAst> = null;
+  protected lastAst: Types.Maybe<Types.TOperationAst> = null;
 
   protected currentFragment: string = "";
   protected fragments: string[] = [];
@@ -79,12 +52,12 @@ export class Grammar {
     return "?";
   }
 
-  toSql(operationAst: TOperationAst): string {
+  toSql(operationAst: Types.TOperationAst): string {
     this.toOperation(operationAst);
     return this.sqlWithValues;
   }
 
-  toOperation(operationAst: TOperationAst): ToSQLValue {
+  toOperation(operationAst: Types.TOperationAst): Types.ToSQLValue {
     if (operationAst === this.lastAst) {
       return this.sqlValue();
     } else {
@@ -100,21 +73,21 @@ export class Grammar {
     this.sqlValues = [];
   }
 
-  protected buildOperation(operationAst: TOperationAst) {
+  protected buildOperation(operationAst: Types.TOperationAst) {
     switch (operationAst.__operation) {
-      case OperationTypeEnum.SELECT:
+      case Enums.OperationTypeEnum.SELECT:
         this.buildSelect(operationAst);
         break;
-      case OperationTypeEnum.INSERT:
+      case Enums.OperationTypeEnum.INSERT:
         this.buildInsert(operationAst);
         break;
-      case OperationTypeEnum.DELETE:
+      case Enums.OperationTypeEnum.DELETE:
         this.buildDelete(operationAst);
         break;
-      case OperationTypeEnum.UPDATE:
+      case Enums.OperationTypeEnum.UPDATE:
         this.buildUpdate(operationAst);
         break;
-      case OperationTypeEnum.TRUNCATE:
+      case Enums.OperationTypeEnum.TRUNCATE:
         this.buildTruncate(operationAst);
         break;
     }
@@ -129,7 +102,7 @@ export class Grammar {
     };
   }
 
-  buildSelect(ast: TSelectOperation) {
+  buildSelect(ast: Types.TSelectOperation) {
     this.addKeyword("SELECT");
     if (ast.distinct) {
       this.addKeyword(" DISTINCT");
@@ -147,7 +120,7 @@ export class Grammar {
     this.addSelectLock(ast);
   }
 
-  protected cacheSqlValue(ast: TOperationAst) {
+  protected cacheSqlValue(ast: Types.TOperationAst) {
     this.pushFragment();
     const { fragments, sqlValues } = this;
     let sql = fragments[0];
@@ -169,7 +142,7 @@ export class Grammar {
     this.currentFragment = "";
   }
 
-  addSelectColumns(select: TSelectOperation["select"]) {
+  addSelectColumns(select: Types.TSelectOperation["select"]) {
     this.addSpace();
     if (select.size === 0) {
       this.currentFragment += "*";
@@ -182,7 +155,7 @@ export class Grammar {
     });
   }
 
-  addSelectFrom(ast: TSelectOperation) {
+  addSelectFrom(ast: Types.TSelectOperation) {
     if (ast.from === null) {
       return;
     }
@@ -192,32 +165,32 @@ export class Grammar {
       return;
     }
     switch (ast.from.__typename) {
-      case NodeTypeEnum.SUB_QUERY:
+      case Enums.NodeTypeEnum.SUB_QUERY:
         break;
-      case NodeTypeEnum.RAW:
+      case Enums.NodeTypeEnum.RAW:
         break;
     }
   }
 
-  addSelectColumn(node: TSelectNode) {
+  addSelectColumn(node: Types.TSelectNode) {
     if (typeof node === "string") {
       this.currentFragment += this.escapeId(node);
       return;
     }
     switch (node.__typename) {
-      case NodeTypeEnum.AGGREGATE:
+      case Enums.NodeTypeEnum.AGGREGATE:
         this.addAggregateNode(node);
         break;
-      case NodeTypeEnum.SUB_QUERY:
+      case Enums.NodeTypeEnum.SUB_QUERY:
         this.addSubQueryNode(node);
         break;
-      case NodeTypeEnum.RAW:
+      case Enums.NodeTypeEnum.RAW:
         this.addRawNode(node);
         break;
     }
   }
 
-  addAggregateNode({ fn, distinct, column, alias }: TAggregateNode) {
+  addAggregateNode({ fn, distinct, column, alias }: Types.TAggregateNode) {
     this.addIdentifier(fn.toUpperCase());
     this.wrapParens(() => {
       if (distinct) {
@@ -242,7 +215,7 @@ export class Grammar {
   /**
    * If it's a "raw node" it could have any number of values mixed in
    */
-  addRawNode(node: TRawNode) {
+  addRawNode(node: Types.TRawNode) {
     this.currentFragment += `${node.fragments.get(0)}`;
     if (node.bindings.size === 0) {
       return;
@@ -253,7 +226,7 @@ export class Grammar {
     });
   }
 
-  addSubQueryNode({ ast }: TSubQueryNode) {
+  addSubQueryNode({ ast }: Types.TSubQueryNode) {
     if (ast && ast !== selectAst) {
       this.wrapParens(() => {
         this.buildSelect(ast);
@@ -277,15 +250,15 @@ export class Grammar {
     this.addKeyword(" AS ");
   }
 
-  addJoinClauses(joins: TSelectOperation["join"]) {
+  addJoinClauses(joins: Types.TSelectOperation["join"]) {
     if (joins.size === 0) {
       return;
     }
     joins.forEach(join => {
       switch (join.__typename) {
-        case NodeTypeEnum.RAW:
+        case Enums.NodeTypeEnum.RAW:
           break;
-        case NodeTypeEnum.JOIN:
+        case Enums.NodeTypeEnum.JOIN:
           this.addKeyword(` ${join.joinType} JOIN `);
           this.addIdentifier(join.table);
           if (join.conditions.size > 0) {
@@ -298,7 +271,7 @@ export class Grammar {
     });
   }
 
-  addHavingClause(having: TSelectOperation["having"]) {
+  addHavingClause(having: Types.TSelectOperation["having"]) {
     if (having.size === 0) {
       return;
     }
@@ -308,7 +281,7 @@ export class Grammar {
     });
   }
 
-  addGroupBy(value: TSelectOperation["group"]) {
+  addGroupBy(value: Types.TSelectOperation["group"]) {
     if (value.size === 0) {
       return;
     }
@@ -321,7 +294,7 @@ export class Grammar {
     });
   }
 
-  addOrderByClause(order: TSelectOperation["order"]) {
+  addOrderByClause(order: Types.TSelectOperation["order"]) {
     if (order.size === 0) {
       return;
     }
@@ -331,7 +304,7 @@ export class Grammar {
     });
   }
 
-  addLimit(val: TSelectOperation["limit"]) {
+  addLimit(val: Types.TSelectOperation["limit"]) {
     if (val === null) {
       return;
     }
@@ -339,7 +312,7 @@ export class Grammar {
     this.addValue(val);
   }
 
-  addOffset(ast: TSelectOperation) {
+  addOffset(ast: Types.TSelectOperation) {
     if (ast.offset === null) {
       return;
     }
@@ -347,17 +320,28 @@ export class Grammar {
     this.addValue(ast.offset);
   }
 
-  addUnions(ast: TSelectOperation["union"]) {
+  addUnions(ast: Types.TSelectOperation["union"]) {
     if (ast.size === 0) {
       return;
     }
+    ast.forEach(({ ast, all }, i) => {
+      if (!ast) {
+        return;
+      }
+      if (isRawNode(ast)) {
+        this.addRawNode(ast);
+      } else {
+        this.addSubQueryNode(ast);
+      }
+      this.addKeyword(all ? " UNION ALL " : " UNION ");
+    });
   }
 
-  addSelectLock(ast: TSelectOperation) {
+  addSelectLock(ast: Types.TSelectOperation) {
     //
   }
 
-  buildInsert(ast: TInsertOperation) {
+  buildInsert(ast: Types.TInsertOperation) {
     if (!ast.table) {
       return null;
     }
@@ -372,7 +356,7 @@ export class Grammar {
     }
   }
 
-  buildUpdate(ast: TUpdateOperation) {
+  buildUpdate(ast: Types.TUpdateOperation) {
     if (ast === updateAst) {
       return;
     }
@@ -380,7 +364,7 @@ export class Grammar {
     this.currentFragment += this.escapeId(ast.table);
   }
 
-  buildDelete(ast: TDeleteOperation) {
+  buildDelete(ast: Types.TDeleteOperation) {
     if (ast === deleteAst) {
       return;
     }
@@ -389,7 +373,7 @@ export class Grammar {
     this.addWhereClauses(ast.where);
   }
 
-  addWhereClauses(nodes: List<TConditionNode>) {
+  addWhereClauses(nodes: List<Types.TConditionNode>) {
     if (nodes.size === 0) {
       return;
     }
@@ -399,39 +383,39 @@ export class Grammar {
     });
   }
 
-  addConditionNode(node: TConditionNode, i: number) {
+  addConditionNode(node: Types.TConditionNode, i: number) {
     if (i > 0) {
       this.addKeyword(` ${node.andOr} `);
     }
     switch (node.__typename) {
-      case NodeTypeEnum.COND_EXPR:
+      case Enums.NodeTypeEnum.COND_EXPR:
         this.addExpressionCondition(node);
         break;
-      case NodeTypeEnum.COND_COLUMN:
+      case Enums.NodeTypeEnum.COND_COLUMN:
         this.addColumnCondition(node);
         break;
-      case NodeTypeEnum.COND_IN:
+      case Enums.NodeTypeEnum.COND_IN:
         this.addInCondition(node);
         break;
-      case NodeTypeEnum.COND_EXISTS:
+      case Enums.NodeTypeEnum.COND_EXISTS:
         this.addExistsCondition(node);
         break;
-      case NodeTypeEnum.COND_NULL:
+      case Enums.NodeTypeEnum.COND_NULL:
         this.addNullCondition(node);
         break;
-      case NodeTypeEnum.COND_BETWEEN:
+      case Enums.NodeTypeEnum.COND_BETWEEN:
         this.addBetweenCondition(node);
         break;
-      case NodeTypeEnum.COND_SUB:
+      case Enums.NodeTypeEnum.COND_SUB:
         this.addSubCondition(node);
         break;
-      case NodeTypeEnum.COND_RAW:
+      case Enums.NodeTypeEnum.COND_RAW:
         this.addRawCondition(node);
         break;
     }
   }
 
-  addNullCondition(node: TCondNullNode) {
+  addNullCondition(node: Types.TCondNullNode) {
     if (!node.column) {
       return;
     }
@@ -443,7 +427,7 @@ export class Grammar {
     this.addKeyword("NULL");
   }
 
-  addExistsCondition({ query }: TCondExistsNode) {
+  addExistsCondition({ query }: Types.TCondExistsNode) {
     if (!query) {
       return;
     }
@@ -460,17 +444,17 @@ export class Grammar {
     }
   }
 
-  addRawCondition(node: TCondRawNode) {
+  addRawCondition(node: Types.TCondRawNode) {
     if (isRawNode(node.value)) {
       this.addRawNode(node.value);
     }
   }
 
-  addBetweenCondition(node: TCondBetweenNode) {
+  addBetweenCondition(node: Types.TCondBetweenNode) {
     this.addKeyword("BETWEEN");
   }
 
-  addExpressionCondition(node: TCondExprNode) {
+  addExpressionCondition(node: Types.TCondExprNode) {
     if (!node.column) {
       return;
     }
@@ -482,7 +466,7 @@ export class Grammar {
     this.addValue(node.value);
   }
 
-  addColumnCondition(node: TCondColumnNode) {
+  addColumnCondition(node: Types.TCondColumnNode) {
     if (node.not) {
       this.addKeyword("NOT ");
     }
@@ -491,7 +475,7 @@ export class Grammar {
     this.addIdentifier(node.rightColumn!);
   }
 
-  addInCondition({ value, column, not }: TCondInNode) {
+  addInCondition({ value, column, not }: Types.TCondInNode) {
     if (Array.isArray(value) && value.length === 0) {
       return this.falsyCondition(not);
     }
@@ -511,7 +495,7 @@ export class Grammar {
     }
   }
 
-  addSubCondition(node: TCondSubNode) {
+  addSubCondition(node: Types.TCondSubNode) {
     if (node.ast && node.ast.size > 0) {
       this.wrapParens(() => {
         node.ast.forEach((node, i) => {
@@ -521,14 +505,14 @@ export class Grammar {
     }
   }
 
-  buildTruncate(node: TTruncateOperation) {
+  buildTruncate(node: Types.TTruncateOperation) {
     if (node.table) {
       this.addKeyword("TRUNCATE TABLE ");
       this.currentFragment += this.escapeId(node.table);
     }
   }
 
-  addIdentifier(ident: TColumn | TTable) {
+  addIdentifier(ident: Types.TColumn | Types.TTable) {
     if (typeof ident === "number") {
       this.currentFragment += ident;
     }
@@ -543,7 +527,7 @@ export class Grammar {
     }
   }
 
-  addOperator(op: TOperatorArg) {
+  addOperator(op: Types.TOperatorArg) {
     if (isRawNode(op)) {
       return this.addRawNode(op);
     }
@@ -576,7 +560,7 @@ export class Grammar {
     this.currentFragment += keyword;
   }
 
-  falsyCondition(not: TNot) {
+  falsyCondition(not: Types.TNot) {
     this.currentFragment += `1 = ${not ? 1 : 0} `;
   }
 

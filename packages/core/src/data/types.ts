@@ -250,7 +250,7 @@ export interface IOrderByNode extends INode<NodeTypeEnum.ORDER_BY> {
 export type TOrderByNode = RecordOf<IOrderByNode>;
 
 export interface IUnionNode extends INode<NodeTypeEnum.UNION> {
-  ast: Maybe<TRawNode | ISelectOperation>;
+  ast: Maybe<TRawNode | TSubQueryNode>;
   all: boolean;
 }
 
