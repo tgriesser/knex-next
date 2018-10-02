@@ -1,42 +1,28 @@
 import { OperatorEnum, ClauseTypeEnum, DateCondType } from "../data/enums";
 import {
   ChainFnWhere,
-  IRawNode,
-  IWrappedWhere,
   SubQueryArg,
   TColumnArg,
-  TColumnConditions,
   TDeleteOperation,
   TSelectOperation,
   TSubQueryNode,
   TUpdateOperation,
-  TValueConditions,
   TWhereClause,
   TValueArg,
   TInArg,
   TConditionNode,
   TAndOr,
   TNot,
-  TDateCondArgs,
-  TOperatorArg,
+  TValueCondition,
+  TConditionColumnArgs,
+  TWhereConditionValueArgs,
+  TWhereBuilderFn,
+  TConditionValueArgs,
 } from "../data/types";
 import { Grammar } from "../Grammar";
 import { AddCondition } from "./AddCondition";
 import { List } from "immutable";
-
-export type WhereArgs =
-  | [IRawNode | IWrappedWhere | WhereClauseBuilder | TValueConditions | boolean | number]
-  | [{ [column: string]: TValueArg }]
-  | [TColumnArg, TValueArg]
-  | [TColumnArg, TOperatorArg, TValueArg];
-
-export type WhereColArgs =
-  | [TColumnConditions]
-  | [{ [column: string]: string }]
-  | [TColumnArg, TColumnArg]
-  | [TColumnArg, TOperatorArg, TColumnArg];
-
-export type WhereDateArgs = [TColumnArg, TValueArg] | [TColumnArg, TOperatorArg, TValueArg];
+import { CondSubNode } from "../data/structs";
 
 export abstract class WhereClauseBuilder extends AddCondition {
   /**
@@ -49,22 +35,22 @@ export abstract class WhereClauseBuilder extends AddCondition {
    */
   protected abstract ast: TSelectOperation | TUpdateOperation | TDeleteOperation | TWhereClause | List<TConditionNode>;
 
-  where(...args: WhereArgs[]) {
-    return this.addCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND);
+  where(...args: TConditionValueArgs<TWhereBuilderFn>) {
+    return this.addValueCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND);
   }
-  orWhere(...args: WhereArgs[]) {
-    return this.addCond(ClauseTypeEnum.WHERE, args, OperatorEnum.OR);
+  orWhere(...args: TWhereConditionValueArgs) {
+    return this.addValueCond(ClauseTypeEnum.WHERE, args, OperatorEnum.OR);
   }
-  whereNot(...args: WhereArgs[]) {
-    return this.addCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND);
+  whereNot(...args: TWhereConditionValueArgs) {
+    return this.addValueCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND);
   }
-  orWhereNot(...args: WhereArgs[]) {
-    return this.addCond(ClauseTypeEnum.WHERE, args, OperatorEnum.OR, OperatorEnum.NOT);
+  orWhereNot(...args: TWhereConditionValueArgs) {
+    return this.addValueCond(ClauseTypeEnum.WHERE, args, OperatorEnum.OR, OperatorEnum.NOT);
   }
-  whereColumn(...args: WhereColArgs[]) {
+  whereColumn(...args: TConditionColumnArgs) {
     return this.addColumnCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND);
   }
-  orWhereColumn(...args: WhereColArgs[]) {
+  orWhereColumn(...args: TConditionColumnArgs) {
     return this.addColumnCond(ClauseTypeEnum.WHERE, args, OperatorEnum.OR, OperatorEnum.NOT);
   }
   whereIn(column: TColumnArg, arg: TInArg) {
@@ -119,43 +105,43 @@ export abstract class WhereClauseBuilder extends AddCondition {
   /**
    * Date Helpers:
    */
-  whereDate(...args: TDateCondArgs) {
+  whereDate(...args: TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
     return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.DATE, column, operator, value, OperatorEnum.AND);
   }
-  orWhereDate(...args: TDateCondArgs) {
+  orWhereDate(...args: TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
     return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.DATE, column, operator, value, OperatorEnum.OR);
   }
-  whereTime(...args: TDateCondArgs) {
+  whereTime(...args: TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
     return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.TIME, column, operator, value, OperatorEnum.AND);
   }
-  orWhereTime(...args: TDateCondArgs) {
+  orWhereTime(...args: TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
     return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.TIME, column, operator, value, OperatorEnum.OR);
   }
-  whereDay(...args: TDateCondArgs) {
+  whereDay(...args: TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
     return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.DAY, column, operator, value, OperatorEnum.AND);
   }
-  orWhereDay(...args: TDateCondArgs) {
+  orWhereDay(...args: TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
     return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.DAY, column, operator, value, OperatorEnum.OR);
   }
-  whereMonth(...args: TDateCondArgs) {
+  whereMonth(...args: TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
     return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.MONTH, column, operator, value, OperatorEnum.AND);
   }
-  orWhereMonth(...args: TDateCondArgs) {
+  orWhereMonth(...args: TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
     return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.MONTH, column, operator, value, OperatorEnum.OR);
   }
-  whereYear(...args: TDateCondArgs) {
+  whereYear(...args: TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
     return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.YEAR, column, operator, value, OperatorEnum.AND);
   }
-  orWhereYear(...args: TDateCondArgs) {
+  orWhereYear(...args: TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
     return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.YEAR, column, operator, value, OperatorEnum.OR);
   }
@@ -194,6 +180,7 @@ export class SubWhereBuilder extends WhereClauseBuilder {
   constructor(protected grammar: Grammar, protected subQuery: ((fn: SubQueryArg) => TSubQueryNode)) {
     super();
   }
+
   getAst() {
     return this.ast;
   }
@@ -204,6 +191,11 @@ export class SubWhereBuilder extends WhereClauseBuilder {
   }
 
   protected subCondition(clauseType: ClauseTypeEnum.WHERE, fn: Function, andOr: TAndOr, not: TNot = null) {
+    const builder = new SubWhereBuilder(this.grammar.newInstance(), this.subQuery);
+    fn.call(builder, builder);
+    if (builder.getAst().size > 0) {
+      return this.pushCondition(clauseType, CondSubNode({ andOr, not, ast: builder.getAst() }));
+    }
     return this;
   }
 

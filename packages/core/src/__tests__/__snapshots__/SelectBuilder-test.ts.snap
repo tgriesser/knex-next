@@ -681,6 +681,47 @@ Object {
 }
 `;
 
+exports[`@knex/core - SelectBuilder having subquery 1`] = `
+Immutable.SelectNodes {
+  "__operation": "SELECT",
+  "from": "users",
+  "where": Immutable.List [],
+  "select": Immutable.List [
+    Immutable.AggregateNode {
+      "__typename": "AggregateNode",
+      "fn": "COUNT",
+      "column": "a as item",
+      "alias": null,
+      "distinct": false,
+    },
+  ],
+  "join": Immutable.List [],
+  "having": Immutable.List [],
+  "group": Immutable.List [
+    "items",
+  ],
+  "order": Immutable.List [],
+  "union": Immutable.List [],
+  "limit": null,
+  "offset": null,
+  "alias": null,
+  "distinct": false,
+  "lock": null,
+  "meta": Immutable.Map {},
+}
+`;
+
+exports[`@knex/core - SelectBuilder having subquery 2`] = `
+Object {
+  "fragments": Array [
+    "SELECT FROM users GROUP BY",
+  ],
+  "query": "SELECT FROM users GROUP BY",
+  "sql": "SELECT FROM users GROUP BY",
+  "values": Array [],
+}
+`;
+
 exports[`@knex/core - SelectBuilder join + left join 1`] = `
 Immutable.SelectNodes {
   "__operation": "SELECT",

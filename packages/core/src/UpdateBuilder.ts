@@ -1,22 +1,13 @@
 import { List } from "immutable";
 import { WhereClauseBuilder, SubWhereBuilder } from "./clauses/WhereClauseBuilder";
 import { updateAst, SubQueryNode, CondSubNode } from "./data/structs";
-import {
-  ChainFnUpdate,
-  SubQueryArg,
-  TValueArg,
-  TAndOr,
-  TNot,
-  TConditionNode,
-  Maybe,
-  ExecutableBuilder,
-} from "./data/types";
+import { ChainFnUpdate, SubQueryArg, TValueArg, TAndOr, TNot, TConditionNode, ExecutableBuilder } from "./data/types";
 import { SelectBuilder } from "./SelectBuilder";
 import { Grammar } from "./Grammar";
 import { ClauseTypeEnum } from "./data/enums";
 import { NEVER } from "./data/messages";
 import { IBuilder } from "./contracts/Buildable";
-import { Connection } from "./Connection";
+import { withExecutionMethods } from "./mixins/withExecutionMethods";
 
 export interface UpdateBuilder extends ExecutableBuilder {}
 
@@ -128,3 +119,5 @@ export class UpdateBuilder<T = { [columnName: string]: TValueArg }> extends Wher
     });
   }
 }
+
+withExecutionMethods(UpdateBuilder);

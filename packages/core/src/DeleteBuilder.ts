@@ -6,7 +6,6 @@ import {
   TAndOr,
   TConditionNode,
   TNot,
-  Maybe,
   ExecutableBuilder,
 } from "./data/types";
 import { deleteAst, SubQueryNode } from "./data/structs";
@@ -14,6 +13,7 @@ import { SelectBuilder } from "./SelectBuilder";
 import { ClauseTypeEnum } from "./data/enums";
 import { IBuilder } from "./contracts/Buildable";
 import { Grammar } from "./Grammar";
+import { withExecutionMethods } from "./mixins/withExecutionMethods";
 
 export interface DeleteBuilder extends ExecutableBuilder {}
 
@@ -62,3 +62,5 @@ export class DeleteBuilder extends WhereClauseBuilder implements IBuilder {
     return this;
   }
 }
+
+withExecutionMethods(DeleteBuilder);

@@ -1,21 +1,17 @@
 import { DialectEnum, OperatorEnum, ClauseTypeEnum } from "../data/enums";
 import {
   ChainFnHaving,
-  IRawNode,
-  IWrappedHaving,
   Maybe,
   SubQueryArg,
   TAndOr,
   TColumnArg,
-  TColumnConditions,
   TNot,
-  TOperatorArg,
-  TSelectOperation,
   TSubQueryNode,
-  TValueConditions,
   TConditionNode,
-  TValueArg,
   TInArg,
+  TConditionColumnArgs,
+  TBetweenArg,
+  THavingConditionValueArgs,
 } from "../data/types";
 import { Grammar } from "../Grammar";
 import { AddCondition } from "./AddCondition";
@@ -32,42 +28,18 @@ export abstract class HavingClauseBuilder extends AddCondition {
    */
   protected grammar = new Grammar();
 
-  protected abstract ast: TSelectOperation | List<TConditionNode>;
+  protected abstract ast: List<TConditionNode>;
 
-  having(raw: IRawNode): this;
-  having(fn: IWrappedHaving): this;
-  having(builder: HavingClauseBuilder): this;
-  having(bool: boolean): this;
-  having(obj: { [column: string]: any }): this;
-  having(column: TColumnArg, value: any): this;
-  having(column: TColumnArg, op: TOperatorArg, value: any): this;
-  having(conditions: TValueConditions): this;
-  having(...args: any[]) {
-    return this.addCond(ClauseTypeEnum.HAVING, args, OperatorEnum.AND);
+  having(...args: THavingConditionValueArgs) {
+    return this.addValueCond(ClauseTypeEnum.HAVING, args, OperatorEnum.AND);
   }
-  orHaving(raw: IRawNode): this;
-  orHaving(fn: IWrappedHaving): this;
-  orHaving(bool: boolean): this;
-  orHaving(builder: HavingClauseBuilder): this;
-  orHaving(obj: { [column: string]: any }): this;
-  orHaving(column: TColumnArg, value: any): this;
-  orHaving(column: TColumnArg, op: TOperatorArg, value: any): this;
-  orHaving(conditions: TValueConditions): this;
-  orHaving(...args: any[]) {
-    return this.addCond(ClauseTypeEnum.HAVING, args, OperatorEnum.OR);
+  orHaving(...args: THavingConditionValueArgs) {
+    return this.addValueCond(ClauseTypeEnum.HAVING, args, OperatorEnum.OR);
   }
-  havingColumn(columnA: TColumnArg, columnB: TColumnArg): this;
-  havingColumn(columnA: TColumnArg, op: TOperatorArg, columnB: TColumnArg): this;
-  havingColumn(obj: { [column: string]: string }): this;
-  havingColumn(conditions: TColumnConditions): this;
-  havingColumn(...args: any[]) {
+  havingColumn(...args: TConditionColumnArgs) {
     return this.addColumnCond(ClauseTypeEnum.HAVING, args, OperatorEnum.AND);
   }
-  orHavingColumn(columnA: TColumnArg, columnB: TColumnArg): this;
-  orHavingColumn(columnA: TColumnArg, op: TOperatorArg, columnB: TColumnArg): this;
-  orHavingColumn(obj: { [column: string]: string }): this;
-  orHavingColumn(conditions: TColumnConditions): this;
-  orHavingColumn(...args: any[]) {
+  orHavingColumn(...args: TConditionColumnArgs) {
     return this.addColumnCond(ClauseTypeEnum.HAVING, args, OperatorEnum.OR, OperatorEnum.NOT);
   }
   havingIn(column: TColumnArg, arg: TInArg) {
@@ -94,17 +66,17 @@ export abstract class HavingClauseBuilder extends AddCondition {
   orHavingNotNull(column: TColumnArg) {
     return this.addNullCond(ClauseTypeEnum.HAVING, column, OperatorEnum.AND, OperatorEnum.NOT);
   }
-  havingBetween(column: TColumnArg, args: [TValueArg, TValueArg]) {
-    return this.addBetweenCond(ClauseTypeEnum.HAVING, column, args, OperatorEnum.AND);
+  havingBetween(column: TColumnArg, arg: TBetweenArg) {
+    return this.addBetweenCond(ClauseTypeEnum.HAVING, column, arg, OperatorEnum.AND);
   }
-  orHavingBetween(column: TColumnArg, args: [TValueArg, TValueArg]) {
-    return this.addBetweenCond(ClauseTypeEnum.HAVING, column, args, OperatorEnum.OR);
+  orHavingBetween(column: TColumnArg, arg: TBetweenArg) {
+    return this.addBetweenCond(ClauseTypeEnum.HAVING, column, arg, OperatorEnum.OR);
   }
-  havingNotBetween(column: TColumnArg, args: [TValueArg, TValueArg]) {
-    return this.addBetweenCond(ClauseTypeEnum.HAVING, column, args, OperatorEnum.AND, OperatorEnum.NOT);
+  havingNotBetween(column: TColumnArg, arg: TBetweenArg) {
+    return this.addBetweenCond(ClauseTypeEnum.HAVING, column, arg, OperatorEnum.AND, OperatorEnum.NOT);
   }
-  orHavingNotBetween(column: TColumnArg, args: [TValueArg, TValueArg]) {
-    return this.addBetweenCond(ClauseTypeEnum.HAVING, column, args, OperatorEnum.OR, OperatorEnum.NOT);
+  orHavingNotBetween(column: TColumnArg, arg: TBetweenArg) {
+    return this.addBetweenCond(ClauseTypeEnum.HAVING, column, arg, OperatorEnum.OR, OperatorEnum.NOT);
   }
   havingExists(subQuery: SubQueryArg) {
     return this.addExistsCond(ClauseTypeEnum.HAVING, subQuery, OperatorEnum.AND);
@@ -132,6 +104,10 @@ export interface HavingClauseBuilder {
   andHavingNotIn: HavingClauseBuilder["havingNotIn"];
   andHavingNull: HavingClauseBuilder["havingNull"];
   andHavingNotNull: HavingClauseBuilder["havingNotNull"];
+  andHavingBetween: HavingClauseBuilder["havingBetween"];
+  andHavingNotBetween: HavingClauseBuilder["havingNotBetween"];
+  andHavingExists: HavingClauseBuilder["havingExists"];
+  andHavingNotExists: HavingClauseBuilder["havingNotExists"];
 }
 
 HavingClauseBuilder.prototype.andHaving = HavingClauseBuilder.prototype.having;
@@ -140,6 +116,25 @@ HavingClauseBuilder.prototype.andHavingIn = HavingClauseBuilder.prototype.having
 HavingClauseBuilder.prototype.andHavingNotIn = HavingClauseBuilder.prototype.havingNotIn;
 HavingClauseBuilder.prototype.andHavingNull = HavingClauseBuilder.prototype.havingNull;
 HavingClauseBuilder.prototype.andHavingNotNull = HavingClauseBuilder.prototype.havingNotNull;
+HavingClauseBuilder.prototype.andHavingBetween = HavingClauseBuilder.prototype.havingBetween;
+HavingClauseBuilder.prototype.andHavingNotBetween = HavingClauseBuilder.prototype.havingNotBetween;
+HavingClauseBuilder.prototype.andHavingExists = HavingClauseBuilder.prototype.havingExists;
+HavingClauseBuilder.prototype.andHavingNotExists = HavingClauseBuilder.prototype.havingNotExists;
+
+// All having methods we wish to attach to the select builder.
+// prettier-ignore
+export const HAVING_METHODS = [
+  'having', 'andHaving', 'orHaving',
+  'havingColumn', 'andHavingColumn', 'orHavingColumn',
+  'havingIn', 'andHavingIn', 'orHavingIn', 
+  'havingNotIn', 'andHavingNotIn', 'orHavingNotIn', 
+  'havingNull', 'andHavingNull', 'orHavingNull',
+  'havingNotNull', 'andHavingNotNull', 'orHavingNotNull',
+  'havingBetween', 'andHavingBetween', 'orHavingBetween',
+  'havingNotBetween', 'andHavingNotBetween', 'orHavingNotBetween',
+  'havingExists', 'andHavingExists', 'orHavingExists',
+  'havingNotExists', 'andHavingNotExists', 'orHavingNotExists',
+]
 
 export class SubHavingBuilder extends HavingClauseBuilder {
   protected ast = List();
@@ -158,6 +153,11 @@ export class SubHavingBuilder extends HavingClauseBuilder {
   }
 
   protected subCondition(clauseType: ClauseTypeEnum.HAVING, fn: Function, andOr: TAndOr, not: TNot = null) {
+    const builder = new SubHavingBuilder(this.grammar.newInstance(), this.subQuery);
+    fn.call(builder, builder);
+    if (builder.getAst().size > 0) {
+      //
+    }
     return this;
   }
 

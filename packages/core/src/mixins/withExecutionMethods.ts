@@ -1,9 +1,15 @@
 import { Connection } from "../Connection";
 
 /**
- * Typings are taken care of on the type defs for ExecutableBuilder
+ * Typings are taken care of on the type defs for ExecutableBuilder,
+ * but basically this just mixes in all of the prototype properties &
+ * methods that are common to all the builders, without needing to independently
+ * define them on each.
  */
 export function withExecutionMethods(ClassToDecorate: any) {
+  /**
+   * The connection we're using to execute the queries.
+   */
   ClassToDecorate.prototype.connection = null;
 
   ClassToDecorate.prototype.setConnection = function setConnection(connection: Connection) {
@@ -11,6 +17,10 @@ export function withExecutionMethods(ClassToDecorate: any) {
     return this;
   };
 
+  /**
+   * If we've executed the promise, cache it on the class body
+   * to fulfill the promises spec.
+   */
   ClassToDecorate.prototype._promise = null;
 
   ClassToDecorate.prototype.then = function then(onFulfilled: any, onRejected: any) {

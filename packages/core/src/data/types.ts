@@ -1,5 +1,5 @@
 import { SelectBuilder } from "../SelectBuilder";
-import { SubWhereBuilder } from "../clauses/WhereClauseBuilder";
+import { WhereClauseBuilder } from "../clauses/WhereClauseBuilder";
 import {
   OperatorEnum,
   NodeTypeEnum,
@@ -11,7 +11,7 @@ import {
 } from "./enums";
 import { JoinBuilder } from "../clauses/JoinBuilder";
 import { RecordOf, List, Map as IMap } from "immutable";
-import { SubHavingBuilder } from "../clauses/HavingClauseBuilder";
+import { HavingClauseBuilder } from "../clauses/HavingClauseBuilder";
 import { AddCondition } from "../clauses/AddCondition";
 import { Connection } from "../Connection";
 
@@ -25,15 +25,11 @@ export interface ChainFn<T> {
 
 export type TNot = OperatorEnum.NOT | null;
 
-export interface IJoinBuilderFn {
-  (this: JoinBuilder, arg: JoinBuilder): any;
-}
-export interface IWrappedWhere {
-  (this: SubWhereBuilder, arg: SubWhereBuilder): any;
-}
-export interface IWrappedHaving {
-  (this: SubHavingBuilder, arg: SubHavingBuilder): any;
-}
+export type TJoinBuilderFn = (this: JoinBuilder, arg: JoinBuilder) => void | JoinBuilder;
+
+export type TWhereBuilderFn = (this: WhereClauseBuilder, arg: WhereClauseBuilder) => void | WhereClauseBuilder;
+
+export type THavingBuilderFn = (this: HavingClauseBuilder, arg: HavingClauseBuilder) => void | HavingClauseBuilder;
 
 export interface ChainFnHaving extends ChainFn<any> {}
 
@@ -62,17 +58,17 @@ export interface SubConditionFn {
 /**
  * Argument for a column, what's passed into the query builder
  */
-export type TColumnArg = string | SubQueryArg | SelectBuilder | TRawNode;
+export type TColumnArg = string | number | SelectBuilder | TRawNode;
 
 /**
  * Allow numbers in select arguments, but not elsewhere
  */
-export type TSelectColumnArg = number | TColumnArg;
+export type TSelectColumnArg = number | TColumnArg | SubQueryArg;
 
 /**
  * Argument for a value
  */
-export type TValueArg = null | number | string | Date | SelectBuilder | SubQueryArg | TRawNode;
+export type TValueArg = null | number | string | Date | SelectBuilder | TRawNode;
 
 /**
  * Argument for a select column
@@ -87,7 +83,7 @@ export type TAliasObj = { [aliasIdent: string]: string };
 /**
  * Argument for an aggregate
  */
-export type TAggregateArg = string | string[] | TRawNode | SubQueryArg | SelectBuilder;
+export type TAggregateArg = string | string[] | TRawNode | SelectBuilder;
 
 export type TTableArg = string | SubQueryArg | SelectBuilder | TRawNode;
 
@@ -99,18 +95,17 @@ export type TAndOr = OperatorEnum.AND | OperatorEnum.OR;
 
 export type TGroupByArg = string | TRawNode;
 
-export type TColumnArrCondition = [TColumnArg, TColumnArg] | [TColumnArg, TOperatorArg, TColumnArg];
+export type TColumnCondition2 = [TColumnArg, TColumnArg] | [number, number];
 
-export type TColumnConditions = Array<TColumnArrCondition>;
+export type TColumnCondition3 = [TColumnArg, TOperatorArg, TColumnArg] | [number, TOperatorArg, number];
 
-export type TValueArrCondition = [TColumnArg, any] | [TColumnArg, TOperatorArg, any];
+export type TColumnCondition = TColumnCondition2 | TColumnCondition3;
 
-export type TValueConditions = Array<TValueArrCondition>;
+export type TValueCondition2 = [TColumnArg, TValueArg] | [number, number];
 
-/**
- * Valid arguments to the date conditions
- */
-export type TDateCondArgs = [TColumnArg, TValueArg] | [TColumnArg, TOperatorArg, TValueArg];
+export type TValueCondition3 = [TColumnArg, TOperatorArg, TValueArg] | [number, TOperatorArg, number];
+
+export type TValueCondition = TValueCondition2 | TValueCondition3;
 
 /**
  * The type for a column (or place for a column) in the AST
@@ -181,13 +176,7 @@ export type ColumnDataType =
   | "collate"
   | "inherits"
   | "specificType"
-  | "index"
-  | "dropIndex"
-  | "unique"
-  | "foreign"
-  | "dropForeign"
-  | "dropUnique"
-  | "dropPrimary";
+  | "index";
 
 export type ColumnIndexType = "unique" | "foreign";
 
@@ -324,15 +313,6 @@ export interface ISubQuery extends INode<NodeTypeEnum.SUB_QUERY> {
 }
 export type TSubQueryNode = RecordOf<ISubQuery>;
 
-export interface IClause<T extends ClauseTypeEnum> {
-  __clause: T;
-}
-export interface IWhereClauseNodes extends IClause<ClauseTypeEnum.WHERE> {
-  where: List<TConditionNode>;
-  having: List<TConditionNode>;
-}
-export type TWhereClause = RecordOf<IWhereClauseNodes>;
-
 export interface IRawNode extends INode<NodeTypeEnum.RAW> {
   fragments: List<string>;
   bindings: List<any>;
@@ -457,4 +437,31 @@ export interface ExecutableBuilder<T = any> extends Promise<T> {
 }
 
 export type ArgumentType<F extends Function> = F extends (...args: infer A) => any ? A[0] : never;
+
 export type ArgumentTypes<F extends Function> = F extends (...args: infer A) => any ? A : never;
+
+export type TConditionValueArgs<T> =
+  | [T | TRawNode | boolean | number | TValueCondition[] | { [column: string]: TValueArg }]
+  | TValueCondition2
+  | TValueCondition3;
+
+export type TWhereConditionValueArgs = TConditionValueArgs<TWhereBuilderFn>;
+
+export type THavingConditionValueArgs = TConditionValueArgs<THavingBuilderFn>;
+
+export type TJoinConditionValueArgs =
+  | [IRawNode | boolean | number | TValueCondition[] | { [column: string]: TValueArg }]
+  | TValueCondition2
+  | TValueCondition3;
+
+export type TJoinConditionColumnArgs =
+  | [TJoinBuilderFn | TColumnCondition[] | { [column: string]: string }]
+  | TColumnCondition2
+  | TColumnCondition3;
+
+export type TConditionColumnArgs =
+  | [TColumnCondition[] | { [column: string]: string }]
+  | TColumnCondition2
+  | TColumnCondition3;
+
+export type TBetweenArg = [TValueArg, TValueArg];

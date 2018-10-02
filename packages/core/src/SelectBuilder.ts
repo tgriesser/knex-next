@@ -13,7 +13,7 @@ import { SELECT_BUILDER } from "./data/symbols";
 import {
   ChainFnSelect,
   FromJSArg,
-  IJoinBuilderFn,
+  TJoinBuilderFn,
   Maybe,
   SubQueryArg,
   TAndOr,
@@ -35,6 +35,9 @@ import {
   TAliasObj,
   TOperatorArg,
   ExecutableBuilder,
+  THavingConditionValueArgs,
+  TConditionValueArgs,
+  THavingBuilderFn,
 } from "./data/types";
 import { ExecutionContext } from "./ExecutionContext";
 import { Grammar } from "./Grammar";
@@ -61,16 +64,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
    */
   protected grammar = new Grammar();
 
-  /**
-   * The connection we're using to execute the queries.
-   */
   protected connection: Maybe<Connection> = null;
-
-  /**
-   * If we've executed the promise, cache it on the class body
-   * to fulfill the promises spec.
-   */
-  protected _promise: Maybe<Promise<T>> = null;
 
   /**
    * All events, row iteration, and query execution takes place in
@@ -86,7 +80,8 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
   /**
    * Select builder used in subqueries or clone, etc.
    */
-  protected selectBuilder = (ast = selectAst, forSubQuery = false) => new SelectBuilder(ast, forSubQuery);
+  protected selectBuilder = (ast = selectAst, forSubQuery = false) =>
+    new (<typeof SelectBuilder>this.constructor)(ast, forSubQuery);
 
   /**
    * "Clones" the current query builder, creating a new instance with a copy of
@@ -103,7 +98,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
    *
    * .select('account.id')
    */
-  select(...args: Array<TSelectArg>): this {
+  select(...args: TSelectArg[]): this {
     return this.chain(ast => {
       return ast.set(
         "select",
@@ -148,7 +143,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
   join(table: TTableArg, aliasObj: TAliasObj): this;
   join(table: TTableArg, leftCol: string, rightCol: string): this;
   join(table: TTableArg, leftCol: string, op: TOperatorArg, rightCol: string): this;
-  join(table: TTableArg, subJoin: IJoinBuilderFn): this;
+  join(table: TTableArg, subJoin: TJoinBuilderFn): this;
   join(table: TTableArg, ...args: any[]) {
     // Allow .join(raw`...`) for simplicity.
     if (args.length === 1 && isRawNode(args[0])) {
@@ -202,6 +197,11 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
     }
     return this.chain(ast => ast.set("group", ast.group.concat(args)));
   }
+
+  /**
+   * Adds a HAVING clause to the query
+   */
+  having() {}
 
   /**
    * Adds an ORDER BY clause to the query
@@ -338,18 +338,6 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
     const builder = this.clone();
     builder.mutable = true;
     return builder;
-  }
-
-  log(msg: string) {
-    console.log(msg);
-  }
-
-  error(err: Error) {
-    console.error(err);
-  }
-
-  warn(warning: string | Error) {
-    console.warn(warning);
   }
 
   update() {
@@ -606,9 +594,16 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
     this.executionContext = new ExecutionContext();
     return this.executionContext;
   }
+
+  protected addHavingClause(args: THavingConditionValueArgs) {
+    return this;
+  }
 }
 
 export interface SelectBuilder<T = any> extends ExecutableBuilder<T> {
+  having(...args: THavingConditionValueArgs): this;
+  orHaving(...args: THavingConditionValueArgs): this;
+  andHaving(...args: THavingConditionValueArgs): this;
   [SELECT_BUILDER]: true;
 }
 

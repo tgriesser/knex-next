@@ -54,6 +54,19 @@ export function commonSelectTests(builder: SelectBuilderFactory) {
     );
   });
 
+  test("having subquery", () => {
+    snap(
+      builder()
+        .count("a as item")
+        .from("users")
+        .groupBy("items")
+        .having("item", ">", 1)
+        .having(h => {
+          h.having("id", 1);
+        })
+    );
+  });
+
   test("join + left join", () => {
     snap(
       builder()

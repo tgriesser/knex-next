@@ -21,7 +21,6 @@ import {
   ICondInNode,
   ICondColumnNode,
   ICondExprNode,
-  IWhereClauseNodes,
   ISelectOperation,
   IInsertOperation,
   IUpdateOperation,
@@ -48,19 +47,6 @@ export const RawNode = IRecord<IRawNode>(
   },
   NodeTypeEnum.RAW
 );
-
-/**
- * WHERE ...
- */
-export const WhereClause = IRecord<IWhereClauseNodes>(
-  {
-    __clause: ClauseTypeEnum.WHERE,
-    where: List(),
-    having: List(),
-  },
-  "WhereClauseNodes"
-);
-export const whereClauseNode = WhereClause();
 
 /**
  * WHERE Condition: expr [op] expr

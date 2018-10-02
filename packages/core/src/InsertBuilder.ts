@@ -4,6 +4,7 @@ import { insertAst } from "./data/structs";
 import { IBuilder } from "./contracts/Buildable";
 import { SelectBuilder } from "./SelectBuilder";
 import { Connection } from "./Connection";
+import { withExecutionMethods } from "./mixins/withExecutionMethods";
 
 export interface InsertBuilder extends ExecutableBuilder {}
 
@@ -58,3 +59,5 @@ export class InsertBuilder<T = { [columnName: string]: any }> implements IBuilde
     return this;
   }
 }
+
+withExecutionMethods(InsertBuilder);

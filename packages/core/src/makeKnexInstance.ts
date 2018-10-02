@@ -9,7 +9,7 @@ import { ArgumentType, ArgumentTypes } from "./data/types";
  * the builder classes w/ a connection, so everything works seamlessly
  */
 export function makeKnexInstance<T extends string>() {
-  function knex(tableName: T) {
+  const knex = (tableName: T) => {
     return {
       insert(values: ArgumentType<InsertBuilder["values"]>) {
         return new InsertBuilder().into(tableName).values(values);
@@ -27,15 +27,19 @@ export function makeKnexInstance<T extends string>() {
         return new SelectBuilder();
       },
     };
-  }
+  };
 
-  knex.insertInto = () => {
+  knex.insertInto = (tableName: string) => {
     return new InsertBuilder().into(tableName);
   };
 
-  knex.updateTable = () => {};
+  knex.updateTable = (tableName: string) => {
+    return new UpdateBuilder().table(tableName);
+  };
 
   knex.select = () => {};
 
   knex.where = () => {};
+
+  return knex;
 }

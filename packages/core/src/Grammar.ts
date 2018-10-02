@@ -138,9 +138,9 @@ export class Grammar {
     this.addWhereClauses(ast.where);
     this.addGroupBy(ast);
     this.addHavingClause(ast.having);
-    this.addOrderByClause(ast);
+    this.addOrderByClause(ast.order);
     this.addLimit(ast.limit);
-    this.addOffset(ast.offset);
+    this.addOffset(ast);
     this.addUnions(ast.union);
     this.buildSelectLock(ast);
   }
@@ -291,12 +291,12 @@ export class Grammar {
     });
   }
 
-  addOrderByClause(ast: TSelectOperation) {
-    if (ast.order.size === 0) {
+  addOrderByClause(order: TSelectOperation["order"]) {
+    if (order.size === 0) {
       return;
     }
     this.addKeyword(" ORDER BY ");
-    ast.order.forEach(order => {
+    order.forEach(order => {
       //
     });
   }
@@ -313,15 +313,15 @@ export class Grammar {
     }
   }
 
-  addOffset(val: TSelectOperation["offset"]) {
-    if (val === null) {
+  addOffset(ast: TSelectOperation) {
+    if (ast.offset === null) {
       return;
     }
     this.addKeyword(" OFFSET ");
-    if (isRawNode(val)) {
-      this.addRawNode(val);
+    if (isRawNode(ast.offset)) {
+      this.addRawNode(ast.offset);
     } else {
-      this.pushValue(val);
+      this.pushValue(ast.offset);
     }
   }
 

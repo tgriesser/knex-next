@@ -5,7 +5,6 @@ import {
   TValueArg,
   SubQueryArg,
   TConditionNode,
-  TValueConditions,
   TSubQueryNode,
   TValue,
   TColumn,
@@ -14,10 +13,16 @@ import {
   TInValue,
   TInArg,
   SubConditionFn,
-  TDateCondArgs,
   TAliasedIdentNode,
   TRawNode,
   TColumnVal,
+  TConditionColumnArgs,
+  TValueCondition,
+  TJoinConditionColumnArgs,
+  TValueCondition3,
+  TConditionValueArgs,
+  TWhereBuilderFn,
+  THavingBuilderFn,
 } from "../data/types";
 import {
   CondNullNode,
@@ -54,13 +59,37 @@ export abstract class AddCondition {
    *
    * creates a wrapped context if necessary, otherwise
    */
-  protected addCond(
+  protected addValueCond(
     clauseType: ClauseTypeEnum,
-    args: any[],
+    args: TConditionValueArgs<TWhereBuilderFn | THavingBuilderFn>,
     andOr: TAndOr,
-    not: TNot = null,
-    asCol: boolean = false
+    not: TNot = null
+  ) {
+    return this.addCond(false, clauseType, args, andOr, not);
+  }
+
+  /**
+   * Handles the column to column comparison condition, e.g.:
+   *
+   * "column" >= "otherColumn"
+   */
+  protected addColumnCond(
+    clauseType: ClauseTypeEnum,
+    args: TConditionColumnArgs | TJoinConditionColumnArgs,
+    andOr: TAndOr,
+    not: TNot = null
   ): this {
+    return this.addCond(true, clauseType, args, andOr, not);
+  }
+
+  /**
+   * Handles the basic condition case:
+   *
+   * "column" = value
+   *
+   * creates a wrapped context if necessary, otherwise
+   */
+  protected addCond(asCol: boolean, clauseType: ClauseTypeEnum, args: any[], andOr: TAndOr, not: TNot = null): this {
     switch (args.length) {
       case 1: {
         return this.addCondAry1(asCol, clauseType, args[0], andOr, not);
@@ -101,15 +130,15 @@ export abstract class AddCondition {
     }
     // WHERE true or WHERE 1
     if (typeof arg === "boolean" || typeof arg === "number") {
-      return this.addCond(clauseType, [1, "=", arg ? 1 : 0], andOr, not);
+      return this.addValueCond(clauseType, [1, "=", arg ? 1 : 0], andOr, not);
     }
     // Array / array-like, create a wrapped context with each of the conditions
     if (Array.isArray(arg)) {
       return this.subCondition(
         clauseType,
         qb => {
-          (arg as TValueConditions).forEach(cond => {
-            qb.addCond(clauseType, cond, OperatorEnum.AND, null, asCol);
+          (arg as TValueCondition[]).forEach(cond => {
+            qb.addCond(asCol, clauseType, cond, OperatorEnum.AND, null);
           });
         },
         andOr,
@@ -137,15 +166,6 @@ export abstract class AddCondition {
       );
     }
     return this;
-  }
-
-  /**
-   * Handles the column to column comparison condition, e.g.:
-   *
-   * "column" >= "otherColumn"
-   */
-  protected addColumnCond(clauseType: ClauseTypeEnum, args: any[], andOr: TAndOr, not: TNot = null): this {
-    return this.addCond(clauseType, args, andOr, not, true);
   }
 
   protected addColumnCondNode(
@@ -271,7 +291,7 @@ export abstract class AddCondition {
    * Takes an argument in a "column" slot and unwraps it so any subqueries / raw values
    * are properly handled.
    */
-  protected unwrapIdent(column: TColumnArg): TColumn {
+  protected unwrapIdent(column: TColumnArg | TQueryArg): TColumn {
     if (typeof column === "string") {
       return this.unwrapAlias(column);
     }
@@ -281,7 +301,7 @@ export abstract class AddCondition {
   /**
    * Takes a column/table reference in a "value" slot and unwraps it
    */
-  protected unwrapIdentVal(column: TColumnArg): TColumnVal {
+  protected unwrapIdentVal(column: TColumnArg | TQueryArg): TColumnVal {
     if (typeof column === "function") {
       return this.subQuery(column);
     }
@@ -345,7 +365,7 @@ export abstract class AddCondition {
     throw new Error(`Invalid value provided to the where in builder: ${typeof value}`);
   }
 
-  protected normalizeExprArgs(args: TDateCondArgs): [TColumnArg, TOperatorArg, TValueArg] {
+  protected normalizeExprArgs(args: TValueCondition): TValueCondition3 {
     if (args.length === 2) {
       return [args[0], "=", args[1]];
     }
