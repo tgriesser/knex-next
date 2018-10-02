@@ -1,24 +1,23 @@
-import { ChainFnInsert, SubQueryArg, TRawNode, Maybe, ExecutableBuilder } from "./data/types";
 import { Grammar } from "./Grammar";
-import { insertAst } from "./data/structs";
 import { IBuilder } from "./contracts/Buildable";
 import { SelectBuilder } from "./SelectBuilder";
 import { Connection } from "./Connection";
 import { withExecutionMethods } from "./mixins/withExecutionMethods";
+import { Structs, Types } from "./data";
 
-export interface InsertBuilder extends ExecutableBuilder {}
+export interface InsertBuilder extends Types.ExecutableBuilder {}
 
 export class InsertBuilder<T = { [columnName: string]: any }> implements IBuilder {
   public readonly dialect = null;
 
   protected grammar = new Grammar();
 
-  constructor(protected ast = insertAst) {}
+  constructor(protected ast = Structs.insertAst) {}
 
-  protected connection: Maybe<Connection> = null;
+  protected connection: Types.Maybe<Connection> = null;
 
   clearValues() {
-    return this.chain(ast => ast.set("values", insertAst.values));
+    return this.chain(ast => ast.set("values", Structs.insertAst.values));
   }
 
   into(tableName: string) {
@@ -33,7 +32,7 @@ export class InsertBuilder<T = { [columnName: string]: any }> implements IBuilde
     return this.chain(ast => ast.set("values", ast.values.concat(toInsert)));
   }
 
-  select(arg: SubQueryArg | TRawNode) {
+  select(arg: Types.SubQueryArg | Types.TRawNode) {
     if (typeof arg === "function") {
       return this.chain(ast => ast.set("select", this.subQuery(arg)));
     }
@@ -48,13 +47,13 @@ export class InsertBuilder<T = { [columnName: string]: any }> implements IBuilde
     return this.ast;
   }
 
-  protected subQuery(arg: SubQueryArg) {
+  protected subQuery(arg: Types.SubQueryArg) {
     const builder = new SelectBuilder();
     arg.call(builder, builder);
     return builder.getAst();
   }
 
-  protected chain(fn: ChainFnInsert) {
+  protected chain(fn: Types.ChainFnInsert) {
     this.ast = fn(this.ast);
     return this;
   }

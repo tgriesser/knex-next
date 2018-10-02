@@ -5,51 +5,15 @@ import { SubHavingBuilder } from "./clauses/HavingClauseBuilder";
 import { JoinBuilder } from "./clauses/JoinBuilder";
 import { SubWhereBuilder, WhereClauseBuilder } from "./clauses/WhereClauseBuilder";
 import { Connection } from "./Connection";
-import {
-  AggregateFns,
-  ClauseTypeEnum,
-  DialectEnum,
-  JoinTypeEnum,
-  NodeTypeEnum,
-  OrderByEnum,
-  OperatorEnum,
-} from "./data/enums";
 import { NEVER } from "./data/messages";
 import { isRawNode, isSelectBuilder, isNodeOf } from "./data/predicates";
-import { AggregateNode, CondSubNode, JoinNode, selectAst, SubQueryNode, UnionNode, OrderByNode } from "./data/structs";
 import { SELECT_BUILDER } from "./data/symbols";
-import {
-  ChainFnSelect,
-  FromJSArg,
-  TJoinBuilderFn,
-  Maybe,
-  SubQueryArg,
-  TAndOr,
-  TColumnArg,
-  TConditionNode,
-  TGroupByArg,
-  TNot,
-  TOrderByDirection,
-  TRawNode,
-  TSelectArg,
-  TSelectNode,
-  TSelectOperation,
-  TTable,
-  TTableArg,
-  TUnionArg,
-  TAggregateArg,
-  IAggregateNode,
-  Omit,
-  TAliasObj,
-  TOperatorArg,
-  ExecutableBuilder,
-  THavingConditionValueArgs,
-} from "./data/types";
 import { ExecutionContext } from "./ExecutionContext";
 import { Grammar } from "./Grammar";
 import { withEventEmitter } from "./mixins/withEventEmitter";
 import { IBuilder } from "./contracts/Buildable";
 import { withExecutionMethods } from "@knex/core/src/mixins/withExecutionMethods";
+import { Types, Structs, Enums } from "./data";
 
 export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuilder {
   /**
@@ -63,30 +27,30 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
   /**
    * Useful if we want to check the builder's dialect from userland.
    */
-  public readonly dialect: Maybe<DialectEnum> = null;
+  public readonly dialect: Types.Maybe<Enums.DialectEnum> = null;
 
   /**
    * Grammar deals with escaping / parameterizing values
    */
   protected grammar = new Grammar();
 
-  protected connection: Maybe<Connection> = null;
+  protected connection: Types.Maybe<Connection> = null;
 
   /**
    * All events, row iteration, and query execution takes place in
    * an "Execution Context", a combination of:
    * Connection + Grammar + EventEmitter
    */
-  protected executionContext: Maybe<ExecutionContext> = null;
+  protected executionContext: Types.Maybe<ExecutionContext> = null;
 
-  constructor(protected ast = selectAst, protected forSubQuery = false) {
+  constructor(protected ast = Structs.selectAst, protected forSubQuery = false) {
     super();
   }
 
   /**
    * Select builder used in subqueries or clone, etc.
    */
-  protected selectBuilder = (ast = selectAst, forSubQuery = false) =>
+  protected selectBuilder = (ast = Structs.selectAst, forSubQuery = false) =>
     new (<typeof SelectBuilder>this.constructor)(ast, forSubQuery);
 
   /**
@@ -104,7 +68,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
    *
    * .select('account.id')
    */
-  select(...args: TSelectArg[]): this {
+  select(...args: Types.TSelectArg[]): this {
     return this.chain(ast => {
       return ast.set(
         "select",
@@ -130,7 +94,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
   /**
    * Adds the FROM value for the select query
    */
-  from(table: TTableArg) {
+  from(table: Types.TTableArg) {
     if (this.isEmpty(table)) {
       return this;
     }
@@ -145,47 +109,47 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
   /**
    * Adds a JOIN clause to the query
    */
-  join(raw: TRawNode): this;
-  join(table: TTableArg, aliasObj: TAliasObj): this;
-  join(table: TTableArg, leftCol: string, rightCol: string): this;
-  join(table: TTableArg, leftCol: string, op: TOperatorArg, rightCol: string): this;
-  join(table: TTableArg, subJoin: TJoinBuilderFn): this;
-  join(table: TTableArg, ...args: any[]) {
+  join(raw: Types.TRawNode): this;
+  join(table: Types.TTableArg, aliasObj: Types.TAliasObj): this;
+  join(table: Types.TTableArg, leftCol: string, rightCol: string): this;
+  join(table: Types.TTableArg, leftCol: string, op: Types.TOperatorArg, rightCol: string): this;
+  join(table: Types.TTableArg, subJoin: Types.TJoinBuilderFn): this;
+  join(table: Types.TTableArg, ...args: any[]) {
     // Allow .join(raw`...`) for simplicity.
     if (args.length === 1 && isRawNode(args[0])) {
       return this.joinRaw(args[0]);
     }
-    return this.addJoinClause(JoinTypeEnum.INNER, table, args);
+    return this.addJoinClause(Enums.JoinTypeEnum.INNER, table, args);
   }
-  joinVal(table: TTableArg, ...args: any[]) {
-    return this.addJoinClause(JoinTypeEnum.INNER, table, args, true);
+  joinVal(table: Types.TTableArg, ...args: any[]) {
+    return this.addJoinClause(Enums.JoinTypeEnum.INNER, table, args, true);
   }
-  leftJoin(table: TTableArg, ...args: any[]) {
-    return this.addJoinClause(JoinTypeEnum.LEFT, table, args);
+  leftJoin(table: Types.TTableArg, ...args: any[]) {
+    return this.addJoinClause(Enums.JoinTypeEnum.LEFT, table, args);
   }
-  leftJoinVal(table: TTableArg, ...args: any[]) {
-    return this.addJoinClause(JoinTypeEnum.LEFT, table, args, true);
+  leftJoinVal(table: Types.TTableArg, ...args: any[]) {
+    return this.addJoinClause(Enums.JoinTypeEnum.LEFT, table, args, true);
   }
-  rightJoin(table: TTableArg, ...args: any[]) {
-    return this.addJoinClause(JoinTypeEnum.RIGHT, table, args);
+  rightJoin(table: Types.TTableArg, ...args: any[]) {
+    return this.addJoinClause(Enums.JoinTypeEnum.RIGHT, table, args);
   }
-  rightJoinVal(table: TTableArg, ...args: any[]) {
-    return this.addJoinClause(JoinTypeEnum.RIGHT, table, args, true);
+  rightJoinVal(table: Types.TTableArg, ...args: any[]) {
+    return this.addJoinClause(Enums.JoinTypeEnum.RIGHT, table, args, true);
   }
-  leftOuterJoin(table: TTableArg, ...args: any[]) {
-    return this.addJoinClause(JoinTypeEnum.LEFT_OUTER, table, args);
+  leftOuterJoin(table: Types.TTableArg, ...args: any[]) {
+    return this.addJoinClause(Enums.JoinTypeEnum.LEFT_OUTER, table, args);
   }
-  rightOuterJoin(table: TTableArg, ...args: any[]) {
-    return this.addJoinClause(JoinTypeEnum.RIGHT_OUTER, table, args);
+  rightOuterJoin(table: Types.TTableArg, ...args: any[]) {
+    return this.addJoinClause(Enums.JoinTypeEnum.RIGHT_OUTER, table, args);
   }
-  fullOuterJoin(table: TTableArg, ...args: any[]) {
-    return this.addJoinClause(JoinTypeEnum.FULL_OUTER, table, args);
+  fullOuterJoin(table: Types.TTableArg, ...args: any[]) {
+    return this.addJoinClause(Enums.JoinTypeEnum.FULL_OUTER, table, args);
   }
-  crossJoin(table: TTableArg, ...args: any[]) {
-    return this.addJoinClause(JoinTypeEnum.CROSS, table, args);
+  crossJoin(table: Types.TTableArg, ...args: any[]) {
+    return this.addJoinClause(Enums.JoinTypeEnum.CROSS, table, args);
   }
 
-  joinRaw(node: TRawNode) {
+  joinRaw(node: Types.TRawNode) {
     invariant(
       isRawNode(node),
       "Expected joinRaw to be provided with a knex raw`` template tag literal, instead saw %s",
@@ -197,7 +161,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
   /**
    * Adds a GROUP BY ... clause to the query
    */
-  groupBy(...args: TGroupByArg[]) {
+  groupBy(...args: Types.TGroupByArg[]) {
     if (arguments.length === 0) {
       return this;
     }
@@ -209,8 +173,8 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
    * make the first parameter a function and you'll get the advanced
    * having clause builder.
    */
-  having(...args: THavingConditionValueArgs) {
-    return this.addValueCond(ClauseTypeEnum.HAVING, args, OperatorEnum.AND);
+  having(...args: Types.THavingConditionValueArgs) {
+    return this.addValueCond(Enums.ClauseTypeEnum.HAVING, args, Enums.OperatorEnum.AND);
   }
 
   /**
@@ -218,7 +182,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
    *
    * .orderBy('something', 'asc').orderBy('somethingElse', 'desc')
    */
-  orderBy(column: TColumnArg, direction: TOrderByDirection = "asc") {
+  orderBy(column: Types.TColumnArg, direction: Types.TOrderByDirection = "asc") {
     if (arguments.length === 0 || column === null || column === undefined) {
       return this;
     }
@@ -226,9 +190,9 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
       ast.set(
         "order",
         ast.order.push(
-          OrderByNode({
+          Structs.OrderByNode({
             column: this.unwrapIdent(column),
-            direction: direction.toUpperCase() as OrderByEnum,
+            direction: direction.toUpperCase() as Enums.OrderByEnum,
           })
         )
       )
@@ -238,35 +202,35 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
   /**
    * Shorthand for orderBy(column, "desc")
    */
-  orderByDesc(column: TColumnArg) {
+  orderByDesc(column: Types.TColumnArg) {
     return this.orderBy(column, "desc");
   }
 
   /**
    * Set the "offset" value of the query.
    */
-  offset(value: number | TRawNode) {
+  offset(value: number | Types.TRawNode) {
     return this.chain(ast => ast.set("offset", value));
   }
 
   /**
    * Set the "limit" value of the query.
    */
-  limit(value: number | TRawNode) {
+  limit(value: number | Types.TRawNode) {
     return this.chain(ast => ast.set("limit", value));
   }
 
   /**
    * Add a UNION clause to the query
    */
-  union(...args: Array<TUnionArg>) {
+  union(...args: Array<Types.TUnionArg>) {
     return this.addUnionClauses(args);
   }
 
   /**
    * Add a UNION ALL clause to the query
    */
-  unionAll(...args: Array<TUnionArg>) {
+  unionAll(...args: Array<Types.TUnionArg>) {
     return this.addUnionClauses(args, true);
   }
 
@@ -280,29 +244,29 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
     return this.lock(false);
   }
 
-  count(column: TAggregateArg) {
-    return this.addAggregate(AggregateFns.COUNT, column);
+  count(column: Types.TAggregateArg) {
+    return this.addAggregate(Enums.AggregateFns.COUNT, column);
   }
-  countDistinct(column: TAggregateArg) {
-    return this.addAggregate(AggregateFns.COUNT, column, true);
+  countDistinct(column: Types.TAggregateArg) {
+    return this.addAggregate(Enums.AggregateFns.COUNT, column, true);
   }
-  min(column: TAggregateArg) {
-    return this.addAggregate(AggregateFns.MIN, column);
+  min(column: Types.TAggregateArg) {
+    return this.addAggregate(Enums.AggregateFns.MIN, column);
   }
-  max(column: TAggregateArg) {
-    return this.addAggregate(AggregateFns.MAX, column);
+  max(column: Types.TAggregateArg) {
+    return this.addAggregate(Enums.AggregateFns.MAX, column);
   }
-  sum(column: TAggregateArg) {
-    return this.addAggregate(AggregateFns.SUM, column);
+  sum(column: Types.TAggregateArg) {
+    return this.addAggregate(Enums.AggregateFns.SUM, column);
   }
-  sumDistinct(column: TAggregateArg) {
-    return this.addAggregate(AggregateFns.SUM, column, true);
+  sumDistinct(column: Types.TAggregateArg) {
+    return this.addAggregate(Enums.AggregateFns.SUM, column, true);
   }
-  avg(column: TAggregateArg) {
-    return this.addAggregate(AggregateFns.AVG, column);
+  avg(column: Types.TAggregateArg) {
+    return this.addAggregate(Enums.AggregateFns.AVG, column);
   }
-  avgDistinct(column: TAggregateArg) {
-    return this.addAggregate(AggregateFns.AVG, column, true);
+  avgDistinct(column: Types.TAggregateArg) {
+    return this.addAggregate(Enums.AggregateFns.AVG, column, true);
   }
 
   as(val: string) {
@@ -317,11 +281,11 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
     return this.grammar.toSql(this.ast);
   }
 
-  fromJS(obj: FromJSArg) {
+  fromJS(obj: Types.FromJSArg) {
     return this;
   }
 
-  getAst(): TSelectOperation {
+  getAst(): Types.TSelectOperation {
     return this.ast;
   }
 
@@ -361,45 +325,45 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
    * Clears any SELECT expressions set on the builder
    */
   clearSelect() {
-    return this.chain(ast => ast.set("select", selectAst.select));
+    return this.chain(ast => ast.set("select", Structs.selectAst.select));
   }
 
   /**
    * Clears any WHERE conditions set on the builder
    */
   clearWhere() {
-    return this.chain(ast => ast.set("where", selectAst.where));
+    return this.chain(ast => ast.set("where", Structs.selectAst.where));
   }
 
   /**
    * Clears any HAVING conditions set on the builder
    */
   clearHaving() {
-    return this.chain(ast => ast.set("having", selectAst.having));
+    return this.chain(ast => ast.set("having", Structs.selectAst.having));
   }
 
   /**
    * Clears any UNION clauses set on the builder
    */
   clearUnion() {
-    return this.chain(ast => ast.set("union", selectAst.union));
+    return this.chain(ast => ast.set("union", Structs.selectAst.union));
   }
 
   /**
    * Clears any GROUP BY set on the builder
    */
   clearGroup() {
-    return this.chain(ast => ast.set("group", selectAst.group));
+    return this.chain(ast => ast.set("group", Structs.selectAst.group));
   }
 
-  protected addUnionClauses(args: Array<TUnionArg>, unionAll: boolean = false) {
+  protected addUnionClauses(args: Array<Types.TUnionArg>, unionAll: boolean = false) {
     return this.chain(ast => {
       return ast.set(
         "union",
         args.reduce((result, arg) => {
           if (typeof arg === "function") {
             const ast = this.selectBuilder().getAst();
-            return result.push(UnionNode({ ast, all: unionAll }));
+            return result.push(Structs.UnionNode({ ast, all: unionAll }));
           }
           return result;
         }, ast.union)
@@ -410,7 +374,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
   /**
    * Adds a JOIN clause to the query.
    */
-  protected addJoinClause(joinType: JoinTypeEnum, table: TTableArg, args: any[], asVal = false): this {
+  protected addJoinClause(joinType: Enums.JoinTypeEnum, table: Types.TTableArg, args: any[], asVal = false): this {
     const builder = new JoinBuilder(this.grammar.newInstance(), this.subQuery);
     switch (args.length) {
       case 1: {
@@ -437,7 +401,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
       }
     }
     const conditions = builder.getAst();
-    const joinNode = JoinNode({
+    const joinNode = Structs.JoinNode({
       joinType,
       table: this.unwrapTable(table),
       conditions,
@@ -448,9 +412,9 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
   /**
    * Adds an aggregate value to the SELECT clause
    */
-  protected addAggregate(fn: AggregateFns, column: TAggregateArg, distinct: boolean = false) {
+  protected addAggregate(fn: Enums.AggregateFns, column: Types.TAggregateArg, distinct: boolean = false) {
     const unwrappedColumn = Array.isArray(column) ? column : this.unwrapIdent(column);
-    const opts: Omit<IAggregateNode, "__typename"> = isNodeOf(unwrappedColumn, NodeTypeEnum.ALIASED)
+    const opts: Types.Omit<Types.IAggregateNode, "__typename"> = isNodeOf(unwrappedColumn, Enums.NodeTypeEnum.ALIASED)
       ? {
           fn,
           column: unwrappedColumn.ident,
@@ -463,14 +427,14 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
           distinct,
           alias: null,
         };
-    return this.chain(ast => ast.set("select", ast.select.push(AggregateNode(opts))));
+    return this.chain(ast => ast.set("select", ast.select.push(Structs.AggregateNode(opts))));
   }
 
   /**
    * A select argument can be a "string", a "function" (SubQuery),
    * an instance of a SelectBuilder, or RawNode.
    */
-  protected selectArg(arg: TSelectArg): Maybe<TSelectNode> {
+  protected selectArg(arg: Types.TSelectArg): Types.Maybe<Types.TSelectNode> {
     if (arg === null || arg === undefined) {
       return null;
     }
@@ -481,7 +445,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
       return this.subQuery(arg);
     }
     if (isSelectBuilder(arg)) {
-      return SubQueryNode({ ast: arg.getAst() });
+      return Structs.SubQueryNode({ ast: arg.getAst() });
     }
     if (isRawNode(arg)) {
       return arg;
@@ -489,11 +453,11 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
     return null;
   }
 
-  protected subCondition(clauseType: ClauseTypeEnum, fn: Function, andOr: TAndOr, not: TNot) {
+  protected subCondition(clauseType: Enums.ClauseTypeEnum, fn: Function, andOr: Types.TAndOr, not: Types.TNot) {
     let builder: SubHavingBuilder | SubWhereBuilder | null = null;
-    if (clauseType === ClauseTypeEnum.HAVING) {
+    if (clauseType === Enums.ClauseTypeEnum.HAVING) {
       builder = new SubHavingBuilder(this.grammar.newInstance(), this.subQuery);
-    } else if (clauseType === ClauseTypeEnum.WHERE) {
+    } else if (clauseType === Enums.ClauseTypeEnum.WHERE) {
       builder = new SubWhereBuilder(this.grammar.newInstance(), this.subQuery);
     }
     if (!builder) {
@@ -504,7 +468,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
     if (ast !== List()) {
       return this.pushCondition(
         clauseType,
-        CondSubNode({
+        Structs.CondSubNode({
           andOr,
           not,
           ast,
@@ -514,29 +478,29 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
     return this;
   }
 
-  protected pushCondition(clauseType: ClauseTypeEnum, node: TConditionNode) {
+  protected pushCondition(clauseType: Enums.ClauseTypeEnum, node: Types.TConditionNode) {
     return this.chain(ast => {
-      if (clauseType === ClauseTypeEnum.HAVING) {
+      if (clauseType === Enums.ClauseTypeEnum.HAVING) {
         return ast.set("having", ast.having.push(node));
       }
-      if (clauseType === ClauseTypeEnum.WHERE) {
+      if (clauseType === Enums.ClauseTypeEnum.WHERE) {
         return ast.set("where", ast.where.push(node));
       }
       throw new Error(NEVER);
     });
   }
 
-  protected subQuery = (fn: SubQueryArg) => {
+  protected subQuery = (fn: Types.SubQueryArg) => {
     const builder = this.selectBuilder();
     fn.call(builder, builder);
-    return SubQueryNode({ ast: builder.getAst() });
+    return Structs.SubQueryNode({ ast: builder.getAst() });
   };
 
   protected isEmpty(val: any) {
     return val === null || val === undefined || val === "";
   }
 
-  protected chain(fn: ChainFnSelect): this {
+  protected chain(fn: Types.ChainFnSelect): this {
     if (this.mutable) {
       this.ast = fn(this.ast);
       return this;
@@ -548,7 +512,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
    * Takes an argument in a "table" slot and unwraps it so any subqueries / raw values are
    * properly handled.
    */
-  protected unwrapTable(column: TTableArg): TTable {
+  protected unwrapTable(column: Types.TTableArg): Types.TTable {
     if (typeof column === "function") {
       return this.subQuery(column);
     }
@@ -559,7 +523,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
       return column;
     }
     if (isSelectBuilder(column)) {
-      return SubQueryNode({ ast: column.getAst() });
+      return Structs.SubQueryNode({ ast: column.getAst() });
     }
     console.log(column);
     throw new Error(`Invalid column type provided to the query builder: ${typeof column}`);
@@ -606,7 +570,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
   }
 }
 
-export interface SelectBuilder<T = any> extends ExecutableBuilder<T> {
+export interface SelectBuilder<T = any> extends Types.ExecutableBuilder<T> {
   [SELECT_BUILDER]: true;
 }
 
