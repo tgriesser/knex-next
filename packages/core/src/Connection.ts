@@ -1,13 +1,6 @@
-import { Maybe } from "./data/types";
+import { Types } from "./data";
 
 let cid = 0;
-
-export interface ColumnInfoData {
-  type: string;
-  maxLength: Maybe<number>;
-  nullable: boolean;
-  defaultValue: any;
-}
 
 export abstract class Connection {
   cid = cid + 1;
@@ -22,5 +15,5 @@ export abstract class Connection {
     return `[KnexConnection ${this.cid}]`;
   }
 
-  abstract async columnInfo(tableName: string): Promise<ColumnInfoData[]>;
+  abstract async columnInfo(tableName: string): Promise<Types.ColumnInfoData[]>;
 }

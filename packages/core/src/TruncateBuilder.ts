@@ -1,12 +1,11 @@
 import { Grammar } from "./Grammar";
-import { IBuilder } from "./contracts/Buildable";
 import { truncateAst } from "./data/structs";
 import * as Types from "./data/types";
 import { Connection } from "./Connection";
 
 export interface TruncateBuilder extends Types.ExecutableBuilder {}
 
-export class TruncateBuilder implements IBuilder {
+export class TruncateBuilder implements Types.IBuilder {
   dialect = null;
 
   protected grammar = new Grammar();

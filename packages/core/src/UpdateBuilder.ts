@@ -4,16 +4,15 @@ import { updateAst, SubQueryNode, CondSubNode } from "./data/structs";
 import { SelectBuilder } from "./SelectBuilder";
 import { Grammar } from "./Grammar";
 import { NEVER } from "./data/messages";
-import { IBuilder } from "./contracts/Buildable";
 import { Mixins, Types, Enums } from "./data";
 
 export interface UpdateBuilder extends Types.ExecutableBuilder {}
 
 export class UpdateBuilder<T = { [columnName: string]: Types.TValueArg }> extends WhereClauseBuilder
-  implements IBuilder {
-  dialect = null;
+  implements Types.IBuilder {
+  dialect: Types.Maybe<Enums.DialectEnum> = null;
 
-  grammar = new Grammar();
+  protected grammar = new Grammar();
 
   constructor(protected ast = updateAst) {
     super();

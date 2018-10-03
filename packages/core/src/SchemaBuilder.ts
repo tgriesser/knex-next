@@ -1,7 +1,10 @@
 import { CreateTableBuilder, CreateTableColumnBlockFn, AlterTableColumnBlockFn } from "./CreateTableBuilder";
-import { AlterTableBuilder } from "./AlterTableBuilder";
+import { List } from "immutable";
+import { Types, Structs } from "./data";
 
 export class SchemaBuilder {
+  protected operations = List<Types.TSchemaOperationAst>();
+
   with() {
     //
   }
@@ -11,29 +14,45 @@ export class SchemaBuilder {
   }
 
   createTable(table: string, createTableBlock: CreateTableColumnBlockFn) {
-    return new CreateTableBuilder().table(table).columns(createTableBlock);
+    return this.pushOperation(
+      new CreateTableBuilder()
+        .table(table)
+        .columns(createTableBlock)
+        .getAst()
+    );
   }
 
   createTableIfNotExists(table: string, createTableBlock: CreateTableColumnBlockFn) {
-    return this.createTable(table, createTableBlock).ifNotExists();
+    return this.pushOperation(
+      new CreateTableBuilder()
+        .table(table)
+        .columns(createTableBlock)
+        .ifNotExists()
+        .getAst()
+    );
   }
 
   renameTable(fromTable: string, toTable: string) {
-    return new AlterTableBuilder().renameTable(fromTable, toTable);
+    // return this.pushOperation(Structs.(fromTable, toTable);
   }
 
   dropTable(table: string) {
-    return new AlterTableBuilder().dropTable(table);
+    // return this.pushOperation(Structs.(table);
   }
 
   alterTable(table: string, alterTableBlock?: AlterTableColumnBlockFn) {
-    if (arguments.length === 1) {
-      return new AlterTableBuilder();
-    }
+    // if (arguments.length === 1) {
+    //   return new AlterTableBuilder();
+    // }
   }
 
   renameColumn(table: string, fromColumn: string, toColumn: string) {
-    return new AlterTableBuilder().renameColumn(table, fromColumn, toColumn);
+    // return new AlterTableBuilder().renameColumn(table, fromColumn, toColumn);
+  }
+
+  protected pushOperation(operation: Types.TSchemaOperationAst) {
+    this.operations = this.operations.push();
+    return this;
   }
 }
 

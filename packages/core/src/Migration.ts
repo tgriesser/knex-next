@@ -1,36 +1,30 @@
 import { SchemaBuilder } from "./SchemaBuilder";
-import { CreateTableColumnBlockFn, AlterTableColumnBlockFn } from "./CreateTableBuilder";
-import { migrationAst } from "./data/structs";
-import { AlterTableBuilder } from "./AlterTableBuilder";
+import { CreateTableColumnBlockFn } from "./CreateTableBuilder";
 
 export abstract class Migration {
-  constructor(protected ast = migrationAst) {}
+  protected builder = new SchemaBuilder();
 
   createTable(table: string, createTableBlock: CreateTableColumnBlockFn) {
-    this.addOperation(new SchemaBuilder().createTable(table, createTableBlock));
+    this.builder.createTable(table, createTableBlock);
   }
 
   createTableIfNotExists(table: string, createTableBlock: CreateTableColumnBlockFn) {
-    this.addOperation(new SchemaBuilder().createTableIfNotExists(table, createTableBlock));
+    this.builder.createTableIfNotExists(table, createTableBlock);
   }
 
   renameTable(from: string, to: string) {
-    this.addOperation(new AlterTableBuilder().renameTable(from, to));
+    this.builder.renameTable(from, to);
   }
 
   dropTable(table: string) {
-    this.addOperation(new AlterTableBuilder().dropTable(table));
+    this.builder.dropTable(table);
   }
 
   addColumn(table: string, column: string) {
-    this.addOperation(new AlterTableBuilder().addColumn());
+    this.builder.addColumn(table, column);
   }
 
   renameColumn() {
     //
-  }
-
-  protected addOperation(op: any) {
-    this.ast = this.ast.set("operations", this.ast.operations.push(op));
   }
 }

@@ -1,13 +1,12 @@
 import { Grammar } from "./Grammar";
-import { IBuilder } from "./contracts/Buildable";
 import { SelectBuilder } from "./SelectBuilder";
 import { Connection } from "./Connection";
-import { Structs, Types, Mixins } from "./data";
+import { Structs, Types, Mixins, Enums } from "./data";
 
 export interface InsertBuilder extends Types.ExecutableBuilder {}
 
-export class InsertBuilder<T = { [columnName: string]: any }> implements IBuilder {
-  public readonly dialect = null;
+export class InsertBuilder<T = { [columnName: string]: any }> implements Types.IBuilder {
+  readonly dialect: Types.Maybe<Enums.DialectEnum> = null;
 
   protected grammar = new Grammar();
 

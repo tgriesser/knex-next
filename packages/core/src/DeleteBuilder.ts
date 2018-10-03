@@ -1,13 +1,12 @@
 import { WhereClauseBuilder } from "./clauses/WhereClauseBuilder";
 import { SelectBuilder } from "./SelectBuilder";
-import { IBuilder } from "./contracts/Buildable";
 import { Grammar } from "./Grammar";
 import { Mixins, Enums, Types, Structs } from "./data";
 
 export interface DeleteBuilder extends Types.ExecutableBuilder {}
 
-export class DeleteBuilder extends WhereClauseBuilder implements IBuilder {
-  dialect = null;
+export class DeleteBuilder extends WhereClauseBuilder implements Types.IBuilder {
+  readonly dialect: Types.Maybe<Enums.DialectEnum> = null;
 
   protected grammar = new Grammar();
 

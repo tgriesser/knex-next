@@ -10,11 +10,10 @@ import { isRawNode, isSelectBuilder, isNodeOf } from "./data/predicates";
 import { SELECT_BUILDER } from "./data/symbols";
 import { ExecutionContext } from "./ExecutionContext";
 import { Grammar } from "./Grammar";
-import { IBuilder } from "./contracts/Buildable";
-import { Types, Structs, Enums, Messages, Mixins } from "./data";
+import { Types, Structs, Enums, Mixins } from "./data";
 import { SubQueryNode } from "./data/structs";
 
-export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuilder {
+export class SelectBuilder<T = any> extends WhereClauseBuilder implements Types.IBuilder {
   /**
    * Whether the builder is "mutable". Immutable builders are useful
    * when building subQueries or statements we want to ensure aren't
@@ -526,27 +525,6 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
     }
     console.log(column);
     throw new Error(`Invalid column type provided to the query builder: ${typeof column}`);
-  }
-
-  protected getExecutionContext() {
-    if (!this.executionContext) {
-      this.makeExecutionContext();
-    }
-    return this.executionContext!;
-  }
-
-  protected makeExecutionContext() {
-    if (this.forSubQuery) {
-      throw new Error(Messages.SUBQUERY_EXECUTION);
-    }
-    if (!this.mutable) {
-      throw new Error(Messages.IMMUTABLE_EXECUTION);
-    }
-    if (!this.connection) {
-      throw new Error(Messages.MISSING_CONNECTION);
-    }
-    this.executionContext = new ExecutionContext();
-    return this.executionContext;
   }
 }
 

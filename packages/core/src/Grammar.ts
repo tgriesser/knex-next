@@ -11,7 +11,7 @@ export class Grammar {
   public readonly dialect = null;
   public readonly dateString = "Y-m-d H:i:s";
 
-  protected lastAst: Types.Maybe<Types.TOperationAst> = null;
+  protected lastAst: Types.Maybe<Types.TAnyOperationAst> = null;
 
   protected currentFragment: string = "";
   protected fragments: string[] = [];
@@ -120,7 +120,7 @@ export class Grammar {
     this.addSelectLock(ast);
   }
 
-  protected cacheSqlValue(ast: Types.TOperationAst) {
+  protected cacheSqlValue(ast: Types.TAnyOperationAst) {
     this.pushFragment();
     const { fragments, sqlValues } = this;
     let sql = fragments[0];

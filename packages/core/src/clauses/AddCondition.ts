@@ -1,30 +1,4 @@
 import {
-  TAndOr,
-  TNot,
-  TColumnArg,
-  TValueArg,
-  SubQueryArg,
-  TConditionNode,
-  TSubQueryNode,
-  TValue,
-  TColumn,
-  TQueryArg,
-  TOperatorArg,
-  TInValue,
-  TInArg,
-  SubConditionFn,
-  TAliasedIdentNode,
-  TRawNode,
-  TColumnVal,
-  TConditionColumnArgs,
-  TValueCondition,
-  TJoinConditionColumnArgs,
-  TValueCondition3,
-  TConditionValueArgs,
-  TWhereBuilderFn,
-  THavingBuilderFn,
-} from "../data/types";
-import {
   CondNullNode,
   ConditionExpressionNode,
   CondExistsNode,
@@ -43,13 +17,14 @@ import { Grammar } from "../Grammar";
 import { Record, List } from "immutable";
 import invariant from "invariant";
 import { isInOrBetween, extractAlias } from "../data/regexes";
+import { Types } from "../data";
 
 /**
  * Most of the clause conditions (having, where, join) are similarly shaped
  * This provides the methods shared by each.
  */
 export abstract class AddCondition {
-  protected abstract ast: Record<any> | List<TConditionNode>;
+  protected abstract ast: Record<any> | List<Types.TConditionNode>;
 
   protected abstract grammar: Grammar;
 
@@ -62,9 +37,9 @@ export abstract class AddCondition {
    */
   protected addValueCond(
     clauseType: ClauseTypeEnum,
-    args: TConditionValueArgs<TWhereBuilderFn | THavingBuilderFn>,
-    andOr: TAndOr,
-    not: TNot = null
+    args: Types.TConditionValueArgs<Types.TWhereBuilderFn | Types.THavingBuilderFn>,
+    andOr: Types.TAndOr,
+    not: Types.TNot = null
   ) {
     return this.addCond(false, clauseType, args, andOr, not);
   }
@@ -76,9 +51,9 @@ export abstract class AddCondition {
    */
   protected addColumnCond(
     clauseType: ClauseTypeEnum,
-    args: TConditionColumnArgs | TJoinConditionColumnArgs,
-    andOr: TAndOr,
-    not: TNot = null
+    args: Types.TConditionColumnArgs | Types.TJoinConditionColumnArgs,
+    andOr: Types.TAndOr,
+    not: Types.TNot = null
   ): this {
     return this.addCond(true, clauseType, args, andOr, not);
   }
@@ -90,7 +65,13 @@ export abstract class AddCondition {
    *
    * creates a wrapped context if necessary, otherwise
    */
-  protected addCond(asCol: boolean, clauseType: ClauseTypeEnum, args: any[], andOr: TAndOr, not: TNot = null): this {
+  protected addCond(
+    asCol: boolean,
+    clauseType: ClauseTypeEnum,
+    args: any[],
+    andOr: Types.TAndOr,
+    not: Types.TNot = null
+  ): this {
     switch (args.length) {
       case 1: {
         return this.addCondAry1(asCol, clauseType, args[0], andOr, not);
@@ -125,7 +106,13 @@ export abstract class AddCondition {
     return this;
   }
 
-  protected addCondAry1(asCol: boolean, clauseType: ClauseTypeEnum, arg: any, andOr: TAndOr, not: TNot = null) {
+  protected addCondAry1(
+    asCol: boolean,
+    clauseType: ClauseTypeEnum,
+    arg: any,
+    andOr: Types.TAndOr,
+    not: Types.TNot = null
+  ) {
     if (typeof arg === "function") {
       return this.subCondition(clauseType, arg, andOr, not);
     }
@@ -138,7 +125,7 @@ export abstract class AddCondition {
       return this.subCondition(
         clauseType,
         qb => {
-          (arg as TValueCondition[]).forEach(cond => {
+          (arg as Types.TValueCondition[]).forEach(cond => {
             qb.addCond(asCol, clauseType, cond, OperatorEnum.AND, null);
           });
         },
@@ -171,11 +158,11 @@ export abstract class AddCondition {
 
   protected addColumnCondNode(
     clauseType: ClauseTypeEnum,
-    column: TColumnArg,
-    operator: TOperatorArg,
-    rightColumn: TColumnArg,
-    andOr: TAndOr,
-    not: TNot = null
+    column: Types.TColumnArg,
+    operator: Types.TOperatorArg,
+    rightColumn: Types.TColumnArg,
+    andOr: Types.TAndOr,
+    not: Types.TNot = null
   ) {
     return this.pushCondition(
       clauseType,
@@ -191,11 +178,11 @@ export abstract class AddCondition {
 
   protected addExpressionCondNode(
     clauseType: ClauseTypeEnum,
-    column: TColumnArg,
-    operator: TOperatorArg,
-    val: TValueArg,
-    andOr: TAndOr,
-    not: TNot = null
+    column: Types.TColumnArg,
+    operator: Types.TOperatorArg,
+    val: Types.TValueArg,
+    andOr: Types.TAndOr,
+    not: Types.TNot = null
   ) {
     return this.pushCondition(
       clauseType,
@@ -209,7 +196,13 @@ export abstract class AddCondition {
     );
   }
 
-  protected addInCond(clauseType: ClauseTypeEnum, column: TColumnArg, arg: TInArg, andOr: TAndOr, not: TNot = null) {
+  protected addInCond(
+    clauseType: ClauseTypeEnum,
+    column: Types.TColumnArg,
+    arg: Types.TInArg,
+    andOr: Types.TAndOr,
+    not: Types.TNot = null
+  ) {
     return this.pushCondition(
       clauseType,
       CondInNode({
@@ -221,7 +214,12 @@ export abstract class AddCondition {
     );
   }
 
-  protected addNullCond(clauseType: ClauseTypeEnum, column: TColumnArg, andOr: TAndOr, not: TNot = null) {
+  protected addNullCond(
+    clauseType: ClauseTypeEnum,
+    column: Types.TColumnArg,
+    andOr: Types.TAndOr,
+    not: Types.TNot = null
+  ) {
     return this.pushCondition(
       clauseType,
       CondNullNode({
@@ -232,7 +230,12 @@ export abstract class AddCondition {
     );
   }
 
-  protected addExistsCond(clauseType: ClauseTypeEnum, query: TQueryArg, andOr: TAndOr, not: TNot = null) {
+  protected addExistsCond(
+    clauseType: ClauseTypeEnum,
+    query: Types.TQueryArg,
+    andOr: Types.TAndOr,
+    not: Types.TNot = null
+  ) {
     return this.pushCondition(
       clauseType,
       CondExistsNode({
@@ -245,10 +248,10 @@ export abstract class AddCondition {
 
   protected addBetweenCond(
     clauseType: ClauseTypeEnum,
-    column: TColumnArg,
-    args: [TValueArg, TValueArg],
-    andOr: TAndOr,
-    not: TNot = null
+    column: Types.TColumnArg,
+    args: [Types.TValueArg, Types.TValueArg],
+    andOr: Types.TAndOr,
+    not: Types.TNot = null
   ) {
     return this.pushCondition(
       clauseType,
@@ -265,11 +268,11 @@ export abstract class AddCondition {
   protected addDateCond(
     clauseType: ClauseTypeEnum,
     dateType: DateCondType,
-    column: TColumnArg,
-    op: string | TRawNode,
-    value: TValueArg,
-    andOr: TAndOr,
-    not: TNot = null
+    column: Types.TColumnArg,
+    op: string | Types.TRawNode,
+    value: Types.TValueArg,
+    andOr: Types.TAndOr,
+    not: Types.TNot = null
   ): this {
     return this.pushCondition(
       clauseType,
@@ -284,7 +287,7 @@ export abstract class AddCondition {
     );
   }
 
-  protected unwrapIdentArr(column: TColumnArg[]): TColumn[] {
+  protected unwrapIdentArr(column: Types.TColumnArg[]): Types.TColumn[] {
     return column.map(col => this.unwrapIdent(col));
   }
 
@@ -292,7 +295,7 @@ export abstract class AddCondition {
    * Takes an argument in a "column" slot and unwraps it so any subqueries / raw values
    * are properly handled.
    */
-  protected unwrapIdent(column: TColumnArg | TQueryArg): TColumn {
+  protected unwrapIdent(column: Types.TColumnArg | Types.TQueryArg): Types.TColumn {
     if (typeof column === "string") {
       return this.unwrapAlias(column);
     }
@@ -302,7 +305,7 @@ export abstract class AddCondition {
   /**
    * Takes a column/table reference in a "value" slot and unwraps it
    */
-  protected unwrapIdentVal(column: number | TQueryArg): TColumnVal {
+  protected unwrapIdentVal(column: number | Types.TQueryArg): Types.TColumnVal {
     if (typeof column === "number") {
       return RawNode({
         fragments: List([`${column}`]),
@@ -311,7 +314,7 @@ export abstract class AddCondition {
     return this.unwrapSubQuery(column);
   }
 
-  protected unwrapSubQuery(column: TQueryArg) {
+  protected unwrapSubQuery(column: Types.TQueryArg) {
     if (typeof column === "function") {
       return this.subQuery(column);
     }
@@ -325,7 +328,7 @@ export abstract class AddCondition {
     throw new Error(`Invalid column type provided to the query builder: ${typeof column}`);
   }
 
-  protected unwrapAlias(column: string): string | TAliasedIdentNode {
+  protected unwrapAlias(column: string): string | Types.TAliasedIdentNode {
     const aliased = extractAlias(column);
     if (!aliased) {
       return column;
@@ -337,7 +340,7 @@ export abstract class AddCondition {
    * Takes an argument in a "value" slot and unwraps it so any subqueries / raw values
    * are properly handled.
    */
-  protected unwrapValue(value: TValueArg): TValue {
+  protected unwrapValue(value: Types.TValueArg): Types.TValue {
     if (value === null) {
       return value;
     }
@@ -357,7 +360,7 @@ export abstract class AddCondition {
     throw new Error(`Invalid value provided to the query builder: ${typeof value}`);
   }
 
-  protected unwrapInValue(value: TInArg): TInValue {
+  protected unwrapInValue(value: Types.TInArg): Types.TInValue {
     if (Array.isArray(value)) {
       return value;
     }
@@ -374,7 +377,7 @@ export abstract class AddCondition {
     throw new Error(`Invalid value provided to the where in builder: ${typeof value}`);
   }
 
-  protected normalizeExprArgs(args: TValueCondition): TValueCondition3 {
+  protected normalizeExprArgs(args: Types.TValueCondition): Types.TValueCondition3 {
     if (args.length === 2) {
       return [args[0], "=", args[1]];
     }
@@ -386,17 +389,22 @@ export abstract class AddCondition {
    * Creates a new wrapped condition block, calling the function with the
    * appropriate builder based on the `clauseType`
    */
-  protected abstract subCondition(clauseType: ClauseTypeEnum, fn: SubConditionFn, andOr: TAndOr, not: TNot): this;
+  protected abstract subCondition(
+    clauseType: ClauseTypeEnum,
+    fn: Types.SubConditionFn,
+    andOr: Types.TAndOr,
+    not: Types.TNot
+  ): this;
 
   /**
    * Adds a node to the AST based on the appropriate clauseType
    */
-  protected abstract pushCondition(clauseType: ClauseTypeEnum, node: TConditionNode): this;
+  protected abstract pushCondition(clauseType: ClauseTypeEnum, node: Types.TConditionNode): this;
 
   /**
    * Creates a sub-query. Used whenever a function is passed in the place of a column or value.
    */
-  protected abstract subQuery(fn: SubQueryArg): TSubQueryNode;
+  protected abstract subQuery(fn: Types.SubQueryArg): Types.TSubQueryNode;
 
   /**
    * Get the AST of the conditions.

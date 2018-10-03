@@ -1,6 +1,6 @@
 export enum DialectEnum {
   MYSQL = "mysql",
-  SQLITE = "sqlite",
+  SQLITE3 = "sqlite3",
   POSTGRESQL = "postgresql",
   ORACLE = "oracle",
   MSSQL = "mssql",
@@ -23,9 +23,18 @@ export enum OperationTypeEnum {
   UPDATE = "UPDATE",
   DELETE = "DELETE",
   TRUNCATE = "TRUNCATE",
+  SCHEMA_OPERATIONS = "SCHEMA_OPERATIONS",
+  MIGRATION_OPERATIONS = "MIGRATION_OPERATIONS",
+}
+
+export enum SchemaOperationTypeEnum {
   CREATE_TABLE = "CREATE_TABLE",
-  ALTER_TABLE = "ALTER_TABLE",
-  MIGRATION = "MIGRATION",
+  RENAME_TABLE = "RENAME_TABLE",
+  DROP_TABLE = "DROP_TABLE",
+  ADD_COLUMN = "ADD_COLUMN",
+  DROP_COLUMN = "DROP_COLUMN",
+  MODIFY_COLUMN = "MODIFY_COLUMN",
+  ADD_INDEX = "ADD_INDEX",
 }
 
 export enum OperatorEnum {
@@ -125,4 +134,10 @@ export enum ColumnTypeEnum {
   UUID = "UUID",
   ENU = "ENU",
   SPECIFICTYPE = "SPECIFICTYPE",
+}
+
+export enum IndexTypeEnum {
+  PRIMARY = "PRIMARY",
+  UNIQUE = "UNIQUE",
+  FULLTEXT = "FULLTEXT",
 }

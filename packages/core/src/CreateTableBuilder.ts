@@ -22,7 +22,9 @@ export class CreateTableBuilder {
     return this;
   }
 
-  ifNotExists() {}
+  ifNotExists() {
+    return this.chain(ast => ast.set("ifNotExists", true));
+  }
 
   protected createColumnBuilder() {
     return new CreateTableInner(this);
@@ -176,14 +178,7 @@ export class CreateTableInner {
   protected addColumnChain(type: Enums.ColumnTypeEnum, columnName: string) {}
 }
 
-/**
- *
- */
-export class AlterTableInner extends CreateTableInner {
-  protected addColumnChain(type: Enums.ColumnTypeEnum, columnName: string) {}
-}
-
-// Add some camel-cased aliases for Backward compat
+// Add some camel-cased aliases for backward compat:
 
 export interface CreateTableInner {
   enum: CreateTableInner["enu"];
@@ -214,3 +209,10 @@ CreateTableInner.prototype.int = CreateTableInner.prototype.integer;
 CreateTableInner.prototype.tinyText = CreateTableInner.prototype.tinytext;
 CreateTableInner.prototype.mediumText = CreateTableInner.prototype.mediumtext;
 CreateTableInner.prototype.longText = CreateTableInner.prototype.longtext;
+
+/**
+ * Build an alter table related
+ */
+export class AlterTableInner extends CreateTableInner {
+  protected addColumnChain(type: Enums.ColumnTypeEnum, columnName: string) {}
+}

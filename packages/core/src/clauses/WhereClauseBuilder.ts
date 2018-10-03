@@ -1,28 +1,7 @@
-import { OperatorEnum, ClauseTypeEnum, DateCondType } from "../data/enums";
-import {
-  ChainFnWhere,
-  SubQueryArg,
-  TColumnArg,
-  TDeleteOperation,
-  TSelectOperation,
-  TSubQueryNode,
-  TUpdateOperation,
-  TValueArg,
-  TInArg,
-  TConditionNode,
-  TAndOr,
-  TNot,
-  TValueCondition,
-  TConditionColumnArgs,
-  TWhereConditionValueArgs,
-  TWhereBuilderFn,
-  TConditionValueArgs,
-  TQueryArg,
-} from "../data/types";
 import { Grammar } from "../Grammar";
 import { AddCondition } from "./AddCondition";
 import { List } from "immutable";
-import { CondSubNode } from "../data/structs";
+import { Enums, Types, Structs } from "../data";
 
 export abstract class WhereClauseBuilder extends AddCondition {
   /**
@@ -33,124 +12,210 @@ export abstract class WhereClauseBuilder extends AddCondition {
   /**
    * All of the operation asts for builders inheriting the "WhereClauseBuilder"
    */
-  protected abstract ast: TSelectOperation | TUpdateOperation | TDeleteOperation | List<TConditionNode>;
+  protected abstract ast:
+    | Types.TSelectOperation
+    | Types.TUpdateOperation
+    | Types.TDeleteOperation
+    | List<Types.TConditionNode>;
 
-  where(...args: TConditionValueArgs<TWhereBuilderFn>) {
-    return this.addValueCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND);
+  where(...args: Types.TConditionValueArgs<Types.TWhereBuilderFn>) {
+    return this.addValueCond(Enums.ClauseTypeEnum.WHERE, args, Enums.OperatorEnum.AND);
   }
-  orWhere(...args: TWhereConditionValueArgs) {
-    return this.addValueCond(ClauseTypeEnum.WHERE, args, OperatorEnum.OR);
+  orWhere(...args: Types.TWhereConditionValueArgs) {
+    return this.addValueCond(Enums.ClauseTypeEnum.WHERE, args, Enums.OperatorEnum.OR);
   }
-  whereNot(...args: TWhereConditionValueArgs) {
-    return this.addValueCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND);
+  whereNot(...args: Types.TWhereConditionValueArgs) {
+    return this.addValueCond(Enums.ClauseTypeEnum.WHERE, args, Enums.OperatorEnum.AND);
   }
-  orWhereNot(...args: TWhereConditionValueArgs) {
-    return this.addValueCond(ClauseTypeEnum.WHERE, args, OperatorEnum.OR, OperatorEnum.NOT);
+  orWhereNot(...args: Types.TWhereConditionValueArgs) {
+    return this.addValueCond(Enums.ClauseTypeEnum.WHERE, args, Enums.OperatorEnum.OR, Enums.OperatorEnum.NOT);
   }
-  whereColumn(...args: TConditionColumnArgs) {
-    return this.addColumnCond(ClauseTypeEnum.WHERE, args, OperatorEnum.AND);
+  whereColumn(...args: Types.TConditionColumnArgs) {
+    return this.addColumnCond(Enums.ClauseTypeEnum.WHERE, args, Enums.OperatorEnum.AND);
   }
-  orWhereColumn(...args: TConditionColumnArgs) {
-    return this.addColumnCond(ClauseTypeEnum.WHERE, args, OperatorEnum.OR, OperatorEnum.NOT);
+  orWhereColumn(...args: Types.TConditionColumnArgs) {
+    return this.addColumnCond(Enums.ClauseTypeEnum.WHERE, args, Enums.OperatorEnum.OR, Enums.OperatorEnum.NOT);
   }
-  whereIn(column: TColumnArg, arg: TInArg) {
-    return this.addInCond(ClauseTypeEnum.WHERE, column, arg, OperatorEnum.AND);
+  whereIn(column: Types.TColumnArg, arg: Types.TInArg) {
+    return this.addInCond(Enums.ClauseTypeEnum.WHERE, column, arg, Enums.OperatorEnum.AND);
   }
-  orWhereIn(column: TColumnArg, arg: TInArg) {
-    return this.addInCond(ClauseTypeEnum.WHERE, column, arg, OperatorEnum.OR);
+  orWhereIn(column: Types.TColumnArg, arg: Types.TInArg) {
+    return this.addInCond(Enums.ClauseTypeEnum.WHERE, column, arg, Enums.OperatorEnum.OR);
   }
-  whereNotIn(column: TColumnArg, arg: TInArg) {
-    return this.addInCond(ClauseTypeEnum.WHERE, column, arg, OperatorEnum.AND, OperatorEnum.NOT);
+  whereNotIn(column: Types.TColumnArg, arg: Types.TInArg) {
+    return this.addInCond(Enums.ClauseTypeEnum.WHERE, column, arg, Enums.OperatorEnum.AND, Enums.OperatorEnum.NOT);
   }
-  orWhereNotIn(column: TColumnArg, arg: TInArg) {
-    return this.addInCond(ClauseTypeEnum.WHERE, column, arg, OperatorEnum.OR, OperatorEnum.NOT);
+  orWhereNotIn(column: Types.TColumnArg, arg: Types.TInArg) {
+    return this.addInCond(Enums.ClauseTypeEnum.WHERE, column, arg, Enums.OperatorEnum.OR, Enums.OperatorEnum.NOT);
   }
-  whereNull(column: TColumnArg) {
-    return this.addNullCond(ClauseTypeEnum.WHERE, column, OperatorEnum.AND);
+  whereNull(column: Types.TColumnArg) {
+    return this.addNullCond(Enums.ClauseTypeEnum.WHERE, column, Enums.OperatorEnum.AND);
   }
-  orWhereNull(column: TColumnArg) {
-    return this.addNullCond(ClauseTypeEnum.WHERE, column, OperatorEnum.OR);
+  orWhereNull(column: Types.TColumnArg) {
+    return this.addNullCond(Enums.ClauseTypeEnum.WHERE, column, Enums.OperatorEnum.OR);
   }
-  whereNotNull(column: TColumnArg) {
-    return this.addNullCond(ClauseTypeEnum.WHERE, column, OperatorEnum.OR, OperatorEnum.NOT);
+  whereNotNull(column: Types.TColumnArg) {
+    return this.addNullCond(Enums.ClauseTypeEnum.WHERE, column, Enums.OperatorEnum.OR, Enums.OperatorEnum.NOT);
   }
-  orWhereNotNull(column: TColumnArg) {
-    return this.addNullCond(ClauseTypeEnum.WHERE, column, OperatorEnum.AND, OperatorEnum.NOT);
+  orWhereNotNull(column: Types.TColumnArg) {
+    return this.addNullCond(Enums.ClauseTypeEnum.WHERE, column, Enums.OperatorEnum.AND, Enums.OperatorEnum.NOT);
   }
-  whereBetween(column: TColumnArg, between: [TValueArg, TValueArg]) {
-    return this.addBetweenCond(ClauseTypeEnum.WHERE, column, between, OperatorEnum.AND);
+  whereBetween(column: Types.TColumnArg, between: [Types.TValueArg, Types.TValueArg]) {
+    return this.addBetweenCond(Enums.ClauseTypeEnum.WHERE, column, between, Enums.OperatorEnum.AND);
   }
-  orWhereBetween(column: TColumnArg, between: [TValueArg, TValueArg]) {
-    return this.addBetweenCond(ClauseTypeEnum.WHERE, column, between, OperatorEnum.OR);
+  orWhereBetween(column: Types.TColumnArg, between: [Types.TValueArg, Types.TValueArg]) {
+    return this.addBetweenCond(Enums.ClauseTypeEnum.WHERE, column, between, Enums.OperatorEnum.OR);
   }
-  whereNotBetween(column: TColumnArg, between: [TValueArg, TValueArg]) {
-    return this.addBetweenCond(ClauseTypeEnum.WHERE, column, between, OperatorEnum.AND, OperatorEnum.NOT);
+  whereNotBetween(column: Types.TColumnArg, between: [Types.TValueArg, Types.TValueArg]) {
+    return this.addBetweenCond(
+      Enums.ClauseTypeEnum.WHERE,
+      column,
+      between,
+      Enums.OperatorEnum.AND,
+      Enums.OperatorEnum.NOT
+    );
   }
-  orWhereNotBetween(column: TColumnArg, between: [TValueArg, TValueArg]) {
-    return this.addBetweenCond(ClauseTypeEnum.WHERE, column, between, OperatorEnum.OR, OperatorEnum.NOT);
+  orWhereNotBetween(column: Types.TColumnArg, between: [Types.TValueArg, Types.TValueArg]) {
+    return this.addBetweenCond(
+      Enums.ClauseTypeEnum.WHERE,
+      column,
+      between,
+      Enums.OperatorEnum.OR,
+      Enums.OperatorEnum.NOT
+    );
   }
-  whereExists(query: TQueryArg) {
-    return this.addExistsCond(ClauseTypeEnum.WHERE, query, OperatorEnum.AND);
+  whereExists(query: Types.TQueryArg) {
+    return this.addExistsCond(Enums.ClauseTypeEnum.WHERE, query, Enums.OperatorEnum.AND);
   }
-  orWhereExists(query: TQueryArg) {
-    return this.addExistsCond(ClauseTypeEnum.WHERE, query, OperatorEnum.AND);
+  orWhereExists(query: Types.TQueryArg) {
+    return this.addExistsCond(Enums.ClauseTypeEnum.WHERE, query, Enums.OperatorEnum.AND);
   }
-  whereNotExists(query: TQueryArg) {
-    return this.addExistsCond(ClauseTypeEnum.WHERE, query, OperatorEnum.AND, OperatorEnum.NOT);
+  whereNotExists(query: Types.TQueryArg) {
+    return this.addExistsCond(Enums.ClauseTypeEnum.WHERE, query, Enums.OperatorEnum.AND, Enums.OperatorEnum.NOT);
   }
-  orWhereNotExists(query: TQueryArg) {
-    return this.addExistsCond(ClauseTypeEnum.WHERE, query, OperatorEnum.AND, OperatorEnum.NOT);
+  orWhereNotExists(query: Types.TQueryArg) {
+    return this.addExistsCond(Enums.ClauseTypeEnum.WHERE, query, Enums.OperatorEnum.AND, Enums.OperatorEnum.NOT);
   }
 
   /**
    * Date Helpers:
    */
-  whereDate(...args: TValueCondition) {
+  whereDate(...args: Types.TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
-    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.DATE, column, operator, value, OperatorEnum.AND);
+    return this.addDateCond(
+      Enums.ClauseTypeEnum.WHERE,
+      Enums.DateCondType.DATE,
+      column,
+      operator,
+      value,
+      Enums.OperatorEnum.AND
+    );
   }
-  orWhereDate(...args: TValueCondition) {
+  orWhereDate(...args: Types.TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
-    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.DATE, column, operator, value, OperatorEnum.OR);
+    return this.addDateCond(
+      Enums.ClauseTypeEnum.WHERE,
+      Enums.DateCondType.DATE,
+      column,
+      operator,
+      value,
+      Enums.OperatorEnum.OR
+    );
   }
-  whereTime(...args: TValueCondition) {
+  whereTime(...args: Types.TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
-    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.TIME, column, operator, value, OperatorEnum.AND);
+    return this.addDateCond(
+      Enums.ClauseTypeEnum.WHERE,
+      Enums.DateCondType.TIME,
+      column,
+      operator,
+      value,
+      Enums.OperatorEnum.AND
+    );
   }
-  orWhereTime(...args: TValueCondition) {
+  orWhereTime(...args: Types.TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
-    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.TIME, column, operator, value, OperatorEnum.OR);
+    return this.addDateCond(
+      Enums.ClauseTypeEnum.WHERE,
+      Enums.DateCondType.TIME,
+      column,
+      operator,
+      value,
+      Enums.OperatorEnum.OR
+    );
   }
-  whereDay(...args: TValueCondition) {
+  whereDay(...args: Types.TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
-    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.DAY, column, operator, value, OperatorEnum.AND);
+    return this.addDateCond(
+      Enums.ClauseTypeEnum.WHERE,
+      Enums.DateCondType.DAY,
+      column,
+      operator,
+      value,
+      Enums.OperatorEnum.AND
+    );
   }
-  orWhereDay(...args: TValueCondition) {
+  orWhereDay(...args: Types.TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
-    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.DAY, column, operator, value, OperatorEnum.OR);
+    return this.addDateCond(
+      Enums.ClauseTypeEnum.WHERE,
+      Enums.DateCondType.DAY,
+      column,
+      operator,
+      value,
+      Enums.OperatorEnum.OR
+    );
   }
-  whereMonth(...args: TValueCondition) {
+  whereMonth(...args: Types.TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
-    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.MONTH, column, operator, value, OperatorEnum.AND);
+    return this.addDateCond(
+      Enums.ClauseTypeEnum.WHERE,
+      Enums.DateCondType.MONTH,
+      column,
+      operator,
+      value,
+      Enums.OperatorEnum.AND
+    );
   }
-  orWhereMonth(...args: TValueCondition) {
+  orWhereMonth(...args: Types.TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
-    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.MONTH, column, operator, value, OperatorEnum.OR);
+    return this.addDateCond(
+      Enums.ClauseTypeEnum.WHERE,
+      Enums.DateCondType.MONTH,
+      column,
+      operator,
+      value,
+      Enums.OperatorEnum.OR
+    );
   }
-  whereYear(...args: TValueCondition) {
+  whereYear(...args: Types.TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
-    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.YEAR, column, operator, value, OperatorEnum.AND);
+    return this.addDateCond(
+      Enums.ClauseTypeEnum.WHERE,
+      Enums.DateCondType.YEAR,
+      column,
+      operator,
+      value,
+      Enums.OperatorEnum.AND
+    );
   }
-  orWhereYear(...args: TValueCondition) {
+  orWhereYear(...args: Types.TValueCondition) {
     const [column, operator, value] = this.normalizeExprArgs(args);
-    return this.addDateCond(ClauseTypeEnum.WHERE, DateCondType.YEAR, column, operator, value, OperatorEnum.OR);
+    return this.addDateCond(
+      Enums.ClauseTypeEnum.WHERE,
+      Enums.DateCondType.YEAR,
+      column,
+      operator,
+      value,
+      Enums.OperatorEnum.OR
+    );
   }
 
   abstract getAst(): WhereClauseBuilder["ast"];
 
-  protected abstract chain(fn: ChainFnWhere): this;
+  protected abstract chain(fn: Types.ChainFnWhere): this;
 
-  protected abstract subQuery(fn: SubQueryArg): TSubQueryNode;
+  protected abstract subQuery(fn: Types.SubQueryArg): Types.TSubQueryNode;
 }
 
 export interface WhereClauseBuilder {
@@ -175,9 +240,9 @@ WhereClauseBuilder.prototype.andWhereExists = WhereClauseBuilder.prototype.where
 WhereClauseBuilder.prototype.andWhereNotExists = WhereClauseBuilder.prototype.whereNotExists;
 
 export class SubWhereBuilder extends WhereClauseBuilder {
-  protected ast = List<TConditionNode>();
+  protected ast = List<Types.TConditionNode>();
 
-  constructor(protected grammar: Grammar, protected subQuery: ((fn: SubQueryArg) => TSubQueryNode)) {
+  constructor(protected grammar: Grammar, protected subQuery: ((fn: Types.SubQueryArg) => Types.TSubQueryNode)) {
     super();
   }
 
@@ -185,21 +250,26 @@ export class SubWhereBuilder extends WhereClauseBuilder {
     return this.ast;
   }
 
-  protected pushCondition(clauseType: ClauseTypeEnum.WHERE, node: TConditionNode) {
+  protected pushCondition(clauseType: Enums.ClauseTypeEnum.WHERE, node: Types.TConditionNode) {
     this.ast = this.ast.push(node);
     return this;
   }
 
-  protected subCondition(clauseType: ClauseTypeEnum.WHERE, fn: Function, andOr: TAndOr, not: TNot = null) {
+  protected subCondition(
+    clauseType: Enums.ClauseTypeEnum.WHERE,
+    fn: Function,
+    andOr: Types.TAndOr,
+    not: Types.TNot = null
+  ) {
     const builder = new SubWhereBuilder(this.grammar.newInstance(), this.subQuery);
     fn.call(builder, builder);
     if (builder.getAst().size > 0) {
-      return this.pushCondition(clauseType, CondSubNode({ andOr, not, ast: builder.getAst() }));
+      return this.pushCondition(clauseType, Structs.CondSubNode({ andOr, not, ast: builder.getAst() }));
     }
     return this;
   }
 
-  protected chain(fn: ChainFnWhere) {
+  protected chain(fn: Types.ChainFnWhere) {
     this.ast = fn(this.ast);
     return this;
   }

@@ -263,17 +263,19 @@ export function commonSelectTests(builder: SelectBuilderFactory) {
   });
 
   describe("UNIONS", () => {
-    snap(
-      builder()
-        .select("*")
-        .from("users")
-        .where("id", "=", 1)
-        .union(q => {
-          q.select("*")
-            .from("users")
-            .where("id", "=", 2);
-        })
-    );
+    test("builds union", () => {
+      snap(
+        builder()
+          .select("*")
+          .from("users")
+          .where("id", "=", 1)
+          .union(q => {
+            q.select("*")
+              .from("users")
+              .where("id", "=", 2);
+          })
+      );
+    });
   });
 
   describe("HAVING", () => {

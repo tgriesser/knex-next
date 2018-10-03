@@ -1,7 +1,6 @@
-import { DialectEnum, OperatorEnum, ClauseTypeEnum } from "../data/enums";
+import { OperatorEnum, ClauseTypeEnum } from "../data/enums";
 import {
   ChainFnHaving,
-  Maybe,
   SubQueryArg,
   TAndOr,
   TColumnArg,
@@ -25,14 +24,9 @@ import { CondSubNode } from "../data/structs";
  */
 export abstract class HavingClauseBuilder extends AddCondition {
   /**
-   * Useful if we want to check the builder's dialect from userland.
-   */
-  public readonly dialect: Maybe<DialectEnum> = null;
-
-  /**
    * Grammar deals with escaping / parameterizing values
    */
-  protected grammar = new Grammar();
+  protected abstract grammar: Grammar;
 
   protected abstract ast: List<TConditionNode>;
 

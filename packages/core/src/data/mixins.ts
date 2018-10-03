@@ -1,5 +1,7 @@
 import { EventEmitter } from "events";
 import { Connection } from "../Connection";
+import { ExecutionContext } from "../ExecutionContext";
+import * as Messages from "./Messages";
 
 export function withEventEmitter(ClassToDecorate: any) {
   Object.keys(EventEmitter.prototype).forEach(key => {
@@ -31,7 +33,7 @@ export function withExecutionMethods(ClassToDecorate: any) {
    */
   ClassToDecorate.prototype._promise = null;
 
-  ClassToDecorate.prototype.then = function then(onFulfilled: any, onRejected: any) {
+  ClassToDecorate.prototype.then = function then(onFulfilled?: any, onRejected?: any) {
     if (!this._promise) {
       try {
         this._promise = this.getExecutionContext().asPromise();
@@ -65,7 +67,45 @@ export function withExecutionMethods(ClassToDecorate: any) {
     console.warn(warning);
   };
 
-  ClassToDecorate.prototype.toOperation = function toOperation() {
-    return this.grammar.toOperation(this.ast);
+  ClassToDecorate.prototype.getExecutionContext = function getExecutionContext() {
+    if (!this.executionContext) {
+      this.makeExecutionContext();
+    }
+    return this.executionContext!;
+  };
+
+  ClassToDecorate.prototype.makeExecutionContext = function makeExecutionContext() {
+    if (this.forSubQuery) {
+      throw new Error(Messages.SUBQUERY_EXECUTION);
+    }
+    if (!this.mutable) {
+      throw new Error(Messages.IMMUTABLE_EXECUTION);
+    }
+    if (!this.connection) {
+      throw new Error(Messages.MISSING_CONNECTION);
+    }
+    this.executionContext = new ExecutionContext();
+    return this.executionContext;
+  };
+}
+
+/**
+ * Adds a RETURNING clause support to the databases that support it
+ */
+export function returningMixin(ClassToDecorate: any) {
+  ClassToDecorate.prototype.returning = function returning() {};
+}
+
+/**
+ * Adds common table expressions (WITH, WITH RECURSIVE) support for the databases
+ * that support it
+ */
+export function commonTableExpressions(ClassToDecorate: any) {
+  ClassToDecorate.prototype.with = function _with() {
+    return;
+  };
+
+  ClassToDecorate.prototype.withRecursive = function withRecursive() {
+    return;
   };
 }

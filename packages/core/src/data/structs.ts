@@ -302,24 +302,23 @@ export const TruncateBindings = IRecord<Types.ITruncateOperation>(
 export const truncateAst = TruncateBindings();
 
 /**
- * Migration AST. Having an explicit list of operations makes it possible to
- * reverse them.
+ * CREATE TABLE (column)
  */
-export const MigrationBindings = IRecord<Types.IMigrationOperation>(
+export const CreateTableColumnNode = IRecord<Types.ITableColumnDefinitionNode>(
   {
-    __operation: Enums.OperationTypeEnum.MIGRATION,
-    operations: List(),
+    columnName: "",
+    dataType: Enums.ColumnTypeEnum.INT,
+    nullable: false,
   },
-  "MigrationOperation"
+  "CreateTableColumnNode"
 );
-export const migrationAst = MigrationBindings();
 
 /**
  * CREATE TABLE
  */
 export const CreateTableOperation = IRecord<Types.ICreateTableOperation>(
   {
-    __operation: Enums.OperationTypeEnum.CREATE_TABLE,
+    __schemaOperation: Enums.SchemaOperationTypeEnum.CREATE_TABLE,
     table: "",
     columns: List(),
     ifNotExists: false,
@@ -328,25 +327,44 @@ export const CreateTableOperation = IRecord<Types.ICreateTableOperation>(
 );
 export const createTableAst = CreateTableOperation();
 
-/**
- * ALTER TABLE
- */
-export const AlterTableOperation = IRecord<Types.IAlterTableOperation>(
+export const IRenameTableNode = IRecord<Types.IRenameTableOperation>(
   {
-    __operation: Enums.OperationTypeEnum.ALTER_TABLE,
+    __schemaOperation: Enums.SchemaOperationTypeEnum.RENAME_TABLE,
+    from: "",
+    to: "",
+  },
+  "RenameTableOperation"
+);
+export const IDropTableNode = IRecord<Types.IDropTableOperation>(
+  {
+    __schemaOperation: Enums.SchemaOperationTypeEnum.DROP_TABLE,
+    table: "",
+    ifExists: false,
+  },
+  "DropTableOperation"
+);
+export const IAddColumnNode = IRecord<Types.IAddColumnOperation>(
+  {
+    __schemaOperation: Enums.SchemaOperationTypeEnum.ADD_COLUMN,
+    table: "",
+    column: null,
+  },
+  "AddColumnOperation"
+);
+export const IDropColumnNode = IRecord<Types.IDropColumnOperation>(
+  {
+    __schemaOperation: Enums.SchemaOperationTypeEnum.DROP_COLUMN,
+    table: "",
+    column: "",
+  },
+  "DropColumnOperation"
+);
+export const IModifyColumnNode = IRecord<Types.IModifyColumnOperation>(
+  {
+    __schemaOperation: Enums.SchemaOperationTypeEnum.MODIFY_COLUMN,
     table: "",
   },
-  "AlterTableOperation"
-);
-
-/**
- * CREATE TABLE (column)
- */
-export const CreateTableColumnNode = IRecord<Types.ICreateTableColumnNode>(
-  {
-    dataType: null,
-  },
-  "CreateTableColumnNode"
+  "ModifyColumnOperation"
 );
 
 /**

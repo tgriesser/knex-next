@@ -1,11 +1,37 @@
+import Immutable from "immutable";
 import { SelectBuilder } from "../SelectBuilder";
 import { WhereClauseBuilder } from "../clauses/WhereClauseBuilder";
-import { OperatorEnum, NodeTypeEnum, OperationTypeEnum, JoinTypeEnum, AggregateFns, DateCondType } from "./enums";
+import {
+  OperatorEnum,
+  NodeTypeEnum,
+  OperationTypeEnum,
+  JoinTypeEnum,
+  AggregateFns,
+  DateCondType,
+  DialectEnum,
+  SchemaOperationTypeEnum,
+  IndexTypeEnum,
+} from "./enums";
 import { JoinBuilder } from "../clauses/JoinBuilder";
 import { RecordOf, List, Map as IMap } from "immutable";
 import { HavingClauseBuilder } from "../clauses/HavingClauseBuilder";
 import { AddCondition } from "../clauses/AddCondition";
 import { Connection } from "../Connection";
+import * as Enums from "./enums";
+
+export interface IBuilder {
+  /**
+   * The dialect of the builder, exposed publicly if multi-dialect
+   * consumers need to follow separate code paths for equivalent behavior,
+   * e.g. to call
+   */
+  dialect: null | DialectEnum;
+  /**
+   * Returns the internal AST of the builder. This property is immutable,
+   * making it simple to clone and compose query fragments in different contexts.
+   */
+  getAst(): Immutable.Record<any>;
+}
 
 export type Omit<T, K> = Pick<T, Exclude<keyof T, K>>;
 
@@ -139,37 +165,6 @@ export type TOrderByDirection = "asc" | "ASC" | "desc" | "DESC";
 
 export interface FromJSArg {}
 
-export type ColumnDataType =
-  | "dropColumn"
-  | "dropColumns"
-  | "renameColumn"
-  | "increments"
-  | "integer"
-  | "bigInteger"
-  | "text"
-  | "string"
-  | "float"
-  | "decimal"
-  | "boolean"
-  | "date"
-  | "dateTime"
-  | "time"
-  | "timestamp"
-  | "timestamps"
-  | "dropTimestamps"
-  | "binary"
-  | "enum"
-  | "json"
-  | "jsonb"
-  | "uuid"
-  | "comment"
-  | "engine"
-  | "charset"
-  | "collate"
-  | "inherits"
-  | "specificType"
-  | "index";
-
 export type ColumnIndexType = "unique" | "foreign";
 
 export type ConditionNodeTypes =
@@ -298,6 +293,9 @@ export type TConditionNode =
 export interface IOperationNode<T> {
   __operation: T;
 }
+export interface ISchemaOperationNode<T> {
+  __schemaOperation: T;
+}
 
 export interface ISubQuery extends INode<NodeTypeEnum.SUB_QUERY> {
   ast: Maybe<TSelectOperation>;
@@ -365,37 +363,76 @@ export interface ITruncateOperation extends IOperationNode<OperationTypeEnum.TRU
 }
 export type TTruncateOperation = RecordOf<ITruncateOperation>;
 
-export interface ICreateTableOperation extends IOperationNode<OperationTypeEnum.CREATE_TABLE> {
+// Schema Operations:
+
+export interface ITableColumnDefinitionNode {
+  columnName: string;
+  dataType: Enums.ColumnTypeEnum;
+  nullable: boolean;
+}
+export type TTableColumnDefinitionNode = RecordOf<ITableColumnDefinitionNode>;
+
+export interface ICreateTableOperation extends ISchemaOperationNode<SchemaOperationTypeEnum.CREATE_TABLE> {
   table: string;
-  columns: List<TCreateTableColumnNode>;
+  columns: List<TTableColumnDefinitionNode>;
   ifNotExists: boolean;
 }
 export type TCreateTableOperation = RecordOf<ICreateTableOperation>;
 
-export interface IAlterTableOperation extends IOperationNode<OperationTypeEnum.ALTER_TABLE> {
+export interface IRenameTableOperation extends ISchemaOperationNode<SchemaOperationTypeEnum.RENAME_TABLE> {
+  from: string;
+  to: string;
+}
+export type TRenameTableOperation = RecordOf<IRenameTableOperation>;
+
+export interface IDropTableOperation extends ISchemaOperationNode<SchemaOperationTypeEnum.DROP_TABLE> {
+  table: string;
+  ifExists: boolean;
+}
+export type TDropTableOperation = RecordOf<IDropTableOperation>;
+
+export interface IAddColumnOperation extends ISchemaOperationNode<SchemaOperationTypeEnum.ADD_COLUMN> {
+  table: string;
+  column: Maybe<TTableColumnDefinitionNode>;
+}
+export type TAddColumnOperation = RecordOf<IAddColumnOperation>;
+
+export interface IDropColumnOperation extends ISchemaOperationNode<SchemaOperationTypeEnum.DROP_COLUMN> {
+  table: string;
+  column: string;
+}
+export type TDropColumnOperation = RecordOf<IDropColumnOperation>;
+
+export interface IAddIndexOperation extends ISchemaOperationNode<SchemaOperationTypeEnum.ADD_INDEX> {
+  table: string;
+  column: string;
+  indexType: IndexTypeEnum | null;
+  indexName: Maybe<string>;
+}
+export type TAddIndexOperation = RecordOf<IAddIndexOperation>;
+
+export interface IModifyColumnOperation extends ISchemaOperationNode<SchemaOperationTypeEnum.MODIFY_COLUMN> {
   table: string;
 }
-export type TAlterTableOperation = RecordOf<IAlterTableOperation>;
+export type TModifyColumnOperation = RecordOf<IModifyColumnOperation>;
 
-export interface ICreateTableColumnNode {
-  dataType: Maybe<ColumnDataType>;
-}
-export type TCreateTableColumnNode = RecordOf<ICreateTableColumnNode>;
-
-export interface IMigrationOperation extends IOperationNode<OperationTypeEnum.MIGRATION> {
-  operations: List<TCreateTableOperation | TAlterTableOperation>;
-}
-export type TMigrationOperation = RecordOf<IMigrationOperation>;
+export type TSchemaOperationAst =
+  | TCreateTableOperation
+  | TRenameTableOperation
+  | TDropTableOperation
+  | TAddColumnOperation
+  | TDropColumnOperation
+  | TModifyColumnOperation
+  | TAddIndexOperation;
 
 export type TOperationAst =
   | TSelectOperation
   | TUpdateOperation
   | TDeleteOperation
   | TInsertOperation
-  | TTruncateOperation
-  | TCreateTableOperation
-  | TAlterTableOperation
-  | TMigrationOperation;
+  | TTruncateOperation;
+
+export type TAnyOperationAst = TSchemaOperationAst | TOperationAst;
 
 export interface IBindingNode extends INode<NodeTypeEnum.BINDING> {
   name: string;
@@ -461,3 +498,10 @@ export type TConditionColumnArgs =
   | TColumnCondition3;
 
 export type TBetweenArg = [TValueArg, TValueArg];
+
+export interface ColumnInfoData {
+  type: string;
+  maxLength: Maybe<number>;
+  nullable: boolean;
+  defaultValue: any;
+}
