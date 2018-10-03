@@ -2,8 +2,7 @@ import { Grammar } from "./Grammar";
 import { IBuilder } from "./contracts/Buildable";
 import { SelectBuilder } from "./SelectBuilder";
 import { Connection } from "./Connection";
-import { withExecutionMethods } from "./mixins/withExecutionMethods";
-import { Structs, Types } from "./data";
+import { Structs, Types, Mixins } from "./data";
 
 export interface InsertBuilder extends Types.ExecutableBuilder {}
 
@@ -59,4 +58,4 @@ export class InsertBuilder<T = { [columnName: string]: any }> implements IBuilde
   }
 }
 
-withExecutionMethods(InsertBuilder);
+Mixins.withExecutionMethods(InsertBuilder);

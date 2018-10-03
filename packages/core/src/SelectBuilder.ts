@@ -10,10 +10,9 @@ import { isRawNode, isSelectBuilder, isNodeOf } from "./data/predicates";
 import { SELECT_BUILDER } from "./data/symbols";
 import { ExecutionContext } from "./ExecutionContext";
 import { Grammar } from "./Grammar";
-import { withEventEmitter } from "./mixins/withEventEmitter";
 import { IBuilder } from "./contracts/Buildable";
-import { withExecutionMethods } from "@knex/core/src/mixins/withExecutionMethods";
-import { Types, Structs, Enums } from "./data";
+import { Types, Structs, Enums, Messages, Mixins } from "./data";
+import { SubQueryNode } from "./data/structs";
 
 export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuilder {
   /**
@@ -363,7 +362,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
         args.reduce((result, arg) => {
           if (typeof arg === "function") {
             const ast = this.selectBuilder().getAst();
-            return result.push(Structs.UnionNode({ ast, all: unionAll }));
+            return result.push(Structs.UnionNode({ ast: SubQueryNode({ ast }), all: unionAll }));
           }
           return result;
         }, ast.union)
@@ -538,32 +537,13 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements IBuild
 
   protected makeExecutionContext() {
     if (this.forSubQuery) {
-      throw new Error(dedent`
-        Oops, looks like you are attempting to call .then or an EventEmitter method 
-        (.on, .off, etc.) on a SubQuery. 
-        This is not permitted as only the outer query may be executed or used as an
-        EventEmitter.
-      `);
+      throw new Error(Messages.SUBQUERY_EXECUTION);
     }
     if (!this.mutable) {
-      throw new Error(dedent`
-        Oops, looks like you're trying to execute a builder which is defined as an immutable instance.
-        Execution is defined as:
-          - calling .then() or .catch(), either directly or indirectly via async / await
-          - calling any of the EventEmitter methods (.on, .off, etc.)
-          - beginning async iteration
-        As an alternative, you may instead call .clone() which clones the builder's AST and then execute
-      `);
+      throw new Error(Messages.IMMUTABLE_EXECUTION);
     }
     if (!this.connection) {
-      throw new Error(dedent`
-        Oops, looks like you're trying to execute a builder without a connection.
-        Execution is defined as:
-          - calling .then() or .catch(), either directly or indirectly via async / await
-          - calling any of the EventEmitter methods (.on, .off, etc.)
-          - beginning async iteration
-        Be sure to provide a connection with .setConnection or use the helpers which take care of this for you.
-      `);
+      throw new Error(Messages.MISSING_CONNECTION);
     }
     this.executionContext = new ExecutionContext();
     return this.executionContext;
@@ -576,5 +556,5 @@ export interface SelectBuilder<T = any> extends Types.ExecutableBuilder<T> {
 
 SelectBuilder.prototype[SELECT_BUILDER] = true;
 
-withEventEmitter(SelectBuilder);
-withExecutionMethods(SelectBuilder);
+Mixins.withEventEmitter(SelectBuilder);
+Mixins.withExecutionMethods(SelectBuilder);

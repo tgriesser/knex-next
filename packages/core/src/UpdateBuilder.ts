@@ -1,17 +1,16 @@
 import { List } from "immutable";
 import { WhereClauseBuilder, SubWhereBuilder } from "./clauses/WhereClauseBuilder";
 import { updateAst, SubQueryNode, CondSubNode } from "./data/structs";
-import { ChainFnUpdate, SubQueryArg, TValueArg, TAndOr, TNot, TConditionNode, ExecutableBuilder } from "./data/types";
 import { SelectBuilder } from "./SelectBuilder";
 import { Grammar } from "./Grammar";
-import { ClauseTypeEnum } from "./data/enums";
 import { NEVER } from "./data/messages";
 import { IBuilder } from "./contracts/Buildable";
-import { withExecutionMethods } from "./mixins/withExecutionMethods";
+import { Mixins, Types, Enums } from "./data";
 
-export interface UpdateBuilder extends ExecutableBuilder {}
+export interface UpdateBuilder extends Types.ExecutableBuilder {}
 
-export class UpdateBuilder<T = { [columnName: string]: TValueArg }> extends WhereClauseBuilder implements IBuilder {
+export class UpdateBuilder<T = { [columnName: string]: Types.TValueArg }> extends WhereClauseBuilder
+  implements IBuilder {
   dialect = null;
 
   grammar = new Grammar();
@@ -31,7 +30,7 @@ export class UpdateBuilder<T = { [columnName: string]: TValueArg }> extends Wher
    * Specifies the values to SET in the update clause
    */
   set(values: T): this;
-  set(key: string, value: TValueArg): this;
+  set(key: string, value: Types.TValueArg): this;
   set(...args: any[]) {
     switch (args.length) {
       case 0: {
@@ -76,20 +75,20 @@ export class UpdateBuilder<T = { [columnName: string]: TValueArg }> extends Wher
     return this.ast;
   }
 
-  protected chain(fn: ChainFnUpdate) {
+  protected chain(fn: Types.ChainFnUpdate) {
     this.ast = fn(this.ast);
     return this;
   }
 
-  protected subQuery(fn: SubQueryArg) {
+  protected subQuery(fn: Types.SubQueryArg) {
     const builder = new SelectBuilder();
     fn.call(builder, builder);
     return SubQueryNode({ ast: builder.getAst() });
   }
 
-  protected subCondition(clauseType: ClauseTypeEnum, fn: Function, andOr: TAndOr, not: TNot) {
+  protected subCondition(clauseType: Enums.ClauseTypeEnum, fn: Function, andOr: Types.TAndOr, not: Types.TNot) {
     let builder: SubWhereBuilder | null = null;
-    if (clauseType === ClauseTypeEnum.WHERE) {
+    if (clauseType === Enums.ClauseTypeEnum.WHERE) {
       builder = new SubWhereBuilder(this.grammar.newInstance(), this.subQuery);
     }
     if (!builder) {
@@ -110,9 +109,9 @@ export class UpdateBuilder<T = { [columnName: string]: TValueArg }> extends Wher
     return this;
   }
 
-  protected pushCondition(clauseType: ClauseTypeEnum, node: TConditionNode) {
+  protected pushCondition(clauseType: Enums.ClauseTypeEnum, node: Types.TConditionNode) {
     return this.chain(ast => {
-      if (clauseType === ClauseTypeEnum.WHERE) {
+      if (clauseType === Enums.ClauseTypeEnum.WHERE) {
         return ast.set("where", ast.where.push(node));
       }
       throw new Error(NEVER);
@@ -120,4 +119,4 @@ export class UpdateBuilder<T = { [columnName: string]: TValueArg }> extends Wher
   }
 }
 
-withExecutionMethods(UpdateBuilder);
+Mixins.withExecutionMethods(UpdateBuilder);

@@ -1,63 +1,55 @@
 import { List } from "immutable";
-import {
-  TConditionNode,
-  TInArg,
-  TColumnArg,
-  SubQueryArg,
-  TSubQueryNode,
-  SubConditionFn,
-  TAndOr,
-  TNot,
-  TJoinConditionValueArgs,
-  TJoinConditionColumnArgs,
-} from "../data/types";
 import { AddCondition } from "./AddCondition";
-import { ClauseTypeEnum, OperatorEnum } from "../data/enums";
 import { Grammar } from "../Grammar";
-import { CondSubNode } from "../data/structs";
+import { Types, Enums, Structs } from "../data";
 
 export class JoinBuilder extends AddCondition {
-  protected ast = List<TConditionNode>();
-  constructor(protected grammar: Grammar, protected subQuery: ((fn: SubQueryArg) => TSubQueryNode)) {
+  protected ast = List<Types.TConditionNode>();
+  constructor(protected grammar: Grammar, protected subQuery: ((fn: Types.SubQueryArg) => Types.TSubQueryNode)) {
     super();
   }
-  on(...args: TJoinConditionColumnArgs) {
-    return this.addColumnCond(ClauseTypeEnum.JOIN, args, OperatorEnum.AND);
+  on(...args: Types.TJoinConditionColumnArgs) {
+    return this.addColumnCond(Enums.ClauseTypeEnum.JOIN, args, Enums.OperatorEnum.AND);
   }
-  orOn(...args: TJoinConditionColumnArgs) {
-    return this.addColumnCond(ClauseTypeEnum.JOIN, args, OperatorEnum.OR);
+  orOn(...args: Types.TJoinConditionColumnArgs) {
+    return this.addColumnCond(Enums.ClauseTypeEnum.JOIN, args, Enums.OperatorEnum.OR);
   }
-  onVal(...args: TJoinConditionValueArgs) {
-    return this.addValueCond(ClauseTypeEnum.JOIN, args, OperatorEnum.AND);
+  onVal(...args: Types.TJoinConditionValueArgs) {
+    return this.addValueCond(Enums.ClauseTypeEnum.JOIN, args, Enums.OperatorEnum.AND);
   }
-  orOnVal(...args: TJoinConditionValueArgs) {
-    return this.addValueCond(ClauseTypeEnum.JOIN, args, OperatorEnum.OR);
+  orOnVal(...args: Types.TJoinConditionValueArgs) {
+    return this.addValueCond(Enums.ClauseTypeEnum.JOIN, args, Enums.OperatorEnum.OR);
   }
-  onIn(column: TColumnArg, arg: TInArg) {
-    return this.addInCond(ClauseTypeEnum.JOIN, column, arg, OperatorEnum.AND);
+  onIn(column: Types.TColumnArg, arg: Types.TInArg) {
+    return this.addInCond(Enums.ClauseTypeEnum.JOIN, column, arg, Enums.OperatorEnum.AND);
   }
-  onNotIn(column: TColumnArg, arg: TInArg) {
-    return this.addInCond(ClauseTypeEnum.JOIN, column, arg, OperatorEnum.OR);
+  onNotIn(column: Types.TColumnArg, arg: Types.TInArg) {
+    return this.addInCond(Enums.ClauseTypeEnum.JOIN, column, arg, Enums.OperatorEnum.OR);
   }
-  onNull(column: TColumnArg) {
-    return this.addNullCond(ClauseTypeEnum.JOIN, column, OperatorEnum.AND);
+  onNull(column: Types.TColumnArg) {
+    return this.addNullCond(Enums.ClauseTypeEnum.JOIN, column, Enums.OperatorEnum.AND);
   }
-  onNotNull(column: TColumnArg) {
-    return this.addNullCond(ClauseTypeEnum.JOIN, column, OperatorEnum.OR);
+  onNotNull(column: Types.TColumnArg) {
+    return this.addNullCond(Enums.ClauseTypeEnum.JOIN, column, Enums.OperatorEnum.OR);
   }
   getAst() {
     return this.ast;
   }
 
-  protected pushCondition(clauseType: ClauseTypeEnum.JOIN, node: TConditionNode) {
+  protected pushCondition(clauseType: Enums.ClauseTypeEnum.JOIN, node: Types.TConditionNode) {
     this.ast = this.ast.push(node);
     return this;
   }
 
-  protected subCondition(clauseType: ClauseTypeEnum.JOIN, fn: SubConditionFn, andOr: TAndOr, not: TNot) {
+  protected subCondition(
+    clauseType: Enums.ClauseTypeEnum.JOIN,
+    fn: Types.SubConditionFn,
+    andOr: Types.TAndOr,
+    not: Types.TNot
+  ) {
     const builder = new JoinBuilder(this.grammar.newInstance(), this.subQuery);
     fn.call(builder, builder);
-    this.pushCondition(clauseType, CondSubNode({ andOr, not, ast: builder.getAst() }));
+    this.pushCondition(clauseType, Structs.CondSubNode({ andOr, not, ast: builder.getAst() }));
     return this;
   }
 }

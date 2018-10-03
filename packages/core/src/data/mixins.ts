@@ -1,4 +1,12 @@
+import { EventEmitter } from "events";
 import { Connection } from "../Connection";
+
+export function withEventEmitter(ClassToDecorate: any) {
+  Object.keys(EventEmitter.prototype).forEach(key => {
+    // @ts-ignore
+    ClassToDecorate.prototype[key] = EventEmitter.prototype[key];
+  });
+}
 
 /**
  * Typings are taken care of on the type defs for ExecutableBuilder,

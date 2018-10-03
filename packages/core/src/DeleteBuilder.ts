@@ -1,28 +1,17 @@
 import { WhereClauseBuilder } from "./clauses/WhereClauseBuilder";
-import {
-  ChainFnDelete,
-  SubQueryArg,
-  SubConditionFn,
-  TAndOr,
-  TConditionNode,
-  TNot,
-  ExecutableBuilder,
-} from "./data/types";
-import { deleteAst, SubQueryNode } from "./data/structs";
 import { SelectBuilder } from "./SelectBuilder";
-import { ClauseTypeEnum } from "./data/enums";
 import { IBuilder } from "./contracts/Buildable";
 import { Grammar } from "./Grammar";
-import { withExecutionMethods } from "./mixins/withExecutionMethods";
+import { Mixins, Enums, Types, Structs } from "./data";
 
-export interface DeleteBuilder extends ExecutableBuilder {}
+export interface DeleteBuilder extends Types.ExecutableBuilder {}
 
 export class DeleteBuilder extends WhereClauseBuilder implements IBuilder {
   dialect = null;
 
   protected grammar = new Grammar();
 
-  constructor(protected ast = deleteAst) {
+  constructor(protected ast = Structs.deleteAst) {
     super();
   }
 
@@ -34,16 +23,21 @@ export class DeleteBuilder extends WhereClauseBuilder implements IBuilder {
     return this.ast;
   }
 
-  protected pushCondition(clauseType: ClauseTypeEnum, node: TConditionNode) {
+  protected pushCondition(clauseType: Enums.ClauseTypeEnum, node: Types.TConditionNode) {
     return this.chain(ast => {
-      if (clauseType === ClauseTypeEnum.WHERE) {
+      if (clauseType === Enums.ClauseTypeEnum.WHERE) {
         return ast.set("where", ast.where.push(node));
       }
       return ast;
     });
   }
 
-  protected subCondition(clauseType: ClauseTypeEnum, fn: SubConditionFn, andOr: TAndOr, not: TNot = null) {
+  protected subCondition(
+    clauseType: Enums.ClauseTypeEnum,
+    fn: Types.SubConditionFn,
+    andOr: Types.TAndOr,
+    not: Types.TNot = null
+  ) {
     return this;
   }
 
@@ -51,16 +45,16 @@ export class DeleteBuilder extends WhereClauseBuilder implements IBuilder {
     return new SelectBuilder();
   }
 
-  protected subQuery(fn: SubQueryArg) {
+  protected subQuery(fn: Types.SubQueryArg) {
     const builder = this.selectBuilder();
     fn.call(builder, builder);
-    return new SubQueryNode({ ast: builder.getAst() });
+    return Structs.SubQueryNode({ ast: builder.getAst() });
   }
 
-  protected chain(fn: ChainFnDelete) {
+  protected chain(fn: Types.ChainFnDelete) {
     this.ast = fn(this.ast);
     return this;
   }
 }
 
-withExecutionMethods(DeleteBuilder);
+Mixins.withExecutionMethods(DeleteBuilder);

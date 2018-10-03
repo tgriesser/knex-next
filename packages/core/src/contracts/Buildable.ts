@@ -1,6 +1,5 @@
 import Immutable from "immutable";
 import { DialectEnum } from "../data/enums";
-import { Connection } from "../Connection";
 
 export interface IBuilder {
   /**

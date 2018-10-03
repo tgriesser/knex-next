@@ -1,38 +1,39 @@
+import { CreateTableBuilder, CreateTableColumnBlockFn, AlterTableColumnBlockFn } from "./CreateTableBuilder";
+import { AlterTableBuilder } from "./AlterTableBuilder";
+
 export class SchemaBuilder {
   with() {
-    // ... //
+    //
   }
 
   withSchema() {
-    // ... //
+    //
   }
 
-  createTable() {
-    // ... //
+  createTable(table: string, createTableBlock: CreateTableColumnBlockFn) {
+    return new CreateTableBuilder().table(table).columns(createTableBlock);
   }
 
-  renameTable() {
-    // ... //
+  createTableIfNotExists(table: string, createTableBlock: CreateTableColumnBlockFn) {
+    return this.createTable(table, createTableBlock).ifNotExists();
   }
 
-  dropTable() {
-    // ... //
+  renameTable(fromTable: string, toTable: string) {
+    return new AlterTableBuilder().renameTable(fromTable, toTable);
   }
 
-  hasColumn() {
-    // ... //
+  dropTable(table: string) {
+    return new AlterTableBuilder().dropTable(table);
   }
 
-  hasTable() {
-    // ... //
+  alterTable(table: string, alterTableBlock?: AlterTableColumnBlockFn) {
+    if (arguments.length === 1) {
+      return new AlterTableBuilder();
+    }
   }
 
-  alterTable() {
-    // ... //
-  }
-
-  renameColumn() {
-    // ... //
+  renameColumn(table: string, fromColumn: string, toColumn: string) {
+    return new AlterTableBuilder().renameColumn(table, fromColumn, toColumn);
   }
 }
 

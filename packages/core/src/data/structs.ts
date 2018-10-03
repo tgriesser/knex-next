@@ -1,249 +1,215 @@
-import {
-  NodeTypeEnum,
-  ClauseTypeEnum,
-  OperatorEnum,
-  OperationTypeEnum,
-  JoinTypeEnum,
-  AggregateFns,
-  DateCondType,
-} from "./enums";
 import { Record as IRecord, List, Map as IMap } from "immutable";
-import {
-  IJoinNode,
-  IRawNode,
-  ISubQuery,
-  ICondSubNode,
-  IUnionNode,
-  IOrderByNode,
-  ICondBetweenNode,
-  ICondExistsNode,
-  ICondNullNode,
-  ICondInNode,
-  ICondColumnNode,
-  ICondExprNode,
-  ISelectOperation,
-  IInsertOperation,
-  IUpdateOperation,
-  IDeleteOperation,
-  ITruncateOperation,
-  ICreateTableOperation,
-  ICreateTableColumnNode,
-  IBindingNode,
-  IAggregateNode,
-  IAlterTableOperation,
-  ICondDateNode,
-  ICondRawNode,
-  IAliasedIdentNode,
-} from "./types";
+import * as Types from "./types";
+import * as Enums from "./enums";
 
 /**
  * raw`...`
  */
-export const RawNode = IRecord<IRawNode>(
+export const RawNode = IRecord<Types.IRawNode>(
   {
-    __typename: NodeTypeEnum.RAW,
+    __typename: Enums.NodeTypeEnum.RAW,
     fragments: List<string>(),
     bindings: List<string | number>(),
   },
-  NodeTypeEnum.RAW
+  Enums.NodeTypeEnum.RAW
 );
 
 /**
  * WHERE Condition: expr [op] expr
  */
-export const ConditionExpressionNode = IRecord<ICondExprNode>(
+export const ConditionExpressionNode = IRecord<Types.ICondExprNode>(
   {
-    __typename: NodeTypeEnum.COND_EXPR,
+    __typename: Enums.NodeTypeEnum.COND_EXPR,
     not: null,
     column: null,
     operator: "=",
     value: null,
-    andOr: OperatorEnum.AND,
+    andOr: Enums.OperatorEnum.AND,
   },
-  NodeTypeEnum.COND_EXPR
+  Enums.NodeTypeEnum.COND_EXPR
 );
 
 /**
  * WHERE Condition: column [op] otherColumn
  */
-export const CondColumnNode = IRecord<ICondColumnNode>(
+export const CondColumnNode = IRecord<Types.ICondColumnNode>(
   {
-    __typename: NodeTypeEnum.COND_COLUMN,
+    __typename: Enums.NodeTypeEnum.COND_COLUMN,
     not: null,
     column: null,
     operator: "=",
     rightColumn: null,
-    andOr: OperatorEnum.AND,
+    andOr: Enums.OperatorEnum.AND,
   },
-  NodeTypeEnum.COND_COLUMN
+  Enums.NodeTypeEnum.COND_COLUMN
 );
 
 /**
  * WHERE Condition: [NOT] IN ...
  */
-export const CondInNode = IRecord<ICondInNode>(
+export const CondInNode = IRecord<Types.ICondInNode>(
   {
-    __typename: NodeTypeEnum.COND_IN,
+    __typename: Enums.NodeTypeEnum.COND_IN,
     not: null,
     column: null,
-    andOr: OperatorEnum.AND,
+    andOr: Enums.OperatorEnum.AND,
     value: null,
   },
-  NodeTypeEnum.COND_IN
+  Enums.NodeTypeEnum.COND_IN
 );
 
 /**
  * WHERE [NOT] NULL
  */
-export const CondNullNode = IRecord<ICondNullNode>(
+export const CondNullNode = IRecord<Types.ICondNullNode>(
   {
-    __typename: NodeTypeEnum.COND_NULL,
+    __typename: Enums.NodeTypeEnum.COND_NULL,
     not: null,
-    andOr: OperatorEnum.AND,
+    andOr: Enums.OperatorEnum.AND,
     column: null,
   },
-  NodeTypeEnum.COND_NULL
+  Enums.NodeTypeEnum.COND_NULL
 );
 
 /**
  * WHERE [NOT] EXISTS
  */
-export const CondExistsNode = IRecord<ICondExistsNode>(
+export const CondExistsNode = IRecord<Types.ICondExistsNode>(
   {
-    __typename: NodeTypeEnum.COND_EXISTS,
+    __typename: Enums.NodeTypeEnum.COND_EXISTS,
     not: null,
-    andOr: OperatorEnum.AND,
+    andOr: Enums.OperatorEnum.AND,
     query: null,
   },
-  NodeTypeEnum.COND_EXISTS
+  Enums.NodeTypeEnum.COND_EXISTS
 );
 
 /**
  * WHERE [NOT] BETWEEN
  */
-export const CondBetweenNode = IRecord<ICondBetweenNode>(
+export const CondBetweenNode = IRecord<Types.ICondBetweenNode>(
   {
-    __typename: NodeTypeEnum.COND_BETWEEN,
+    __typename: Enums.NodeTypeEnum.COND_BETWEEN,
     not: null,
-    andOr: OperatorEnum.AND,
+    andOr: Enums.OperatorEnum.AND,
     column: "",
     first: null,
     second: null,
   },
-  NodeTypeEnum.COND_BETWEEN
+  Enums.NodeTypeEnum.COND_BETWEEN
 );
 
-export const CondDateNode = IRecord<ICondDateNode>(
+export const CondDateNode = IRecord<Types.ICondDateNode>(
   {
-    __typename: NodeTypeEnum.COND_DATE,
+    __typename: Enums.NodeTypeEnum.COND_DATE,
     not: null,
-    andOr: OperatorEnum.AND,
-    type: DateCondType.DATE,
+    andOr: Enums.OperatorEnum.AND,
+    type: Enums.DateCondType.DATE,
     column: null,
     operator: "=",
     value: null,
   },
-  NodeTypeEnum.COND_DATE
+  Enums.NodeTypeEnum.COND_DATE
 );
 
 /**
  * WHERE [NOT] BETWEEN
  */
-export const CondRawNode = IRecord<ICondRawNode>(
+export const CondRawNode = IRecord<Types.ICondRawNode>(
   {
-    __typename: NodeTypeEnum.COND_RAW,
+    __typename: Enums.NodeTypeEnum.COND_RAW,
     not: null,
-    andOr: OperatorEnum.AND,
+    andOr: Enums.OperatorEnum.AND,
     value: null,
   },
-  NodeTypeEnum.COND_RAW
+  Enums.NodeTypeEnum.COND_RAW
 );
 
 /**
  * SUM(*), AVG(*), etc.
  */
-export const AggregateNode = IRecord<IAggregateNode>(
+export const AggregateNode = IRecord<Types.IAggregateNode>(
   {
-    __typename: NodeTypeEnum.AGGREGATE,
-    fn: AggregateFns.COUNT,
+    __typename: Enums.NodeTypeEnum.AGGREGATE,
+    fn: Enums.AggregateFns.COUNT,
     column: "",
     alias: null,
     distinct: false,
   },
-  NodeTypeEnum.AGGREGATE
+  Enums.NodeTypeEnum.AGGREGATE
 );
 
 /**
  * JOIN ...
  */
-export const JoinNode = IRecord<IJoinNode>(
+export const JoinNode = IRecord<Types.IJoinNode>(
   {
-    __typename: NodeTypeEnum.JOIN,
-    joinType: JoinTypeEnum.INNER,
+    __typename: Enums.NodeTypeEnum.JOIN,
+    joinType: Enums.JoinTypeEnum.INNER,
     table: "",
     conditions: List(),
   },
-  NodeTypeEnum.JOIN
+  Enums.NodeTypeEnum.JOIN
 );
 
 /**
  * ORDER BY
  */
-export const OrderByNode = IRecord<IOrderByNode>(
+export const OrderByNode = IRecord<Types.IOrderByNode>(
   {
-    __typename: NodeTypeEnum.ORDER_BY,
+    __typename: Enums.NodeTypeEnum.ORDER_BY,
     column: null,
     direction: "ASC",
   },
-  NodeTypeEnum.ORDER_BY
+  Enums.NodeTypeEnum.ORDER_BY
 );
 
 /**
  * ... UNION [ALL] ...
  */
-export const UnionNode = IRecord<IUnionNode>(
+export const UnionNode = IRecord<Types.IUnionNode>(
   {
-    __typename: NodeTypeEnum.UNION,
+    __typename: Enums.NodeTypeEnum.UNION,
     ast: null,
     all: false,
   },
-  NodeTypeEnum.UNION
+  Enums.NodeTypeEnum.UNION
 );
 
 /**
  * WHERE (...)
  */
-export const CondSubNode = IRecord<ICondSubNode>(
+export const CondSubNode = IRecord<Types.ICondSubNode>(
   {
-    __typename: NodeTypeEnum.COND_SUB,
+    __typename: Enums.NodeTypeEnum.COND_SUB,
     not: null,
-    andOr: OperatorEnum.AND,
+    andOr: Enums.OperatorEnum.AND,
     ast: List(),
   },
-  NodeTypeEnum.COND_SUB
+  Enums.NodeTypeEnum.COND_SUB
 );
 
 /**
  * (SELECT ...) as
  */
-export const SubQueryNode = IRecord<ISubQuery>(
+export const SubQueryNode = IRecord<Types.ISubQuery>(
   {
-    __typename: NodeTypeEnum.SUB_QUERY,
+    __typename: Enums.NodeTypeEnum.SUB_QUERY,
     ast: null,
   },
-  NodeTypeEnum.SUB_QUERY
+  Enums.NodeTypeEnum.SUB_QUERY
 );
 
 /**
  * ___ AS ___
  */
-export const AliasedIdentNode = IRecord<IAliasedIdentNode>(
+export const AliasedIdentNode = IRecord<Types.IAliasedIdentNode>(
   {
-    __typename: NodeTypeEnum.ALIASED,
+    __typename: Enums.NodeTypeEnum.ALIASED,
     ident: "",
     alias: "",
   },
-  NodeTypeEnum.ALIASED
+  Enums.NodeTypeEnum.ALIASED
 );
 
 /**
@@ -253,9 +219,9 @@ export const AliasedIdentNode = IRecord<IAliasedIdentNode>(
 /**
  * SELECT
  */
-export const SelectOperationNodes = IRecord<ISelectOperation>(
+export const SelectOperationNodes = IRecord<Types.ISelectOperation>(
   {
-    __operation: OperationTypeEnum.SELECT,
+    __operation: Enums.OperationTypeEnum.SELECT,
     from: null,
     where: List(),
     select: List(),
@@ -278,9 +244,9 @@ export const selectAst = SelectOperationNodes();
 /**
  * INSERT
  */
-export const InsertOperation = IRecord<IInsertOperation>(
+export const InsertOperation = IRecord<Types.IInsertOperation>(
   {
-    __operation: OperationTypeEnum.INSERT,
+    __operation: Enums.OperationTypeEnum.INSERT,
     table: null,
     chunkSize: null,
     columns: List(),
@@ -295,9 +261,9 @@ export const insertAst = InsertOperation();
 /**
  * UPDATE
  */
-export const UpdateOperation = IRecord<IUpdateOperation>(
+export const UpdateOperation = IRecord<Types.IUpdateOperation>(
   {
-    __operation: OperationTypeEnum.UPDATE,
+    __operation: Enums.OperationTypeEnum.UPDATE,
     table: "",
     join: List(),
     where: List(),
@@ -311,9 +277,9 @@ export const updateAst = UpdateOperation();
 /**
  * DELETE
  */
-export const DeleteBindings = IRecord<IDeleteOperation>(
+export const DeleteBindings = IRecord<Types.IDeleteOperation>(
   {
-    __operation: OperationTypeEnum.DELETE,
+    __operation: Enums.OperationTypeEnum.DELETE,
     table: "",
     where: List(),
     join: List(),
@@ -326,9 +292,9 @@ export const deleteAst = DeleteBindings();
 /**
  * TRUNCATE
  */
-export const TruncateBindings = IRecord<ITruncateOperation>(
+export const TruncateBindings = IRecord<Types.ITruncateOperation>(
   {
-    __operation: OperationTypeEnum.TRUNCATE,
+    __operation: Enums.OperationTypeEnum.TRUNCATE,
     table: null,
   },
   "TruncateOperation"
@@ -336,13 +302,27 @@ export const TruncateBindings = IRecord<ITruncateOperation>(
 export const truncateAst = TruncateBindings();
 
 /**
+ * Migration AST. Having an explicit list of operations makes it possible to
+ * reverse them.
+ */
+export const MigrationBindings = IRecord<Types.IMigrationOperation>(
+  {
+    __operation: Enums.OperationTypeEnum.MIGRATION,
+    operations: List(),
+  },
+  "MigrationOperation"
+);
+export const migrationAst = MigrationBindings();
+
+/**
  * CREATE TABLE
  */
-export const CreateTableOperation = IRecord<ICreateTableOperation>(
+export const CreateTableOperation = IRecord<Types.ICreateTableOperation>(
   {
-    __operation: OperationTypeEnum.CREATE_TABLE,
+    __operation: Enums.OperationTypeEnum.CREATE_TABLE,
     table: "",
     columns: List(),
+    ifNotExists: false,
   },
   "CreateTableOperation"
 );
@@ -351,9 +331,9 @@ export const createTableAst = CreateTableOperation();
 /**
  * ALTER TABLE
  */
-export const AlterTableOperation = IRecord<IAlterTableOperation>(
+export const AlterTableOperation = IRecord<Types.IAlterTableOperation>(
   {
-    __operation: OperationTypeEnum.ALTER_TABLE,
+    __operation: Enums.OperationTypeEnum.ALTER_TABLE,
     table: "",
   },
   "AlterTableOperation"
@@ -362,7 +342,7 @@ export const AlterTableOperation = IRecord<IAlterTableOperation>(
 /**
  * CREATE TABLE (column)
  */
-export const CreateTableColumnNode = IRecord<ICreateTableColumnNode>(
+export const CreateTableColumnNode = IRecord<Types.ICreateTableColumnNode>(
   {
     dataType: null,
   },
@@ -372,11 +352,11 @@ export const CreateTableColumnNode = IRecord<ICreateTableColumnNode>(
 /**
  * Placeholder for a future binding value, allows precompiled queries.
  */
-export const BindingNode = IRecord<IBindingNode>(
+export const BindingNode = IRecord<Types.IBindingNode>(
   {
-    __typename: NodeTypeEnum.BINDING,
+    __typename: Enums.NodeTypeEnum.BINDING,
     name: "",
     type: null,
   },
-  NodeTypeEnum.BINDING
+  Enums.NodeTypeEnum.BINDING
 );

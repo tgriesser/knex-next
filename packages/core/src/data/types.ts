@@ -368,24 +368,34 @@ export type TTruncateOperation = RecordOf<ITruncateOperation>;
 export interface ICreateTableOperation extends IOperationNode<OperationTypeEnum.CREATE_TABLE> {
   table: string;
   columns: List<TCreateTableColumnNode>;
+  ifNotExists: boolean;
 }
 export type TCreateTableOperation = RecordOf<ICreateTableOperation>;
 
 export interface IAlterTableOperation extends IOperationNode<OperationTypeEnum.ALTER_TABLE> {
   table: string;
 }
+export type TAlterTableOperation = RecordOf<IAlterTableOperation>;
 
 export interface ICreateTableColumnNode {
   dataType: Maybe<ColumnDataType>;
 }
 export type TCreateTableColumnNode = RecordOf<ICreateTableColumnNode>;
 
+export interface IMigrationOperation extends IOperationNode<OperationTypeEnum.MIGRATION> {
+  operations: List<TCreateTableOperation | TAlterTableOperation>;
+}
+export type TMigrationOperation = RecordOf<IMigrationOperation>;
+
 export type TOperationAst =
   | TSelectOperation
   | TUpdateOperation
   | TDeleteOperation
   | TInsertOperation
-  | TTruncateOperation;
+  | TTruncateOperation
+  | TCreateTableOperation
+  | TAlterTableOperation
+  | TMigrationOperation;
 
 export interface IBindingNode extends INode<NodeTypeEnum.BINDING> {
   name: string;
