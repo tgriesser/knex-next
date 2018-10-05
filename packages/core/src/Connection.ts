@@ -1,19 +1,30 @@
 import { Types } from "./data";
+import { Grammar } from "./Grammar";
 
 let cid = 0;
 
-export abstract class Connection {
+export class KnexConnection {
   cid = cid + 1;
 
-  abstract readonly database: string;
+  get grammar() {
+    return new Grammar();
+  }
+
+  get database(): string {
+    throw new Error("Not Implemented");
+  }
 
   constructor(protected connection: any) {}
 
-  abstract async beginTransaction(): Promise<void>;
+  async execute<T>(sql: string, bindings: any[], timeout?: number): Promise<T> {
+    throw new Error("Not Implemented");
+  }
 
   toString() {
     return `[KnexConnection ${this.cid}]`;
   }
 
-  abstract async columnInfo(tableName: string): Promise<Types.ColumnInfoData[]>;
+  async columnInfo(tableName: string): Promise<Types.ColumnInfoData[]> {
+    throw new Error("Not Implemented");
+  }
 }

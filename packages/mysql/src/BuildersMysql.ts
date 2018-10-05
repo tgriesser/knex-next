@@ -9,14 +9,23 @@ export class SelectBuilderMysql extends SelectBuilder {
 export class DeleteBuilderMysql extends DeleteBuilder {
   dialect = Enums.DialectEnum.MYSQL;
   protected grammar = new GrammarMysql();
+  protected selectBuilder() {
+    return new SelectBuilderMysql();
+  }
 }
 
 export class UpdateBuilderMysql extends UpdateBuilder {
   dialect = Enums.DialectEnum.MYSQL;
   protected grammar = new GrammarMysql();
+  protected selectBuilder() {
+    return new SelectBuilderMysql();
+  }
 }
 
 export class InsertBuilderMysql extends InsertBuilder {
   dialect = Enums.DialectEnum.MYSQL;
   protected grammar = new GrammarMysql();
+  protected selectBuilder() {
+    return new SelectBuilderMysql();
+  }
 }

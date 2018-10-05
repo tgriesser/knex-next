@@ -9,8 +9,5 @@ export type PossibleBindingTypes = "string" | "number";
  * matching up with the "bindingName".
  */
 export function Binding(name: string, type?: PossibleBindingTypes) {
-  return BindingNode({
-    name,
-    type,
-  });
+  return BindingNode({ name, type });
 }

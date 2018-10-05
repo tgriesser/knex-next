@@ -6,7 +6,7 @@ import { Grammar } from "./Grammar";
 import { NEVER } from "./data/messages";
 import { Mixins, Types, Enums } from "./data";
 
-export interface UpdateBuilder extends Types.ExecutableBuilder {}
+export interface UpdateBuilder extends Mixins.ExecutionMethods {}
 
 export class UpdateBuilder<T = { [columnName: string]: Types.TValueArg }> extends WhereClauseBuilder
   implements Types.IBuilder {
@@ -79,8 +79,12 @@ export class UpdateBuilder<T = { [columnName: string]: Types.TValueArg }> extend
     return this;
   }
 
+  protected selectBuilder() {
+    return new SelectBuilder();
+  }
+
   protected subQuery(fn: Types.SubQueryArg) {
-    const builder = new SelectBuilder();
+    const builder = this.selectBuilder();
     fn.call(builder, builder);
     return SubQueryNode({ ast: builder.getAst() });
   }

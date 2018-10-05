@@ -1,13 +1,59 @@
 import { EventEmitter } from "events";
-import { Connection } from "../Connection";
+import { KnexConnection } from "../Connection";
 import { ExecutionContext } from "../ExecutionContext";
 import * as Messages from "./Messages";
+import { Types } from ".";
+import { ToSQLValue } from "./types";
+import { KnexConnectionPool } from "../ConnectionPool";
+
+export interface EventEmitterMixin extends EventEmitter {}
 
 export function withEventEmitter(ClassToDecorate: any) {
   Object.keys(EventEmitter.prototype).forEach(key => {
     // @ts-ignore
     ClassToDecorate.prototype[key] = EventEmitter.prototype[key];
   });
+}
+
+/**
+ * When a Builder is executable, it is a promise and contains all of these methods
+ */
+export interface ExecutionMethods<T = any> extends EventEmitter, LogMixin, Promise<T> {
+  /**
+   * Sets the current connection on the class
+   */
+  setConnection(connection: KnexConnection | KnexConnectionPool): this;
+  /**
+   * Build the query
+   */
+  toOperation(): ToSQLValue;
+}
+
+export interface LogMixin {
+  /**
+   * Logs a message
+   */
+  log(msg: string): void;
+  /**
+   * Logs an error
+   */
+  error(err: Error): void;
+  /**
+   * Logs a warning
+   */
+  warn(msg: string | Error): void;
+}
+
+export function withLogMixin(ClassToDecorate: any) {
+  ClassToDecorate.prototype.log = function log(msg: string) {
+    console.log(msg);
+  };
+  ClassToDecorate.prototype.error = function error(err: Error) {
+    console.error(err);
+  };
+  ClassToDecorate.prototype.warn = function warn(warning: string | Error) {
+    console.warn(warning);
+  };
 }
 
 /**
@@ -18,11 +64,21 @@ export function withEventEmitter(ClassToDecorate: any) {
  */
 export function withExecutionMethods(ClassToDecorate: any) {
   /**
+   * Add log methods to any executing builder
+   */
+  withLogMixin(ClassToDecorate);
+
+  /**
+   * Add event emitter methods to any executing builder
+   */
+  withEventEmitter(ClassToDecorate);
+
+  /**
    * The connection we're using to execute the queries.
    */
   ClassToDecorate.prototype.connection = null;
 
-  ClassToDecorate.prototype.setConnection = function setConnection(connection: Connection) {
+  ClassToDecorate.prototype.setConnection = function setConnection(connection: KnexConnection) {
     this.connection = connection;
     return this;
   };
@@ -55,18 +111,6 @@ export function withExecutionMethods(ClassToDecorate: any) {
     return this.grammar.toOperation(this.ast);
   };
 
-  ClassToDecorate.prototype.log = function log(msg: string) {
-    console.log(msg);
-  };
-
-  ClassToDecorate.prototype.error = function error(err: Error) {
-    console.error(err);
-  };
-
-  ClassToDecorate.prototype.warn = function warn(warning: string | Error) {
-    console.warn(warning);
-  };
-
   ClassToDecorate.prototype.getExecutionContext = function getExecutionContext() {
     if (!this.executionContext) {
       this.makeExecutionContext();
@@ -87,6 +131,14 @@ export function withExecutionMethods(ClassToDecorate: any) {
     this.executionContext = new ExecutionContext();
     return this.executionContext;
   };
+
+  ClassToDecorate.prototype.asCallback = function asCallback<T>(cb: (err: Error | null, value?: T) => any) {
+    this.then((data: T) => cb(null, data)).catch((e: Error) => cb(e));
+  };
+}
+
+export interface ReturningMixin {
+  returning(...args: string[] | [string[]]): this;
 }
 
 /**
@@ -94,6 +146,11 @@ export function withExecutionMethods(ClassToDecorate: any) {
  */
 export function returningMixin(ClassToDecorate: any) {
   ClassToDecorate.prototype.returning = function returning() {};
+}
+
+export interface CTEMixin {
+  with(alias: string, as: Types.TQueryArg): this;
+  withRecursive(...args: string[] | [string[]]): this;
 }
 
 /**

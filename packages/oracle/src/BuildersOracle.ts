@@ -9,14 +9,23 @@ export class SelectBuilderOracle extends SelectBuilder {
 export class DeleteBuilderOracle extends DeleteBuilder {
   dialect = Enums.DialectEnum.ORACLE;
   protected grammar = new GrammarOracle();
+  protected selectBuilder() {
+    return new SelectBuilderOracle();
+  }
 }
 
 export class UpdateBuilderOracle extends UpdateBuilder {
   dialect = Enums.DialectEnum.ORACLE;
   protected grammar = new GrammarOracle();
+  protected selectBuilder() {
+    return new SelectBuilderOracle();
+  }
 }
 
 export class InsertBuilderOracle extends InsertBuilder {
   dialect = Enums.DialectEnum.ORACLE;
   protected grammar = new GrammarOracle();
+  protected selectBuilder() {
+    return new SelectBuilderOracle();
+  }
 }

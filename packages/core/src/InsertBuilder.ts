@@ -1,9 +1,12 @@
 import { Grammar } from "./Grammar";
 import { SelectBuilder } from "./SelectBuilder";
-import { Connection } from "./Connection";
+import { KnexConnection } from "./Connection";
 import { Structs, Types, Mixins, Enums } from "./data";
+import { INSERT_BUILDER } from "./data/symbols";
 
-export interface InsertBuilder extends Types.ExecutableBuilder {}
+export interface InsertBuilder extends Mixins.ExecutionMethods {
+  [INSERT_BUILDER]: true;
+}
 
 export class InsertBuilder<T = { [columnName: string]: any }> implements Types.IBuilder {
   readonly dialect: Types.Maybe<Enums.DialectEnum> = null;
@@ -12,7 +15,7 @@ export class InsertBuilder<T = { [columnName: string]: any }> implements Types.I
 
   constructor(protected ast = Structs.insertAst) {}
 
-  protected connection: Types.Maybe<Connection> = null;
+  protected connection: Types.Maybe<KnexConnection> = null;
 
   clearValues() {
     return this.chain(ast => ast.set("values", Structs.insertAst.values));
@@ -45,8 +48,12 @@ export class InsertBuilder<T = { [columnName: string]: any }> implements Types.I
     return this.ast;
   }
 
+  protected selectBuilder() {
+    return new SelectBuilder();
+  }
+
   protected subQuery(arg: Types.SubQueryArg) {
-    const builder = new SelectBuilder();
+    const builder = this.selectBuilder();
     arg.call(builder, builder);
     return builder.getAst();
   }
@@ -56,5 +63,7 @@ export class InsertBuilder<T = { [columnName: string]: any }> implements Types.I
     return this;
   }
 }
+
+InsertBuilder.prototype[INSERT_BUILDER] = true;
 
 Mixins.withExecutionMethods(InsertBuilder);

@@ -1,0 +1,7 @@
+{
+  "name": "@knex/migrator",
+  "version": "2.0.0-alpha",
+  "dependencies": {
+    "@knex/core": "2.0.0-alpha"
+  }
+}

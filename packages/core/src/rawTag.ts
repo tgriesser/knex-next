@@ -7,5 +7,3 @@ export function raw(query: TemplateStringsArray, ...bindings: any[]) {
     bindings: List(bindings),
   });
 }
-
-export function ident() {}

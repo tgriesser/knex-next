@@ -1,7 +1,7 @@
-import { Connection, raw } from "@knex/core";
+import { KnexConnection } from "@knex/core";
 import { IConnection } from "oracledb";
 
-export class ConnectionOracle extends Connection {
+export class ConnectionOracle extends KnexConnection {
   database = "oracle";
 
   constructor(connection: IConnection) {

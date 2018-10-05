@@ -1,7 +1,7 @@
-import { Connection } from "@knex/core";
+import { KnexConnection } from "@knex/core";
 import { ConnectionPool } from "mssql";
 
-export class KnexConnectionMssql extends Connection {
+export class KnexConnectionMssql extends KnexConnection {
   database = "mssql";
 
   constructor(protected connection: ConnectionPool) {

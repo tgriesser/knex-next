@@ -1,22 +1,47 @@
-import { SelectBuilder, DeleteBuilder, UpdateBuilder, Enums, InsertBuilder } from "@knex/core";
-import { GrammarPostgres } from "./GrammarPostgres";
+import { SelectBuilder, DeleteBuilder, UpdateBuilder, Enums, InsertBuilder, Mixins, SchemaBuilder } from "@knex/core";
+import { GrammarPostgresql, SchemaGrammarPostgresql } from "./GrammarPostgres";
 
-export class SelectBuilderPostgres extends SelectBuilder {
+export interface SelectBuilderPostgresql extends Mixins.CTEMixin, Mixins.ReturningMixin {}
+
+export class SelectBuilderPostgresql extends SelectBuilder {
   dialect = Enums.DialectEnum.POSTGRESQL;
-  protected grammar = new GrammarPostgres();
+  protected grammar = new GrammarPostgresql();
 }
+Mixins.commonTableExpressions(SelectBuilderPostgresql);
+Mixins.returningMixin(SelectBuilderPostgresql);
 
-export class DeleteBuilderPostgres extends DeleteBuilder {
+export interface DeleteBuilderPostgresql extends Mixins.CTEMixin, Mixins.ReturningMixin {}
+
+export class DeleteBuilderPostgresql extends DeleteBuilder {
   dialect = Enums.DialectEnum.POSTGRESQL;
-  protected grammar = new GrammarPostgres();
+  protected grammar = new GrammarPostgresql();
+  protected selectBuilder() {
+    return new SelectBuilderPostgresql();
+  }
 }
+Mixins.commonTableExpressions(DeleteBuilderPostgresql);
+Mixins.returningMixin(DeleteBuilderPostgresql);
 
-export class UpdateBuilderPostgres extends UpdateBuilder {
+export class UpdateBuilderPostgresql extends UpdateBuilder {
   dialect = Enums.DialectEnum.POSTGRESQL;
-  protected grammar = new GrammarPostgres();
+  protected grammar = new GrammarPostgresql();
+  protected selectBuilder() {
+    return new SelectBuilderPostgresql();
+  }
 }
+Mixins.commonTableExpressions(DeleteBuilderPostgresql);
+Mixins.returningMixin(UpdateBuilderPostgresql);
 
-export class InsertBuilderPostgres extends InsertBuilder {
+export class InsertBuilderPostgresql extends InsertBuilder {
   dialect = Enums.DialectEnum.POSTGRESQL;
-  protected grammar = new GrammarPostgres();
+  protected grammar = new GrammarPostgresql();
+  protected selectBuilder() {
+    return new SelectBuilderPostgresql();
+  }
+}
+Mixins.commonTableExpressions(DeleteBuilderPostgresql);
+Mixins.returningMixin(InsertBuilderPostgresql);
+
+export class SchemaBuilderPostgresql extends SchemaBuilder {
+  protected grammar = new SchemaGrammarPostgresql();
 }

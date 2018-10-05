@@ -7,6 +7,11 @@
   },
   "dependencies": {
     "@knex/core": "2.0.0-alpha",
+    "@knex/mssql": "2.0.0-alpha",
+    "@knex/mysql": "2.0.0-alpha",
+    "@knex/sqlite3": "2.0.0-alpha",
+    "@knex/postgresql": "2.0.0-alpha",
+    "@knex/oracle": "2.0.0-alpha",
     "tslib": "^1.9.3"
   }
 }

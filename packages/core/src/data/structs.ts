@@ -235,6 +235,7 @@ export const SelectOperationNodes = IRecord<Types.ISelectOperation>(
     alias: null,
     distinct: false,
     lock: null,
+    returning: List(),
     meta: IMap(),
   },
   "SelectNodes"
@@ -252,6 +253,7 @@ export const InsertOperation = IRecord<Types.IInsertOperation>(
     columns: List(),
     values: List(),
     select: null,
+    returning: List(),
     meta: IMap(),
   },
   "InsertOperation"
@@ -268,6 +270,7 @@ export const UpdateOperation = IRecord<Types.IUpdateOperation>(
     join: List(),
     where: List(),
     values: IMap(),
+    returning: List(),
     meta: IMap(),
   },
   "UpdateOperation"
@@ -283,6 +286,7 @@ export const DeleteBindings = IRecord<Types.IDeleteOperation>(
     table: "",
     where: List(),
     join: List(),
+    returning: List(),
     meta: IMap(),
   },
   "DeleteOperation"
@@ -307,8 +311,9 @@ export const truncateAst = TruncateBindings();
 export const CreateTableColumnNode = IRecord<Types.ITableColumnDefinitionNode>(
   {
     columnName: "",
-    dataType: Enums.ColumnTypeEnum.INT,
+    dataType: Enums.ColumnTypeEnum.INTEGER,
     nullable: false,
+    comment: null,
   },
   "CreateTableColumnNode"
 );
@@ -327,7 +332,7 @@ export const CreateTableOperation = IRecord<Types.ICreateTableOperation>(
 );
 export const createTableAst = CreateTableOperation();
 
-export const IRenameTableNode = IRecord<Types.IRenameTableOperation>(
+export const RenameTableNode = IRecord<Types.IRenameTableOperation>(
   {
     __schemaOperation: Enums.SchemaOperationTypeEnum.RENAME_TABLE,
     from: "",
@@ -335,7 +340,7 @@ export const IRenameTableNode = IRecord<Types.IRenameTableOperation>(
   },
   "RenameTableOperation"
 );
-export const IDropTableNode = IRecord<Types.IDropTableOperation>(
+export const DropTableNode = IRecord<Types.IDropTableOperation>(
   {
     __schemaOperation: Enums.SchemaOperationTypeEnum.DROP_TABLE,
     table: "",
@@ -343,7 +348,7 @@ export const IDropTableNode = IRecord<Types.IDropTableOperation>(
   },
   "DropTableOperation"
 );
-export const IAddColumnNode = IRecord<Types.IAddColumnOperation>(
+export const AddColumnNode = IRecord<Types.IAddColumnOperation>(
   {
     __schemaOperation: Enums.SchemaOperationTypeEnum.ADD_COLUMN,
     table: "",
@@ -351,7 +356,7 @@ export const IAddColumnNode = IRecord<Types.IAddColumnOperation>(
   },
   "AddColumnOperation"
 );
-export const IDropColumnNode = IRecord<Types.IDropColumnOperation>(
+export const DropColumnNode = IRecord<Types.IDropColumnOperation>(
   {
     __schemaOperation: Enums.SchemaOperationTypeEnum.DROP_COLUMN,
     table: "",
@@ -359,7 +364,7 @@ export const IDropColumnNode = IRecord<Types.IDropColumnOperation>(
   },
   "DropColumnOperation"
 );
-export const IModifyColumnNode = IRecord<Types.IModifyColumnOperation>(
+export const ModifyColumnNode = IRecord<Types.IModifyColumnOperation>(
   {
     __schemaOperation: Enums.SchemaOperationTypeEnum.MODIFY_COLUMN,
     table: "",

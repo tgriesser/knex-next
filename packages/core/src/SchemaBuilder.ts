@@ -1,8 +1,11 @@
 import { CreateTableBuilder, CreateTableColumnBlockFn, AlterTableColumnBlockFn } from "./CreateTableBuilder";
 import { List } from "immutable";
 import { Types, Structs } from "./data";
+import { SchemaGrammar } from "./SchemaGrammar";
 
 export class SchemaBuilder {
+  protected grammar = new SchemaGrammar();
+
   protected operations = List<Types.TSchemaOperationAst>();
 
   with() {
@@ -32,12 +35,14 @@ export class SchemaBuilder {
     );
   }
 
-  renameTable(fromTable: string, toTable: string) {
-    // return this.pushOperation(Structs.(fromTable, toTable);
+  // addColumn(table: string, columnName: string);
+
+  renameTable(from: string, to: string) {
+    return this.pushOperation(Structs.RenameTableNode({ from, to }));
   }
 
   dropTable(table: string) {
-    // return this.pushOperation(Structs.(table);
+    return this.pushOperation(Structs.DropColumnNode({ table }));
   }
 
   alterTable(table: string, alterTableBlock?: AlterTableColumnBlockFn) {
@@ -50,8 +55,24 @@ export class SchemaBuilder {
     // return new AlterTableBuilder().renameColumn(table, fromColumn, toColumn);
   }
 
+  getAst() {
+    return this.operations;
+  }
+
+  toSql() {
+    return this.toSqlArray().join(";\n");
+  }
+
+  toSqlArray() {
+    return this.grammar.toSqlArray(this.operations);
+  }
+
+  toOperations() {
+    return this.grammar.toOperations(this.operations);
+  }
+
   protected pushOperation(operation: Types.TSchemaOperationAst) {
-    this.operations = this.operations.push();
+    this.operations = this.operations.push(operation);
     return this;
   }
 }

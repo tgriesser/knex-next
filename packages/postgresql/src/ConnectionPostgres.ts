@@ -6,7 +6,9 @@ export class ConnectionPostgresql extends Connection {
     super(connection);
   }
 
-  async beginTransaction() {}
+  async beginTransaction() {
+    await this;
+  }
 
   async commit() {}
 

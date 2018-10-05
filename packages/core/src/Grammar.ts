@@ -3,7 +3,9 @@ import sqlstring from "sqlstring";
 import { isRawNode, isSubQueryNode } from "./data/predicates";
 import { deleteAst, selectAst, updateAst } from "./data/structs";
 import { validOperators } from "./data/operators";
-import { Types, Enums } from "./data";
+import { Types, Enums, Mixins } from "./data";
+
+export interface Grammar extends Mixins.LogMixin {}
 
 export class Grammar {
   operators = validOperators;
@@ -343,7 +345,7 @@ export class Grammar {
 
   buildInsert(ast: Types.TInsertOperation) {
     if (!ast.table) {
-      return null;
+      return;
     }
     this.addKeyword("INSERT INTO ");
     this.currentFragment += this.escapeId(ast.table);
@@ -569,4 +571,10 @@ export class Grammar {
     fn();
     this.currentFragment += ")";
   }
+
+  defaultValue() {
+    this.addKeyword("DEFAULT");
+  }
 }
+
+Mixins.withLogMixin(Grammar);

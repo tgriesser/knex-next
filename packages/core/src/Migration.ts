@@ -1,7 +1,10 @@
 import { SchemaBuilder } from "./SchemaBuilder";
 import { CreateTableColumnBlockFn } from "./CreateTableBuilder";
+import { ColumnTypeEnum } from "./data/enums";
 
 export abstract class Migration {
+  static ColumnType = ColumnTypeEnum;
+
   protected builder = new SchemaBuilder();
 
   createTable(table: string, createTableBlock: CreateTableColumnBlockFn) {

@@ -29,3 +29,12 @@ export const SUBQUERY_EXECUTION = dedent`
   This is not permitted as only the outer query may be executed or used as an
   EventEmitter.
 `;
+
+export const IMMUTABLE_CONVERSION = dedent`
+Oops, looks like you're trying to convert a builder which has already begun execution to an immutable instance.
+Execution is defined as:
+  - calling .then() or .catch(), either directly or indirectly via async / await
+  - calling any of the EventEmitter methods (.on, .off, etc.)
+  - beginning async iteration
+As an alternative, you may instead call .clone() which clones the builder's AST and then call .toImmutable on 
+`;

@@ -54,12 +54,12 @@ export class CreateTableInner {
     return this.addColumnChain(Enums.ColumnTypeEnum.MEDIUMINT, columnName);
   }
   bigincrements(columnName: string) {
-    return this.addColumnChain(Enums.ColumnTypeEnum.BIGINCREMENTS, columnName);
+    return this.addColumnChain(Enums.ColumnTypeEnum.BIG_INCREMENTS, columnName);
   }
   decimal(columnName: string) {
     return this.addColumnChain(Enums.ColumnTypeEnum.DECIMAL, columnName);
   }
-  float(columnName: string) {
+  float(columnName: string, precision = 8, scale = 2) {
     return this.addColumnChain(Enums.ColumnTypeEnum.FLOAT, columnName);
   }
   double(columnName: string) {
@@ -96,7 +96,7 @@ export class CreateTableInner {
   char(columnName: string) {
     return this.addColumnChain(Enums.ColumnTypeEnum.CHAR, columnName);
   }
-  varchar(columnName: string) {
+  varchar(columnName: string, length: number = 255) {
     return this.addColumnChain(Enums.ColumnTypeEnum.VARCHAR, columnName);
   }
   tinytext(columnName: string) {
@@ -137,9 +137,6 @@ export class CreateTableInner {
   }
 
   // Increments, Aliases, and Additional
-  bool(columnName: string) {
-    return this.addColumnChain(Enums.ColumnTypeEnum.BOOL, columnName);
-  }
   datetime(columnName: string) {
     return this.addColumnChain(Enums.ColumnTypeEnum.DATETIME, columnName);
   }
@@ -150,7 +147,7 @@ export class CreateTableInner {
     return this.addColumnChain(Enums.ColumnTypeEnum.INTEGER, columnName);
   }
   biginteger(columnName: string) {
-    return this.addColumnChain(Enums.ColumnTypeEnum.BIGINTEGER, columnName);
+    return this.addColumnChain(Enums.ColumnTypeEnum.BIG_INTEGER, columnName);
   }
   string(columnName: string) {
     return this.addColumnChain(Enums.ColumnTypeEnum.STRING, columnName);
@@ -165,10 +162,10 @@ export class CreateTableInner {
     return this.addColumnChain(Enums.ColumnTypeEnum.UUID, columnName);
   }
   enu(columnName: string) {
-    return this.addColumnChain(Enums.ColumnTypeEnum.ENU, columnName);
+    return this.addColumnChain(Enums.ColumnTypeEnum.ENUM, columnName);
   }
   specificType(columnName: string) {
-    return this.addColumnChain(Enums.ColumnTypeEnum.SPECIFICTYPE, columnName);
+    return this.addColumnChain(Enums.ColumnTypeEnum.SPECIFIC_TYPE, columnName);
   }
 
   // Metadata:
@@ -178,9 +175,21 @@ export class CreateTableInner {
   protected addColumnChain(type: Enums.ColumnTypeEnum, columnName: string) {}
 }
 
+class ColumnChain {
+  nullable() {}
+  notNullable() {}
+  defaultTo() {}
+}
+
+interface ColumnChain {
+  default: ColumnChain["defaultTo"];
+}
+ColumnChain.prototype["default"] = ColumnChain.prototype.defaultTo;
+
 // Add some camel-cased aliases for backward compat:
 
 export interface CreateTableInner {
+  bool: CreateTableInner["boolean"];
   enum: CreateTableInner["enu"];
   bigint: CreateTableInner["biginteger"];
   bigInt: CreateTableInner["biginteger"];
@@ -196,6 +205,7 @@ export interface CreateTableInner {
   longText: CreateTableInner["longtext"];
 }
 
+CreateTableInner.prototype.bool = CreateTableInner.prototype.boolean;
 CreateTableInner.prototype.enum = CreateTableInner.prototype.enu;
 CreateTableInner.prototype.bigint = CreateTableInner.prototype.biginteger;
 CreateTableInner.prototype.bigInt = CreateTableInner.prototype.biginteger;

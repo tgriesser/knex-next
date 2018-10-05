@@ -87,10 +87,72 @@ export class SchemaGrammar extends Grammar {
     this.addIdentifier(ast.columnName);
     this.addSpace();
     this.addColumnType(ast);
+    this.addSpace();
+    this.addColumnDefault(ast);
   }
 
-  addColumnType(type: Types.TTableColumnDefinitionNode) {
-    this.addIdentifier(type.dataType);
+  addColumnType({ dataType }: Types.TTableColumnDefinitionNode) {
+    switch (dataType) {
+      case Enums.ColumnTypeEnum.INCREMENTS:
+        return this.addIncrements();
+      case Enums.ColumnTypeEnum.BIG_INCREMENTS:
+        return this.addBigIncrements();
+      case Enums.ColumnTypeEnum.INTEGER:
+      case Enums.ColumnTypeEnum.SMALLINT:
+      case Enums.ColumnTypeEnum.MEDIUMINT:
+        return this.addKeyword("INTEGER");
+      case Enums.ColumnTypeEnum.BIG_INTEGER:
+        return this.addKeyword("BIGINT");
+      case Enums.ColumnTypeEnum.VARCHAR:
+        return this.addKeyword(`VARCHAR(...)`);
+      case Enums.ColumnTypeEnum.MEDIUMTEXT:
+      case Enums.ColumnTypeEnum.LONGTEXT:
+      case Enums.ColumnTypeEnum.TEXT:
+        return this.addKeyword("TEXT");
+      case Enums.ColumnTypeEnum.TINYINT:
+        return this.addKeyword("TINYINT");
+      case Enums.ColumnTypeEnum.FLOAT:
+        return this.addKeyword(`FLOAT(...)`);
+      case Enums.ColumnTypeEnum.DOUBLE:
+      case Enums.ColumnTypeEnum.DECIMAL:
+        return this.addKeyword(`DECIMAL(...)`);
+      case Enums.ColumnTypeEnum.BLOB:
+      case Enums.ColumnTypeEnum.LONGBLOB:
+      case Enums.ColumnTypeEnum.BINARY:
+        return this.addKeyword("BLOB");
+      case Enums.ColumnTypeEnum.BOOLEAN:
+        return this.addKeyword("BOOLEAN");
+      case Enums.ColumnTypeEnum.DATE:
+        return this.addKeyword("DATE");
+      case Enums.ColumnTypeEnum.DATETIME:
+        return this.addKeyword("DATETIME");
+      case Enums.ColumnTypeEnum.TIME:
+        return this.addKeyword("TIME");
+      case Enums.ColumnTypeEnum.TIMESTAMP:
+        return this.addKeyword("TIMESTAMP");
+      case Enums.ColumnTypeEnum.ENUM:
+        return this.addKeyword("VARCHAR");
+      case Enums.ColumnTypeEnum.BIT:
+      case Enums.ColumnTypeEnum.JSON:
+        return this.addKeyword("TEXT");
+      case Enums.ColumnTypeEnum.UUID:
+        return this.addKeyword("CHAR(36)");
+      default: {
+        throw new Error(`No column casting defined for ${dataType}`);
+      }
+    }
+  }
+
+  addIncrements() {
+    this.addKeyword("INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT");
+  }
+
+  addBigIncrements() {
+    this.addKeyword("INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT");
+  }
+
+  addColumnDefault(type: Types.TTableColumnDefinitionNode) {
+    //
   }
 
   toSchemaOperation(operationAst: Types.TSchemaOperationAst) {
@@ -103,11 +165,11 @@ export class SchemaGrammar extends Grammar {
     return this.cacheSqlValue(operationAst);
   }
 
-  toOperationList(operations: List<Types.TSchemaOperationAst>): Types.ToSQLValue[] {
+  toOperations(operations: List<Types.TSchemaOperationAst>): Types.ToSQLValue[] {
     return operations.map(op => this.newInstance().toSchemaOperation(op)).toArray();
   }
 
-  toSqlList(operations: List<Types.TSchemaOperationAst>) {
+  toSqlArray(operations: List<Types.TSchemaOperationAst>) {
     return operations.map(op => this.newInstance().toSchemaOperation(op).sql).toArray();
   }
 }

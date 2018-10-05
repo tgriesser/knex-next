@@ -4,14 +4,21 @@ import { List } from "immutable";
 import { SubHavingBuilder } from "./clauses/HavingClauseBuilder";
 import { JoinBuilder } from "./clauses/JoinBuilder";
 import { SubWhereBuilder, WhereClauseBuilder } from "./clauses/WhereClauseBuilder";
-import { Connection } from "./Connection";
+import { KnexConnection } from "./Connection";
 import { NEVER } from "./data/messages";
 import { isRawNode, isSelectBuilder, isNodeOf } from "./data/predicates";
 import { SELECT_BUILDER } from "./data/symbols";
 import { ExecutionContext } from "./ExecutionContext";
 import { Grammar } from "./Grammar";
-import { Types, Structs, Enums, Mixins } from "./data";
+import { Types, Structs, Enums, Mixins, Messages } from "./data";
 import { SubQueryNode } from "./data/structs";
+
+// Only used as types, and only here for backward compat:
+import { InsertBuilder } from "./InsertBuilder";
+import { UpdateBuilder } from "./UpdateBuilder";
+import { DeleteBuilder } from "./DeleteBuilder";
+
+export interface SelectBuilder<T = any> extends Mixins.EventEmitterMixin {}
 
 export class SelectBuilder<T = any> extends WhereClauseBuilder implements Types.IBuilder {
   /**
@@ -32,7 +39,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Types.
    */
   protected grammar = new Grammar();
 
-  protected connection: Types.Maybe<Connection> = null;
+  protected connection: Types.Maybe<KnexConnection> = null;
 
   /**
    * All events, row iteration, and query execution takes place in
@@ -96,12 +103,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Types.
     if (this.isEmpty(table)) {
       return this;
     }
-    return this.chain(ast => {
-      if (typeof table === "string") {
-        return ast.set("from", table);
-      }
-      return ast;
-    });
+    return this.chain(ast => ast.set("from", this.unwrapIdent(table)));
   }
 
   /**
@@ -235,9 +237,11 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Types.
   lock(value: boolean | string = true) {
     return this.chain(ast => ast.set("lock", value));
   }
+
   lockForUpdate() {
     return this.lock(true);
   }
+
   sharedLock() {
     return this.lock(false);
   }
@@ -289,14 +293,7 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Types.
 
   toImmutable() {
     if (this.executionContext) {
-      throw new Error(dedent`
-        Oops, looks like you're trying to convert a builder which has already begun execution to an immutable instance.
-        Execution is defined as:
-          - calling .then() or .catch(), either directly or indirectly via async / await
-          - calling any of the EventEmitter methods (.on, .off, etc.)
-          - beginning async iteration
-        As an alternative, you may instead call .clone() which clones the builder's AST and then call .toImmutable on 
-      `);
+      throw new Error(Messages.IMMUTABLE_CONVERSION);
     }
     const builder = this.clone();
     builder.mutable = false;
@@ -312,11 +309,68 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Types.
     return builder;
   }
 
-  update() {
-    throw new Error(dedent`
-      The .update() method is no longer chained off of a select query, it is now 
-      moved to it's own UpdateBuilder class. Check the docs for migration.
-    `);
+  protected insertBuilder(): InsertBuilder {
+    throw new Error("Abstract, implemented in inheriting classes.");
+  }
+  protected updateBuilder(): UpdateBuilder {
+    throw new Error("Abstract, implemented in inheriting classes.");
+  }
+  protected deleteBuilder(): DeleteBuilder {
+    throw new Error("Abstract, implemented in inheriting classes.");
+  }
+
+  /**
+   * Add the update/insert/delete APIs in, even though they're deprecated. We've changed
+   * the types on the signatures so anyone using TypeScript will see errors for these changes...
+   * otherwise we'll just warn at execution time.
+   */
+  insert(...args: any[]) {
+    this.warn(
+      new Error(dedent`
+      The .insert() method should should no longer be chained off of a select query.
+      Check the docs for how to migrate to the new APIs.
+    `)
+    );
+    const builder = this.insertBuilder();
+    if (this.connection) {
+      builder.setConnection(this.connection);
+    }
+    // @ts-ignore
+    return builder.values(...args);
+  }
+
+  update(...args: any[]) {
+    this.warn(
+      new Error(dedent`
+      The .update() method should should no longer be chained off of a select query.
+      Check the docs for how to migrate to the new APIs.
+    `)
+    );
+    const builder = this.updateBuilder();
+    if (this.connection) {
+      builder.setConnection(this.connection);
+    }
+    // @ts-ignore
+    return builder.set(...args);
+  }
+
+  del(arg: never) {
+    this.warn(
+      new Error(dedent`
+      The .del() or .delete() method should should no longer be chained off of a select query.
+      Check the docs for how to migrate to the new APIs.
+    `)
+    );
+    const builder = this.updateBuilder();
+    if (this.connection) {
+      builder.setConnection(this.connection);
+    }
+    return builder;
+  }
+
+  delete(arg: never) {
+    // @ts-ignore
+    return this.del(arg);
   }
 
   /**
@@ -352,6 +406,20 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Types.
    */
   clearGroup() {
     return this.chain(ast => ast.set("group", Structs.selectAst.group));
+  }
+
+  /**
+   * Clears any GROUP BY set on the builder
+   */
+  clearLimit() {
+    return this.chain(ast => ast.set("limit", Structs.selectAst.limit));
+  }
+
+  /**
+   * Clears any GROUP BY set on the builder
+   */
+  clearOffset() {
+    return this.chain(ast => ast.set("offset", Structs.selectAst.offset));
   }
 
   protected addUnionClauses(args: Array<Types.TUnionArg>, unionAll: boolean = false) {
@@ -528,11 +596,10 @@ export class SelectBuilder<T = any> extends WhereClauseBuilder implements Types.
   }
 }
 
-export interface SelectBuilder<T = any> extends Types.ExecutableBuilder<T> {
+export interface SelectBuilder<T = any> extends Mixins.ExecutionMethods<T> {
   [SELECT_BUILDER]: true;
 }
 
 SelectBuilder.prototype[SELECT_BUILDER] = true;
 
-Mixins.withEventEmitter(SelectBuilder);
 Mixins.withExecutionMethods(SelectBuilder);

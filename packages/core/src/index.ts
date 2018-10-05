@@ -5,10 +5,12 @@ export * from "./clauses/JoinBuilder";
 export * from "./Connection";
 export * from "./DeleteBuilder";
 export * from "./ExecutionContext";
-export * from "./Grammar";
 export * from "./InsertBuilder";
 export * from "./Migration";
 export * from "./SchemaBuilder";
 export * from "./rawTag";
 export * from "./SelectBuilder";
 export * from "./UpdateBuilder";
+
+export * from "./Grammar";
+export * from "./SchemaGrammar";

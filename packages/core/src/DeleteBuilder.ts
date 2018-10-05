@@ -3,7 +3,7 @@ import { SelectBuilder } from "./SelectBuilder";
 import { Grammar } from "./Grammar";
 import { Mixins, Enums, Types, Structs } from "./data";
 
-export interface DeleteBuilder extends Types.ExecutableBuilder {}
+export interface DeleteBuilder extends Mixins.ExecutionMethods {}
 
 export class DeleteBuilder extends WhereClauseBuilder implements Types.IBuilder {
   readonly dialect: Types.Maybe<Enums.DialectEnum> = null;

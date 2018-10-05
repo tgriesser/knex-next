@@ -19,3 +19,7 @@ export function isSubQueryNode(obj: any): obj is TSubQueryNode {
 export function isNodeOf<N extends NodeTypeEnum>(obj: any, type: N): obj is INode<N> {
   return typeof obj === "object" && obj !== null && obj.__typename === type;
 }
+
+export function isThenable(o: any): o is PromiseLike<any> {
+  return o && o.then && typeof o.then === "function";
+}

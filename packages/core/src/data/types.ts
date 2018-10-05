@@ -16,8 +16,13 @@ import { JoinBuilder } from "../clauses/JoinBuilder";
 import { RecordOf, List, Map as IMap } from "immutable";
 import { HavingClauseBuilder } from "../clauses/HavingClauseBuilder";
 import { AddCondition } from "../clauses/AddCondition";
-import { Connection } from "../Connection";
 import * as Enums from "./enums";
+import { UpdateBuilder } from "../UpdateBuilder";
+import { DeleteBuilder } from "../DeleteBuilder";
+import { InsertBuilder } from "../InsertBuilder";
+import { TruncateBuilder } from "../TruncateBuilder";
+import { EventEmitter } from "events";
+import { SchemaBuilder } from "../SchemaBuilder";
 
 export interface IBuilder {
   /**
@@ -325,6 +330,7 @@ export interface ISelectOperation {
   distinct: boolean;
   alias: Maybe<string | TRawNode>;
   lock: Maybe<boolean | string>;
+  returning: List<string>;
   meta: IMap<string, any>;
 }
 export type TSelectOperation = RecordOf<ISelectOperation>;
@@ -336,6 +342,7 @@ export interface IInsertOperation extends IOperationNode<OperationTypeEnum.INSER
   values: List<any>;
   columns: List<string>;
   select: Maybe<TSelectOperation>;
+  returning: List<string>;
   meta: IMap<string, any>;
 }
 export type TInsertOperation = RecordOf<IInsertOperation>;
@@ -346,6 +353,7 @@ export interface IUpdateOperation extends IOperationNode<OperationTypeEnum.UPDAT
   where: List<TConditionNode>;
   join: List<TJoinNode | TRawNode>;
   values: IMap<string, TValue>;
+  returning: List<string>;
   meta: IMap<string, any>;
 }
 export type TUpdateOperation = RecordOf<IUpdateOperation>;
@@ -354,6 +362,7 @@ export interface IDeleteOperation extends IOperationNode<OperationTypeEnum.DELET
   table: string;
   where: List<TConditionNode>;
   join: List<TJoinNode>;
+  returning: List<string>;
   meta: IMap<string, any>;
 }
 export type TDeleteOperation = RecordOf<IDeleteOperation>;
@@ -369,6 +378,7 @@ export interface ITableColumnDefinitionNode {
   columnName: string;
   dataType: Enums.ColumnTypeEnum;
   nullable: boolean;
+  comment: Maybe<string>;
 }
 export type TTableColumnDefinitionNode = RecordOf<ITableColumnDefinitionNode>;
 
@@ -446,32 +456,6 @@ export interface ToSQLValue {
   fragments: string[];
 }
 
-/**
- * When a Builder is executable, it is a promise and contains all of these methods
- */
-export interface ExecutableBuilder<T = any> extends Promise<T> {
-  /**
-   * Sets the current connection on the class
-   */
-  setConnection(connection: Connection): this;
-  /**
-   * Logs a message
-   */
-  log(msg: string): void;
-  /**
-   * Logs an error
-   */
-  error(err: Error): void;
-  /**
-   * Logs a warning
-   */
-  warn(msg: string | Error): void;
-  /**
-   * Build the query
-   */
-  toOperation(): ToSQLValue;
-}
-
 export type ArgumentType<F extends Function> = F extends (...args: infer A) => any ? A[0] : never;
 
 export type ArgumentTypes<F extends Function> = F extends (...args: infer A) => any ? A : never;
@@ -505,3 +489,25 @@ export interface ColumnInfoData {
   nullable: boolean;
   defaultValue: any;
 }
+
+export type BuildersObject = {
+  SchemaBuilder: typeof SchemaBuilder;
+  SelectBuilder: typeof SelectBuilder;
+  UpdateBuilder: typeof UpdateBuilder;
+  DeleteBuilder: typeof DeleteBuilder;
+  InsertBuilder: typeof InsertBuilder;
+  TruncateBuilder: typeof TruncateBuilder;
+};
+
+export type TransactionArgs = [];
+
+export interface LegacyKnex extends EventEmitter {}
+
+export interface LegacyKnexTransaction extends LegacyKnex {}
+
+export interface TransactionBlockFn<T> {
+  (trx: T): any;
+}
+export type LegacyTransactionBlock = TransactionBlockFn<LegacyKnexTransaction>;
+
+export type CreateKnexOptions {}

@@ -9,14 +9,23 @@ export class SelectBuilderMssql extends SelectBuilder {
 export class DeleteBuilderMssql extends DeleteBuilder {
   dialect = Enums.DialectEnum.MSSQL;
   protected grammar = new GrammarMssql();
+  protected selectBuilder() {
+    return new SelectBuilderMssql();
+  }
 }
 
 export class UpdateBuilderMssql extends UpdateBuilder {
   dialect = Enums.DialectEnum.MSSQL;
   protected grammar = new GrammarMssql();
+  protected selectBuilder() {
+    return new SelectBuilderMssql();
+  }
 }
 
 export class InsertBuilderMssql extends InsertBuilder {
   dialect = Enums.DialectEnum.MSSQL;
   protected grammar = new GrammarMssql();
+  protected selectBuilder() {
+    return new SelectBuilderMssql();
+  }
 }

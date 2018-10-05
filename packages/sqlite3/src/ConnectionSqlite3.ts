@@ -1,7 +1,7 @@
-import { Connection } from "@knex/core";
+import { KnexConnection } from "@knex/core";
 import { Database } from "sqlite3";
 
-export class ConnectionSqlite3 extends Connection {
+export class ConnectionSqlite3 extends KnexConnection {
   database = "sqlite3";
 
   constructor(connection: Database) {

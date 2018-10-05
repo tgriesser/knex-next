@@ -1,22 +1,33 @@
-import { Connection as MysqlConnection } from "mysql";
-import { Connection, raw } from "@knex/core";
+import { Connection } from "mysql";
+import { KnexConnection, raw, Types } from "@knex/core";
+import { GrammarMysql } from "./GrammarMysql";
 
-export class ConnectionMysql extends Connection {
-  constructor(protected connection: MysqlConnection) {
+export class ConnectionMysql extends KnexConnection {
+  constructor(protected connection: Connection) {
     super(connection);
+  }
+
+  get grammar() {
+    return new GrammarMysql();
   }
 
   get database() {
     return this.connection.config.database!;
   }
 
-  async execute(sql: string, bindings: any[], timeout?: number) {
-    return new Promise((resolve, reject) => {
-      this.connection.query(sql, bindings);
+  async execute<T>(sql: string, bindings: any[], timeout?: number) {
+    return new Promise<T>((resolve, reject) => {
+      this.connection.query(sql, bindings, (err, result: T) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(result);
+        }
+      });
     });
   }
 
-  async beginTransaction() {}
+  async executeRaw(node: Types.TRawNode) {}
 
   async columnInfo(tableName: string) {
     const { fragments, bindings } = raw`
