@@ -1,6 +1,6 @@
 # knex-next
 
-Nothing to see here yet. This is a future verison of knex (TypeScript + internal rewrite), just putting it here for anyone that's really interested in the direction it's heading and/or really wants to help. This will likely all get squashed down & merged into knex as a 2.0 PR so any contributions might be lost.
+Nothing to see here yet. This is a future verison of knex (TypeScript + internal rewrite), just putting it here for anyone that's really interested in the direction it's heading and/or really wants to help. This will likely all get squashed down & merged into knex as a 2.0 PR so any contributions might be lost. Most of the interesting stuff is in [core](https://github.com/tgriesser/knex-next/tree/master/packages/core/src)
 
 Goals:
 
